@@ -22,120 +22,99 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-# import sys
+import sys
 
-# sys.path.append("..")
-# import logging
+sys.path.append("..")
+import logging
 
-# import rtde.rtde as rtde
-# import rtde.rtde_config as rtde_config
+import rtde.rtde as rtde
+import rtde.rtde_config as rtde_config
 
 
-# logging.basicConfig(level=logging.INFO)
+logging.basicConfig(level=logging.INFO)
 
 ROBOT_HOST = "192.168.0.111"
 ROBOT_PORT = 30002
-# config_filename = "control_loop_configuration.xml"
+config_filename = "control_loop_configuration.xml"
 
-# keep_running = True
+keep_running = True
 
-# logging.getLogger().setLevel(logging.INFO)
+logging.getLogger().setLevel(logging.INFO)
 
-# conf = rtde_config.ConfigFile(config_filename)
-# state_names, state_types = conf.get_recipe("state")
-# setp_names, setp_types = conf.get_recipe("setp")
-# watchdog_names, watchdog_types = conf.get_recipe("watchdog")
+conf = rtde_config.ConfigFile(config_filename)
+state_names, state_types = conf.get_recipe("state")
+setp_names, setp_types = conf.get_recipe("setp")
+watchdog_names, watchdog_types = conf.get_recipe("watchdog")
 
-# con = rtde.RTDE(ROBOT_HOST, ROBOT_PORT)
-# con.connect()
-import socket
-import time
+con = rtde.RTDE(ROBOT_HOST, ROBOT_PORT)
+con.connect()
 
-con = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-con.connect((ROBOT_HOST, ROBOT_PORT))
+# get controller version
+con.get_controller_version()
 
+# setup recipes
+con.send_output_setup(state_names, state_types)
+setp = con.send_input_setup(setp_names, setp_types)
+watchdog = con.send_input_setup(watchdog_names, watchdog_types)
 
-# con.send(b"set_digital_out(2,True)" + b"\n")
-while True:
-    con.send(b"movej([-1.94, -1.58, 1.16, -1.15, -1.55, 1.18], a=1.0, v=0.6)" + b"\n")
-    time.sleep(5)
-    con.send(b"movej([1.94, -1.58, 1.16, -1.15, -1.55, 1.18], a=1.0, v=0.6)" + b"\n")
-    time.sleep(5)
+# Setpoints to move the robot to
+setp1 = [-0.12, -0.43, 0.14, 0, 3.11, 0.04]
+setp2 = [-0.12, -0.51, 0.21, 0, 3.11, 0.04]
 
+setp.input_double_register_0 = 0
+setp.input_double_register_1 = 0
+setp.input_double_register_2 = 0
+setp.input_double_register_3 = 0
+setp.input_double_register_4 = 0
+setp.input_double_register_5 = 0
 
-data = con.recv(1024)
-con.close()
-
-print("Received", repr(data))
-
-
-
-# # get controller version
-# con.get_controller_version()
-
-# # setup recipes
-# con.send_output_setup(state_names, state_types)
-# setp = con.send_input_setup(setp_names, setp_types)
-# watchdog = con.send_input_setup(watchdog_names, watchdog_types)
-
-# # Setpoints to move the robot to
-# setp1 = [-0.12, -0.43, 0.14, 0, 3.11, 0.04]
-# setp2 = [-0.12, -0.51, 0.21, 0, 3.11, 0.04]
-
-# setp.input_double_register_0 = 0
-# setp.input_double_register_1 = 0
-# setp.input_double_register_2 = 0
-# setp.input_double_register_3 = 0
-# setp.input_double_register_4 = 0
-# setp.input_double_register_5 = 0
-
-# # The function "rtde_set_watchdog" in the "rtde_control_loop.urp" creates a 1 Hz watchdog
-# watchdog.input_int_register_0 = 0
+# The function "rtde_set_watchdog" in the "rtde_control_loop.urp" creates a 1 Hz watchdog
+watchdog.input_int_register_0 = 0
 
 
-# def setp_to_list(sp):
-#     sp_list = []
-#     for i in range(0, 6):
-#         sp_list.append(sp.__dict__["input_double_register_%i" % i])
-#     return sp_list
+def setp_to_list(sp):
+    sp_list = []
+    for i in range(0, 6):
+        sp_list.append(sp.__dict__["input_double_register_%i" % i])
+    return sp_list
 
 
-# def list_to_setp(sp, list):
-#     for i in range(0, 6):
-#         sp.__dict__["input_double_register_%i" % i] = list[i]
-#     return sp
+def list_to_setp(sp, list):
+    for i in range(0, 6):
+        sp.__dict__["input_double_register_%i" % i] = list[i]
+    return sp
 
 
-# # start data synchronization
-# if not con.send_start():
-#     sys.exit()
+# start data synchronization
+if not con.send_start():
+    sys.exit()
 
-# # control loop
-# move_completed = True
-# while keep_running:
-#     # receive the current state
-#     state = con.receive()
+# control loop
+move_completed = True
+while keep_running:
+    # receive the current state
+    state = con.receive()
 
-#     if state is None:
-#         break
+    if state is None:
+        break
 
-#     # do something...
-#     if move_completed and state.output_int_register_0 == 1:
-#         move_completed = False
-#         new_setp = setp1 if setp_to_list(setp) == setp2 else setp2
-#         list_to_setp(setp, new_setp)
-#         print("New pose = " + str(new_setp))
-#         # send new setpoint
-#         con.send(setp)
-#         watchdog.input_int_register_0 = 1
-#     elif not move_completed and state.output_int_register_0 == 0:
-#         print("Move to confirmed pose = " + str(state.target_q))
-#         move_completed = True
-#         watchdog.input_int_register_0 = 0
+    # do something...
+    if move_completed and state.output_int_register_0 == 1:
+        move_completed = False
+        new_setp = setp1 if setp_to_list(setp) == setp2 else setp2
+        list_to_setp(setp, new_setp)
+        print("New pose = " + str(new_setp))
+        # send new setpoint
+        con.send(setp)
+        watchdog.input_int_register_0 = 1
+    elif not move_completed and state.output_int_register_0 == 0:
+        print("Move to confirmed pose = " + str(state.target_q))
+        move_completed = True
+        watchdog.input_int_register_0 = 0
 
-#     # kick watchdog
-#     con.send(watchdog)
+    # kick watchdog
+    con.send(watchdog)
 
-# con.send_pause()
+con.send_pause()
 
-# con.disconnect()
+con.disconnect()
