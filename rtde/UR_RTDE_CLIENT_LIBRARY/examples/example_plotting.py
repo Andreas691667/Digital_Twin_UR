@@ -33,5 +33,5 @@ with open("robot_data.csv") as csvfile:
     r = csv_reader.CSVReader(csvfile)
 
 # plot
-plt.plot(r.timestamp, r.actual_TCP_pose_4)
+plt.plot(r.timestamp, r.actual_q_4)
 plt.show()

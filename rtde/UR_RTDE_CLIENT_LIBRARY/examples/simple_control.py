@@ -7,13 +7,29 @@ import time
 con = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 con.connect((ROBOT_HOST, ROBOT_PORT))
 
+script_digital_out = b"""
+def fun(): \n
+\tset_digital_out(2,True) \n
+\tset_digital_out(3,True) \n
+end \n
+fun() \n
+"""
 
-# con.send(b"set_digital_out(2,True)" + b"\n")
-while True:
-    con.send(b"movej([-1.94, -1.58, 1.16, -1.15, -1.55, 1.18], a=1.0, v=0.6)" + b"\n")
-    time.sleep(15)
-    con.send(b"movej([1.94, -1.58, 1.16, -1.15, -1.55, 1.18], a=1.0, v=0.6)" + b"\n")
-    time.sleep(15)
+script_move = b"""
+def move(): \n
+\ti=0
+\twhile i < 5:  
+\t\tmovej([3.14, -1.5196582, 0.0001, -1.53589, 0.006, 0.02391101], a=0.3 , v=0.6) \n
+\t\tmovej([5, -1.5196582, -0.0959931, -1.53589, 0.006, 0.02391101], a=0.3 , v=0.6) \n
+\t\tmovej([0.004886922, -1.5196582, -0.0959931, -1.53589, 3.14, 0.02391101], a=0.3 , v=0.6) \n
+\t\ti=i+1 \n
+\tend
+end \n
+move() \n
+"""
+
+con.send(script_move)
+
 
 
 data = con.recv(1024)

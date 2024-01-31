@@ -71,7 +71,12 @@ if args.verbose:
 conf = rtde_config.ConfigFile(args.config)
 output_names, output_types = conf.get_recipe("out")
 
-con = rtde.RTDE(args.host, args.port)
+
+ROBOT_HOST = "192.168.0.111"
+ROBOT_PORT = 30004
+
+
+con = rtde.RTDE(ROBOT_HOST, ROBOT_PORT)
 con.connect()
 
 # get controller version
