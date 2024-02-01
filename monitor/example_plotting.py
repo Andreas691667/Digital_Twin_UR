@@ -26,7 +26,7 @@ import matplotlib.pyplot as plt
 
 import sys
 
-sys.path.append("..")
+sys.path.append("../rtde/UR_RTDE_CLIENT_LIBRARY")
 import rtde.csv_reader as csv_reader
 
 with open("robot_data.csv") as csvfile:
