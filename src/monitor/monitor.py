@@ -22,32 +22,37 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+
+import sys
+import threading
 import argparse
 import logging
-import sys
-from rmq_client import Client
-import threading
-
 import json
 
-sys.path.append("../rtde/UR_RTDE_CLIENT_LIBRARY")
-import rtde.rtde as rtde
-import rtde.rtde_config as rtde_config
-import rtde.csv_writer as csv_writer
-import rtde.csv_binary_writer as csv_binary_writer
+sys.path.append("..")
+
+from config.rmq_config import RMQ_CONFIG
+from config.robot_config import ROBOT_CONFIG
+from rmq.rmq_client import Client
+# import ur_rtde_client_lib.rtde as rtde
+# import ur_rtde_client_lib.rtde_config as rtde_config
+# import ur_rtde_client_lib.csv_writer as csv_writer
+# import ur_rtde_client_lib.csv_binary_writer as csv_binary_writer
+import ur_rtde_client_lib.rtde as rtde
+import ur_rtde_client_lib.rtde_config as rtde_config
+import ur_rtde_client_lib.csv_writer as csv_writer
+import ur_rtde_client_lib.csv_binary_writer as csv_binary_writer
 
 
-class Monitor():
-    def __init__(self) -> None:    
+class Monitor:
+    def __init__(self) -> None:
         self.args = None
-        self.output_names, self.output_types = self.get_input_argument ()
-        
-        # Define host and port
-        self.ROBOT_HOST = "192.168.0.111"
-        self.ROBOT_PORT = 30004
+        self.output_names, self.output_types = self.get_input_argument()
 
         # Instantiate RMQ_CLIENT
-        self.rmq_client = Client()        
+        self.rmq_client = Client()
+
+        
 
         # Setup connection to robot
         # makes con, that can be accessed via self.con
@@ -65,14 +70,20 @@ class Monitor():
         self.monitor_thread = threading.Thread(target=self.start_recording)
         self.monitor_event = threading.Event()
 
+        self.configure_rmq_client()
+
         self.monitor_thread.start()
+
+    def configure_rmq_client(self) -> None:
+        self.rmq_client.configure_outgoing_channel(
+            RMQ_CONFIG.MONITOR_EXCHANGE, RMQ_CONFIG.FANOUT
+        )
 
     def rdte_connect(self) -> None:
         # Instantiate RTDE connection
-        self.rtde_con = rtde.RTDE(self.ROBOT_HOST, self.ROBOT_PORT)
+        self.rtde_con = rtde.RTDE(ROBOT_CONFIG.ROBOT_HOST, ROBOT_CONFIG.ROBOT_PORT_OUT)
         self.rtde_con.connect()
-    
-    
+
     # TODO: add return type, I think it is (str, str)
     def get_input_argument(self):
         # ---- Get arguments ----
@@ -80,7 +91,9 @@ class Monitor():
         parser.add_argument(
             "--host", default="localhost", help="name of host to connect to (localhost)"
         )
-        parser.add_argument("--port", type=int, default=30004, help="port number (30004)")
+        parser.add_argument(
+            "--port", type=int, default=30004, help="port number (30004)"
+        )
         parser.add_argument(
             "--samples", type=int, default=0, help="number of samples to record"
         )
@@ -97,7 +110,9 @@ class Monitor():
             default="robot_data.csv",
             help="data output file to write to (robot_data.csv)",
         )
-        parser.add_argument("--verbose", help="increase output verbosity", action="store_true")
+        parser.add_argument(
+            "--verbose", help="increase output verbosity", action="store_true"
+        )
         parser.add_argument(
             "--buffered",
             help="Use buffered receive which doesn't skip data",
@@ -115,28 +130,34 @@ class Monitor():
         output_names, output_types = conf.get_recipe("out")
 
         return output_names, output_types
-    
-    def setup_recipes (self) -> None:
+
+    def setup_recipes(self) -> None:
         # setup recipes
-        if not self.rtde_con.send_output_setup(self.output_names, self.output_types, frequency=self.args.frequency):
+        if not self.rtde_con.send_output_setup(
+            self.output_names, self.output_types, frequency=self.args.frequency
+        ):
             logging.error("Unable to configure output")
             sys.exit()
-    
-    def start_data_synchronization (self) -> None:
+
+    def start_data_synchronization(self) -> None:
         # start data synchronization
         if not self.rtde_con.send_start():
             logging.error("Unable to start synchronization")
             sys.exit()
 
-    def start_recording (self) -> None:
+    def start_recording(self) -> None:
         writeModes = "wb" if self.args.binary else "w"
         with open(self.args.output, writeModes) as csvfile:
             writer = None
 
             if self.args.binary:
-                writer = csv_binary_writer.CSVBinaryWriter(csvfile, self.output_names, self.output_types)
+                writer = csv_binary_writer.CSVBinaryWriter(
+                    csvfile, self.output_names, self.output_types
+                )
             else:
-                writer = csv_writer.CSVWriter(csvfile, self.output_names, self.output_types)
+                writer = csv_writer.CSVWriter(
+                    csvfile, self.output_names, self.output_types
+                )
 
             writer.writeheader()
 
@@ -146,7 +167,9 @@ class Monitor():
                 if i % self.args.frequency == 0:
                     if self.args.samples > 0:
                         sys.stdout.write("\r")
-                        sys.stdout.write("{:.2%} done.".format(float(i) / float(self.args.samples)))
+                        sys.stdout.write(
+                            "{:.2%} done.".format(float(i) / float(self.args.samples))
+                        )
                         sys.stdout.flush()
                     else:
                         sys.stdout.write("\r")
@@ -160,14 +183,16 @@ class Monitor():
                         state = self.rtde_con.receive_buffered(self.args.binary)
                     else:
                         state = self.rtde_con.receive(self.args.binary)
-                    
+
                     # Check if there is a reading
                     if state is not None:
                         # Write to a file
-                        data = writer.writerow(state) 
-                        
+                        data = writer.writerow(state)
+
                         # Send state over RMQ
-                        self.rmq_client.send_message(json.dumps(data))
+                        self.rmq_client.send_message(
+                            json.dumps(data), RMQ_CONFIG.MONITOR_EXCHANGE
+                        )
 
                         i += 1
 
@@ -179,8 +204,5 @@ class Monitor():
         self.rtde_con.send_pause()
         self.rtde_con.disconnect()
 
-
-    def stop_recording (self) -> None:
+    def stop_recording(self) -> None:
         self.monitor_event.set()
-        
-        
