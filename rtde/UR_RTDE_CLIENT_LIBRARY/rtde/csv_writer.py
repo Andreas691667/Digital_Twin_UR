@@ -63,3 +63,4 @@ class CSVWriter(object):
             else:
                 data.append(value)
         self.__writer.writerow(data)
+        return data

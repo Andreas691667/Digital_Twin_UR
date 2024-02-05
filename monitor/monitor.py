@@ -26,6 +26,7 @@ import argparse
 import logging
 import sys
 from rmq_client import Client
+import threading
 
 sys.path.append("../rtde/UR_RTDE_CLIENT_LIBRARY")
 import rtde.rtde as rtde
@@ -35,22 +36,43 @@ import rtde.csv_binary_writer as csv_binary_writer
 
 
 class Monitor():
-    def __init__(self) -> None:
+    def __init__(self) -> None:    
+        self.args = None
         self.output_names, self.output_types = self.get_input_argument ()
+        
+        # Define host and port
+        self.ROBOT_HOST = "192.168.0.111"
+        self.ROBOT_PORT = 30004
 
         # Instantiate RMQ_CLIENT
-        rmq_client = Client()
+        self.rmq_client = Client()        
 
-        # Instantiate RTDE connection
-        self.con = rtde.RTDE(ROBOT_HOST, ROBOT_PORT)
-        self.con.connect()
+        # Setup connection to robot
+        # makes con, that can be accessed via self.con
+        self.rdte_connect()
 
         # get controller version
-        self.con.get_controller_version()
+        self.rtde_con.get_controller_version()
 
+        # setup recipies
+        self.setup_recipes()
 
+        # start data synchronization
+        self.start_data_synchronization()
+
+        self.monitor_thread = threading.Thread(target=self.start_recording)
+        self.monitor_event = threading.Event()
+
+        self.monitor_thread.start()
+
+    def rdte_connect(self) -> None:
+        # Instantiate RTDE connection
+        self.rtde_con = rtde.RTDE(self.ROBOT_HOST, self.ROBOT_PORT)
+        self.rtde_con.connect()
+    
+    
     # TODO: add return type, I think it is (str, str)
-    def get_input_argument ():
+    def get_input_argument(self):
         # ---- Get arguments ----
         parser = argparse.ArgumentParser()
         parser.add_argument(
@@ -82,83 +104,83 @@ class Monitor():
         parser.add_argument(
             "--binary", help="save the data in binary format", action="store_true"
         )
-        args = parser.parse_args()
+        self.args = parser.parse_args()
 
-        if args.verbose:
+        if self.args.verbose:
             logging.basicConfig(level=logging.INFO)
 
-        conf = rtde_config.ConfigFile(args.config)
+        conf = rtde_config.ConfigFile(self.args.config)
         output_names, output_types = conf.get_recipe("out")
 
         return output_names, output_types
     
     def setup_recipes (self) -> None:
         # setup recipes
-        if not self.con.send_output_setup(output_names, output_types, frequency=args.frequency):
+        if not self.rtde_con.send_output_setup(self.output_names, self.output_types, frequency=self.args.frequency):
             logging.error("Unable to configure output")
             sys.exit()
-
-
-# Define host and port
-ROBOT_HOST = "192.168.0.111"
-ROBOT_PORT = 30004
-
-
-
-
-# start data synchronization
-if not con.send_start():
-    logging.error("Unable to start synchronization")
-    sys.exit()
-
-writeModes = "wb" if args.binary else "w"
-with open(args.output, writeModes) as csvfile:
-    writer = None
-
-    if args.binary:
-        writer = csv_binary_writer.CSVBinaryWriter(csvfile, output_names, output_types)
-    else:
-        writer = csv_writer.CSVWriter(csvfile, output_names, output_types)
-
-    writer.writeheader()
-
-    i = 1
-    keep_running = True
-    while keep_running:
-
-        if i % args.frequency == 0:
-            if args.samples > 0:
-                sys.stdout.write("\r")
-                sys.stdout.write("{:.2%} done.".format(float(i) / float(args.samples)))
-                sys.stdout.flush()
-            else:
-                sys.stdout.write("\r")
-                sys.stdout.write("{:3d} samples.".format(i))
-                sys.stdout.flush()
-        if args.samples > 0 and i >= args.samples:
-            keep_running = False
-
-        try:
-            if args.buffered:
-                state = con.receive_buffered(args.binary)
-            else:
-                state = con.receive(args.binary)
-            
-            # Check if there is a reading
-            if state is not None:
-                
-                # Write to a file
-                writer.writerow(state) 
-                i += 1
-
-        except KeyboardInterrupt:
-            keep_running = False
-        except rtde.RTDEException:
-            con.disconnect()
+    
+    def start_data_synchronization (self) -> None:
+        # start data synchronization
+        if not self.rtde_con.send_start():
+            logging.error("Unable to start synchronization")
             sys.exit()
 
+    def start_recording (self) -> None:
+        writeModes = "wb" if self.args.binary else "w"
+        with open(self.args.output, writeModes) as csvfile:
+            writer = None
 
-sys.stdout.write("\rComplete!            \n")
+            if self.args.binary:
+                writer = csv_binary_writer.CSVBinaryWriter(csvfile, self.output_names, self.output_types)
+            else:
+                writer = csv_writer.CSVWriter(csvfile, self.output_names, self.output_types)
 
-con.send_pause()
-con.disconnect()
+            writer.writeheader()
+
+            # Loop with required frequency
+            i = 1
+            while not self.monitor_event.is_set():
+                if i % self.args.frequency == 0:
+                    if self.args.samples > 0:
+                        sys.stdout.write("\r")
+                        sys.stdout.write("{:.2%} done.".format(float(i) / float(self.args.samples)))
+                        sys.stdout.flush()
+                    else:
+                        sys.stdout.write("\r")
+                        sys.stdout.write("{:3d} samples.".format(i))
+                        sys.stdout.flush()
+                if self.args.samples > 0 and i >= self.args.samples:
+                    self.monitor_event.clear()
+
+                try:
+                    if self.args.buffered:
+                        state = self.rtde_con.receive_buffered(self.args.binary)
+                    else:
+                        state = self.rtde_con.receive(self.args.binary)
+                    
+                    # Check if there is a reading
+                    if state is not None:
+                        # Write to a file
+                        data = writer.writerow(state) 
+                        # Send state over RMQ
+
+                        print(data)
+                        print(type(data))
+                        self.rmq_client.send_message(data)
+
+                        i += 1
+
+                except rtde.RTDEException:
+                    self.rtde_con.disconnect()
+                    sys.exit()
+
+        sys.stdout.write("\rComplete!            \n")
+        self.rtde_con.send_pause()
+        self.rtde_con.disconnect()
+
+
+    def stop_recording (self) -> None:
+        self.monitor_event.set()
+        
+        

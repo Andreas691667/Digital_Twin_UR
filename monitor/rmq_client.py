@@ -8,7 +8,7 @@ class Client():
     """Class for the client of the game
     The client is responsible for sending the player's input to the leader using RMQ (pika)"""
 
-    def __init__(self, on_message_clb, player_id) -> None:
+    def __init__(self) -> None:
 
         self.outgoing_channel = self.create_channel()
         # self.incoming_channel = self.create_channel()
