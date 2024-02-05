@@ -34,10 +34,6 @@ sys.path.append("..")
 from config.rmq_config import RMQ_CONFIG
 from config.robot_config import ROBOT_CONFIG
 from rmq.rmq_client import Client
-# import ur_rtde_client_lib.rtde as rtde
-# import ur_rtde_client_lib.rtde_config as rtde_config
-# import ur_rtde_client_lib.csv_writer as csv_writer
-# import ur_rtde_client_lib.csv_binary_writer as csv_binary_writer
 import ur_rtde_client_lib.rtde as rtde
 import ur_rtde_client_lib.rtde_config as rtde_config
 import ur_rtde_client_lib.csv_writer as csv_writer
@@ -98,7 +94,7 @@ class Monitor:
             "--samples", type=int, default=0, help="number of samples to record"
         )
         parser.add_argument(
-            "--frequency", type=int, default=125, help="the sampling frequency in Herz"
+            "--frequency", type=int, default=12, help="the sampling frequency in Herz"
         )
         parser.add_argument(
             "--config",
@@ -186,12 +182,12 @@ class Monitor:
 
                     # Check if there is a reading
                     if state is not None:
-                        # Write to a file
+                        # Write to a file and return data in a list
                         data = writer.writerow(state)
-
+                        
                         # Send state over RMQ
                         self.rmq_client.send_message(
-                            json.dumps(data), RMQ_CONFIG.MONITOR_EXCHANGE
+                            data, RMQ_CONFIG.MONITOR_EXCHANGE
                         )
 
                         i += 1

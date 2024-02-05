@@ -4,6 +4,6 @@ import time
 if __name__ == "__main__":
     monitor = Monitor()
 
-    time.sleep(10)
+    time.sleep(50)
 
     monitor.stop_recording()

@@ -1,5 +1,6 @@
 import pika
 import threading
+import json
 
 # based on https://www.rabbitmq.com/tutorials/tutorial-three-python.html
 class Client:
@@ -32,6 +33,7 @@ class Client:
         if self.channel_type != "":
             print("Error in RMQ config. Channel already configured")
         else:
+            self.channel_type = "incoming"
             self.channel.exchange_declare(
                 exchange=exchange_name, exchange_type=exch_type
             )  # for incoming messages
@@ -85,5 +87,5 @@ class Client:
             # print(f"Error in RMQ. Channel is not outgoing, {self.channel_type}")
         else:
             self.channel.basic_publish(
-                exchange=exchange_name, routing_key=r_key, body=message
+                exchange=exchange_name, routing_key=r_key, body=json.dumps(message)
             )
