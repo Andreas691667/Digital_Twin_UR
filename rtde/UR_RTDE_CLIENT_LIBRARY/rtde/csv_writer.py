@@ -53,7 +53,7 @@ class CSVWriter(object):
     def writeheader(self):
         self.__writer.writerow(self.__header_names)
 
-    def writerow(self, data_object):
+    def writerow(self, data_object) -> list:
         data = []
         for i in range(len(self.__names)):
             size = serialize.get_item_size(self.__types[i])

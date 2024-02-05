@@ -28,6 +28,8 @@ import sys
 from rmq_client import Client
 import threading
 
+import json
+
 sys.path.append("../rtde/UR_RTDE_CLIENT_LIBRARY")
 import rtde.rtde as rtde
 import rtde.rtde_config as rtde_config
@@ -163,11 +165,9 @@ class Monitor():
                     if state is not None:
                         # Write to a file
                         data = writer.writerow(state) 
+                        
                         # Send state over RMQ
-
-                        print(data)
-                        print(type(data))
-                        self.rmq_client.send_message(data)
+                        self.rmq_client.send_message(json.dumps(data))
 
                         i += 1
 
