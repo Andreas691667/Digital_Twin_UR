@@ -1,6 +1,11 @@
 import pika
 import threading
 import json
+import sys
+
+sys.path.append("..")
+from config.rmq_credentials import RMQ_CREDENTIALS
+
 
 # based on https://www.rabbitmq.com/tutorials/tutorial-three-python.html
 class Client:
@@ -8,9 +13,7 @@ class Client:
     The client is responsible for sending the player's input to the leader using RMQ (pika)
     """
 
-    def __init__(
-        self, host="localhost", port=5672
-    ) -> None:
+    def __init__(self, host="localhost", port=5672) -> None:
 
         self.__host = host
         self.__port = port
@@ -21,7 +24,13 @@ class Client:
         """Create and return a channel object"""
         # The connection object
         connection = pika.BlockingConnection(
-            pika.ConnectionParameters(host=self.__host, port=self.__port, credentials=pika.PlainCredentials('Andreas', 'bordtennisbat'))
+            pika.ConnectionParameters(
+                host=self.__host,
+                port=self.__port,
+                credentials=pika.PlainCredentials(
+                    RMQ_CREDENTIALS.RMQ_USERNAME, RMQ_CREDENTIALS.RMQ_PASSWORD
+                ),
+            )
         )
         # The channel object
         channel = connection.channel()
