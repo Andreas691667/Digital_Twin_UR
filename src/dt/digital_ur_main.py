@@ -1,4 +1,4 @@
-from digital_ur import DigitalUR
+from src.dt.DigitalUR import DigitalUR
 
 if __name__ == "__main__":
     digital_ur = DigitalUR()

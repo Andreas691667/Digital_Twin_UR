@@ -5,7 +5,7 @@ import threading
 import time
 
 sys.path.append("..")
-from rmq.rmq_client import Client
+from rmq.RMQClient import Client
 from config.rmq_config import RMQ_CONFIG
 from config.robot_config import ROBOT_CONFIG
 

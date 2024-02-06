@@ -33,7 +33,7 @@ sys.path.append("..")
 
 from config.rmq_config import RMQ_CONFIG
 from config.robot_config import ROBOT_CONFIG
-from rmq.rmq_client import Client
+from rmq.RMQClient import Client
 import ur_rtde_client_lib.rtde as rtde
 import ur_rtde_client_lib.rtde_config as rtde_config
 import ur_rtde_client_lib.csv_writer as csv_writer
