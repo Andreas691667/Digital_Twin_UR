@@ -15,7 +15,7 @@ class Controller:
 
     def __init__(self):
         self.robot_con = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.rmq_client = Client()
+        self.rmq_client = Client(host=RMQ_CONFIG.RMQ_SERVER_IP)
       
 
     def configure_rmq_client(self):
