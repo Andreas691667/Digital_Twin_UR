@@ -21,7 +21,7 @@ class Client:
         """Create and return a channel object"""
         # The connection object
         connection = pika.BlockingConnection(
-            pika.ConnectionParameters(host=self.__host, port=self.__port)
+            pika.ConnectionParameters(host=self.__host, port=self.__port, credentials=pika.PlainCredentials('Andreas', 'bordtennisbat'))
         )
         # The channel object
         channel = connection.channel()
