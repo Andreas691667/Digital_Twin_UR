@@ -1,0 +1,7 @@
+src/config/__pychache__/
+src/controller/__pychache__/
+src/dt/__pychache__/
+src/monitor/__pychache__/
+src/rmq/__pychache__/
+src/ur_rtde_client_library/__pychache__/
+rtde/UR_RTDE_CLIENT_LIBRARY/rtde/__pychache__/
