@@ -11,8 +11,8 @@ class DigitalUR:
     """Class for the digital twin of the UR3e Robot"""
 
     def __init__(self):
-        self.rmq_client_in = Client()
-        self.rmq_client_out = Client()
+        self.rmq_client_in = Client(host=RMQ_CONFIG.RMQ_SERVER_IP)
+        self.rmq_client_out = Client(host=RMQ_CONFIG.RMQ_SERVER_IP)
 
     def configure_rmq_clients(self):
         """configures rmq_client_in to receive data from monitor and rmq_client_out to send data to controller"""
