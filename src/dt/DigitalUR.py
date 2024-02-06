@@ -4,7 +4,6 @@ sys.path.append("..")
 from rmq.RMQClient import Client
 from config.rmq_config import RMQ_CONFIG
 
-
 import json
 
 class DigitalUR:
