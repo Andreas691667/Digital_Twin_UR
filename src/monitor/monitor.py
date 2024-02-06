@@ -46,7 +46,7 @@ class Monitor:
         self.output_names, self.output_types = self.get_input_argument()
 
         # Instantiate RMQ_CLIENT
-        self.rmq_client = Client()
+        self.rmq_client = Client(RMQ_CONFIG.RMQ_SERVER_IP, RMQ_CONFIG.RMQ_SERVER_PORT)
 
         
 
