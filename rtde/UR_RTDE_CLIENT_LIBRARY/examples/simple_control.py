@@ -18,7 +18,7 @@ fun() \n
 script_move = b"""
 def move(): \n
 \ti=0
-\twhile i < 5:  
+\twhile i < 2:  
 \t\tmovej([3.14, -1.5196582, 0.0001, -1.53589, 0.006, 0.02391101], a=0.3 , v=0.6) \n
 \t\tmovej([5, -1.5196582, -0.0959931, -1.53589, 0.006, 0.02391101], a=0.3 , v=0.6) \n
 \t\tmovej([0.004886922, -1.5196582, -0.0959931, -1.53589, 3.14, 0.02391101], a=0.3 , v=0.6) \n
@@ -26,6 +26,13 @@ def move(): \n
 \tend
 end \n
 move() \n
+"""
+
+script_abort = b"""
+def fun(): \n
+\tabort \n
+end \n
+fun_abort() \n
 """
 
 con.send(script_move)
