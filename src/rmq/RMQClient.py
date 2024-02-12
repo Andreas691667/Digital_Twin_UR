@@ -87,6 +87,13 @@ class Client:
         else:
             self.channel.start_consuming()
 
+    def stop_consuming(self):
+        """Stop consuming messages"""
+        if self.channel_type != "incoming":
+            print("Error in RMQ. Channel is not incoming")
+        else:
+            self.channel.stop_consuming()
+
     def send_message(self, message, exchange_name, r_key=""):
         """Send message to the rabbitmq server
         message: The message to send

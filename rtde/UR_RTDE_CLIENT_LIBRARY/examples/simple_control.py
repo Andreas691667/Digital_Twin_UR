@@ -1,4 +1,4 @@
-ROBOT_HOST = "192.168.0.111"
+ROBOT_HOST = "10.0.0.221"
 ROBOT_PORT = 30002
 
 import socket
