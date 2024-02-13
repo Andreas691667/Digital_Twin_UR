@@ -2,8 +2,9 @@
 from sys import path
 
 path.append("..")
-from config.robot_config import ROBOT_CONFIG
+path.append("../urinterface/src")
 from urinterface.robot_connection import RobotConnection
+from config.robot_config import ROBOT_CONFIG
 from threading import Thread, Event
 from pathlib import Path
 from queue import Queue, Empty

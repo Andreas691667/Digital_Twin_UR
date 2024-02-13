@@ -8,10 +8,7 @@ from queue import Queue
 
 import numpy as np
 
-sys.path.append("C:/Users/Andreas/Documents/GitHub/Digital_Twin_UR/rtde/UR_RTDE_CLIENT_LIBRARY")
-
-from rtde import rtde
-
+from third_party.rtde import rtde
 from urinterface.recording import _recording_thread, STOP_REQUEST
 
 _log = logging.getLogger("RobotConnection")

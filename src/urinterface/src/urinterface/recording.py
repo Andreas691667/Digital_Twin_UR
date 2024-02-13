@@ -3,20 +3,13 @@ import os
 import sys
 from queue import Queue
 
-sys.path.append("C:/Users/Andreas/Documents/GitHub/Digital_Twin_UR/legacy/ur_rtde_client_lib")
-
-
-from rtde import rtde_config, csv_writer, rtde
+from third_party.rtde import rtde_config, csv_writer, rtde
 
 # ADDED
 from urinterface.zmq_publisher import ZMQPublisher 
 # ADDED
 zmq_pub = ZMQPublisher(port=5556)
 
-# ADDED
-# sys.path.append("..")
-sys.path.append("C:/Users/Andreas/Documents/GitHub/Digital_Twin_UR/src")
-from rmq.RMQClient import Client as RMQClient
 
 STOP_REQUEST = 1
 
@@ -63,7 +56,7 @@ def publish_topics(topics, state):
     else:
         pub_topic(topics, state)
 
-def _read_csv_stream(filename, samples, output_names, output_types, publish_topic, read_row_function, _thread_log, rmq_client:RMQClient=None):
+def _read_csv_stream(filename, samples, output_names, output_types, publish_topic, read_row_function, _thread_log, rmq_client=None):
     write_mode = 'w'
 
     with open(filename, write_mode) as csvfile:
@@ -83,7 +76,7 @@ def _read_csv_stream(filename, samples, output_names, output_types, publish_topi
             state, should_continue = read_row_function()
             _thread_log.debug(f"Sample received: {state}")
 
-            # ADDED (daniella) ######
+            # ADDED ######
             if publish_topic != None:
                 publish_topics(publish_topic, state)
             ##############

@@ -15,4 +15,3 @@ class ZMQPublisher():
     def send_stop(self):
         print("STOPPING SOCKET")
         self.socket.send_string(f"stop stop")
-
