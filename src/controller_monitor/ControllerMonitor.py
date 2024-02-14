@@ -12,6 +12,7 @@ from time import sleep
 
 from rmq.RMQClient import Client
 from config.rmq_config import RMQ_CONFIG
+from config.msg_types import MSG_TYPES
 
 
 class ControllerMonitor:
@@ -38,7 +39,7 @@ class ControllerMonitor:
                 overwrite=True,
                 frequency=50,
                 publish_topic=["actual_q"],
-                rmq_client=self.rmq_client_out
+                rmq_client=self.rmq_client_out,
             )
         )
 
@@ -55,7 +56,7 @@ class ControllerMonitor:
         self.rmq_client_in.start_consumer_thread()
         print("RMQ clients configured")
 
-    def on_rmq_message_cb(self, ch, method, properties, body):
+    def on_rmq_message_cb(self, ch, method, properties, body: str):
         """Callback function for when a message is received
         ch: The channel object
         method: The method object
@@ -63,8 +64,10 @@ class ControllerMonitor:
         body: The message body
         This function is called when a message is received from the server
         It is responsible for updating the queue of incoming messages"""
-        print(f" [x] Received from DT: {body}")
-        self.controller_queue.put(body)
+        print(f" [x] Received msg from DT: {body}")
+        # get type and body
+        msg_type, msg_body = body.split(" ", 1)
+        self.controller_queue.put((msg_type, msg_body))
 
     def start_monitoring(self):
         """start the monitor thread"""
@@ -97,14 +100,14 @@ class ControllerMonitor:
     def controller_worker(self):
         """worker for the controller thread.
         Listens for new control signals from the DT"""
-
         while not self.controller_thread_event.is_set():
             try:
-                msg = self.controller_queue.get(timeout=1)
+                msg_type, msg_body = self.controller_queue.get(timeout=1)
             except Empty:
                 pass
             else:
-                self.stop_program()
+                if msg_type == MSG_TYPES.STOP_PROGRAM:
+                    self.stop_program()
 
     def shutdown(self):
         """shutdown everything: robot, rmq, threads"""
@@ -113,30 +116,3 @@ class ControllerMonitor:
         self.controller_thread_event.set()
         self.controller_thread.join()
         self.rmq_client_in.stop_consuming()
-
-
-if __name__ == "__main__":
-    import msvcrt
-
-    cm = ControllerMonitor()
-    cm.start_monitoring()
-
-    sleep(.5)
-
-    print("Ready to load program")
-
-    while True:
-        try:
-            k = msvcrt.getwche()
-            if k == "c":
-                break
-            elif k in {"1", "2"}:
-                if k == "2":
-                    cm.load_program("/program1.urp")
-                    cm.play_program()
-            # reset k
-            k = "a"
-        except KeyboardInterrupt:
-            break
-
-    cm.shutdown()
