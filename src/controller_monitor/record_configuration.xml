@@ -34,7 +34,8 @@
 		<field name="runtime_state" type="UINT32"/> -->
 
 		<!-- UNCOMMENTED FOR OBJECT DTECTION -->
-		<field name="output_int_register_0" type="INT32"/>
+		<field name="output_bit_register_65" type="BOOL"/> <!-- Start bit-->
+		<field name="output_bit_register_66" type="BOOL"/> <!-- Object detection bit-->
 
 <!--
 		<field name="script_control_line" type="UINT32"/>

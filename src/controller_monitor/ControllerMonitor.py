@@ -43,6 +43,13 @@ class ControllerMonitor:
             )
         )
 
+        self.load_program("/move-block-init.urp")
+        self.play_program()
+        sleep(1)
+        print("Init program initialized")
+        self.stop_program()
+
+
     def configure_rmq_clients(self):
         """configures rmq client to receive data from DT"""
         self.rmq_client_in.configure_incoming_channel(

@@ -2,6 +2,7 @@ import sys
 import json
 import threading
 from queue import Queue, Empty
+import time
 
 sys.path.append("..")
 from rmq.RMQClient import Client
@@ -22,10 +23,12 @@ class DigitalUR:
         self.state_machine_thread = threading.Thread(target=self.state_machine)
 
         self.current_fault: FAULT_TYPES = None
-
         self.state_machine_thread.start()
 
-        # self.configure_rmq_clients()
+        # parameters for detecting a fault
+        self.time_of_last_message = 0
+        self.time_of_last_message_threshold = 10  # seconds
+        self.last_object_detected = False
 
     def configure_rmq_clients(self):
         """Configures rmq_client_in to receive data from monitor
@@ -52,11 +55,23 @@ class DigitalUR:
         body: The message body
         This function is called when a message is received from the monitor"""
 
-        # format data here
+        # format data as string
         data = json.loads(body)
+        data_dict = {
+            "timestamp": float(data[0]),
+            "actual_q0": float(data[1]),
+            "actual_q2": float(data[2]),
+            "actual_q3": float(data[3]),
+            "actual_q4": float(data[4]),
+            "actual_q5": float(data[5]),
+            "actual_q6": float(data[6]),
+            "output_bit_register_65": bool(data[7]),  # for start bit
+            "output_bit_register_66": bool(data[8]),  # for object detection
+        }
+        
 
         # put data in the queue
-        self.msg_queue.put(data)
+        self.msg_queue.put(data_dict)
 
     def state_machine(self):
         """The state machine for the digital twin"""
@@ -75,15 +90,19 @@ class DigitalUR:
                     # check the digital bit 0 of the data
                     # if set go to monitoring state
                     # else pass
-                    if self.check_digital_bit(data):
+                    if self.check_start_bit(data):
+                        print("State: MONITORING_PT")
                         self.state = DT_STATES.MONITORING_PT
+                        # Start timer
+                        self.time_of_last_message = time.time()
+
                     else:
                         pass
             elif self.state == DT_STATES.MONITORING_PT:
                 self.monitor_pt()
             elif self.state == DT_STATES.FAULT_RESOLUTION:
                 self.resolve_fault()
-    
+
     def resolve_fault(self) -> None:
         """Resolve the fault"""
         # resolve the fault here
@@ -91,21 +110,42 @@ class DigitalUR:
         # if fault unresovled send could not resolve fault message to controller
         # in both cases go to waiting for task to start state
         if self.current_fault == FAULT_TYPES.MISSING_OBJECT:
-            pass
+            # send message to controller to stop program
+            msg = "STOP_PROGRAM None"
+            self.rmq_client_out.send_message(msg, RMQ_CONFIG.DT_EXCHANGE)
         elif self.current_fault == FAULT_TYPES.UNKOWN_FAULT:
             pass
 
-
-
-    def check_for_faults(self, data) -> tuple(bool, FAULT_TYPES):
+    # TODO: add proper return type       
+    def check_for_faults(self, data):
         """Check for faults in the data"""
         # check for faults here
         # if fault present return True, fault_type
         # else return False, None
-        return False, None
+        # Check if timer has expired
 
-    def check_digital_bit(self, data) -> bool:
+        # check if object is detected
+        object_detected = data["output_bit_register_66"]
+
+        # If object_detected was the first True in a sequence of booleans
+        object_grapped = not self.last_object_detected and object_detected
+        self.last_object_detected = object_detected
+        # if object detected, reset timer
+        # else check if timer has expired. If expired, return fault
+        if object_grapped:
+            # If an object was detected then
+            self.time_of_last_message = time.time()
+            return (False, None)
+        else:
+            if (
+                time.time() - self.time_of_last_message
+                > self.time_of_last_message_threshold
+            ):
+                return (True, FAULT_TYPES.MISSING_OBJECT)
+
+    def check_start_bit(self, data: str) -> bool:
         """Check the digital bit of the data"""
+        return data["output_bit_register_65"]
 
     def monitor_pt(self) -> None:
         """Monitor the PT"""
