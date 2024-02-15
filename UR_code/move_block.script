@@ -1,0 +1,10 @@
+def move_block(w1, w2, w3, w4, grip_percentage):
+    movej(w1[0], w1[1], w1[2], w1[3], w1[4], w1[5], w1[6], 0.5, 0.5)
+    movej(w2[0], w2[1], w2[2], w2[3], w2[4], w2[5], w2[6], 0.5, 0.5)
+
+matrix := 
+
+main:
+for i in len(matrix):
+    move_block(matrix[0], matrix[1], matrix[2], matrix[3], matrix[4])
+    i += 1

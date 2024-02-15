@@ -28,7 +28,7 @@ class DigitalUR:
 
         # parameters for detecting a fault
         self.time_of_last_message = 0
-        self.time_of_last_message_threshold = 2  # seconds
+        self.time_of_last_message_threshold = 3  # seconds
         self.last_object_detected = False
 
     def configure_rmq_clients(self):
