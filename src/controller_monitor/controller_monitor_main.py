@@ -1,8 +1,8 @@
 from time import sleep
 from ControllerMonitor import ControllerMonitor
+import msvcrt
 
 if __name__ == "__main__":
-    import msvcrt
 
     cm = ControllerMonitor()
     cm.start_monitoring()

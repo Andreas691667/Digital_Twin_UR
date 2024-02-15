@@ -28,7 +28,7 @@ class DigitalUR:
 
         # parameters for detecting a fault
         self.time_of_last_message = 0
-        self.time_of_last_message_threshold = 10  # seconds
+        self.time_of_last_message_threshold = 2  # seconds
         self.last_object_detected = False
 
     def configure_rmq_clients(self):
@@ -121,6 +121,8 @@ class DigitalUR:
         elif self.current_fault == FAULT_TYPES.UNKOWN_FAULT:
             pass
 
+        self.state = DT_STATES.WAITING_FOR_TASK_TO_START
+
     # TODO: add proper return type
     def check_for_faults(self, data):
         """Check for faults in the data"""
@@ -135,7 +137,7 @@ class DigitalUR:
         # If object_detected was the first True in a sequence of booleans
         object_grapped = not self.last_object_detected and object_detected
 
-        print(f"Object detected: {object_detected}")
+        print(f"Object grapped: {object_grapped}")
 
         self.last_object_detected = object_detected
         # if object detected, reset timer
@@ -173,3 +175,10 @@ class DigitalUR:
                 self.state = DT_STATES.FAULT_RESOLUTION
             else:
                 pass
+
+    def shutdown(self):
+        """Shutdown the digital twin"""
+        self.state_machine_stop_event.set()
+        self.state_machine_thread.join()
+        self.rmq_client_in.stop_consuming()
+        print("Digital UR shutdown")

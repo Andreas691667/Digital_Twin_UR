@@ -13,6 +13,7 @@ from time import sleep
 from rmq.RMQClient import Client
 from config.rmq_config import RMQ_CONFIG
 from config.msg_config import MSG_TYPES
+import json
 
 
 class ControllerMonitor:
@@ -43,14 +44,17 @@ class ControllerMonitor:
             )
         )
 
-        self.load_program("/move-block-init.urp")
-        self.play_program()
-        sleep(1)
-        print("Init program initialized")
-        self.stop_program()
+        self.init_robot()
 
         self.controller_thread.start()
 
+    def init_robot(self):
+        """initialize the robot"""
+        self.load_program("/move-block-init.urp")
+        self.play_program()
+        sleep(1)
+        print("Robot initialized")
+        self.stop_program()
 
     def configure_rmq_clients(self):
         """configures rmq client to receive data from DT"""
@@ -65,7 +69,7 @@ class ControllerMonitor:
         self.rmq_client_in.start_consumer_thread()
         print("RMQ clients configured")
 
-    def on_rmq_message_cb(self, ch, method, properties, body: str):
+    def on_rmq_message_cb(self, ch, method, properties, body):
         """Callback function for when a message is received
         ch: The channel object
         method: The method object
@@ -75,8 +79,13 @@ class ControllerMonitor:
         It is responsible for updating the queue of incoming messages"""
         print(f" [x] Received msg from DT: {body}")
         # get type and body
-        msg_type, msg_body = body.split(" ", 1)
-        self.controller_queue.put((msg_type, msg_body))
+
+        try:
+            data = json.loads(body)
+            msg_type, msg_body = data.split(" ", 1)
+            self.controller_queue.put((msg_type, msg_body))
+        except ValueError:
+            print("Invalid message format")
 
     def start_monitoring(self):
         """start the monitor thread"""
@@ -124,3 +133,4 @@ class ControllerMonitor:
         self.controller_thread_event.set()
         self.controller_thread.join()
         self.rmq_client_in.stop_consuming()
+        print("Shutdown complete")

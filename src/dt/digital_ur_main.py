@@ -1,4 +1,5 @@
 from DigitalUR import DigitalUR
+import msvcrt
 
 if __name__ == "__main__":
     digital_ur = DigitalUR()
@@ -6,4 +7,11 @@ if __name__ == "__main__":
 
 # while until keyboard interrupt
     while True:
-        pass
+        try:
+            k = msvcrt.getwche()
+            if k == "c":
+                break
+        except KeyboardInterrupt:
+            break
+
+    digital_ur.
