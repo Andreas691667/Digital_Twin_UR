@@ -11,7 +11,8 @@ if __name__ == "__main__":
             k = msvcrt.getwche()
             if k == "c":
                 break
+            k = "a"
         except KeyboardInterrupt:
             break
 
-    digital_ur.
+    digital_ur.shutdown()

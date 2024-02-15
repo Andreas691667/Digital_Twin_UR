@@ -85,7 +85,7 @@ class DigitalUR:
                 self.configure_rmq_clients()
                 self.start_consuming()
                 self.state = DT_STATES.WAITING_FOR_TASK_TO_START
-                print("State: WAITING_FOR_TASK_TO_START")
+                print("State transition -> WAITING_FOR_TASK_TO_START")
             elif self.state == DT_STATES.WAITING_FOR_TASK_TO_START:
                 try:
                     data = self.msg_queue.get()
@@ -96,7 +96,7 @@ class DigitalUR:
                     # if set go to monitoring state
                     # else pass
                     if self.check_start_bit(data):
-                        print("State: MONITORING_PT")
+                        print("State transition -> MONITORING_PT")
                         self.state = DT_STATES.MONITORING_PT
                         # Start timer
                         self.time_of_last_message = time.time()
@@ -137,8 +137,6 @@ class DigitalUR:
         # If object_detected was the first True in a sequence of booleans
         object_grapped = not self.last_object_detected and object_detected
 
-        print(f"Object grapped: {object_grapped}")
-
         self.last_object_detected = object_detected
         # if object detected, reset timer
         # else check if timer has expired. If expired, return fault
@@ -171,8 +169,10 @@ class DigitalUR:
             # else pass
             fault_present, fault_type = self.check_for_faults(monitor_data)
             if fault_present:
+                print(f"Fault present: {fault_type}")
                 self.current_fault = fault_type
                 self.state = DT_STATES.FAULT_RESOLUTION
+                print("State transition -> FAULT_RESOLUTION")
             else:
                 pass
 
