@@ -49,6 +49,8 @@ class ControllerMonitor:
         print("Init program initialized")
         self.stop_program()
 
+        self.controller_thread.start()
+
 
     def configure_rmq_clients(self):
         """configures rmq client to receive data from DT"""
@@ -96,7 +98,6 @@ class ControllerMonitor:
         program_started = self.robot_connection.play_program()
         if program_started:
             print(f"Program started: {program_started}")
-            self.controller_thread.start()
         else:
             pass
 

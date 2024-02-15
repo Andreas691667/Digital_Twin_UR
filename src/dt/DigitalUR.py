@@ -58,22 +58,22 @@ class DigitalUR:
 
         # format data as string
         data = json.loads(body)
-        # data_dict = {
-        #     "timestamp": float(data[0]),
-        #     "actual_q0": float(data[1]),
-        #     "actual_q2": float(data[2]),
-        #     "actual_q3": float(data[3]),
-        #     "actual_q4": float(data[4]),
-        #     "actual_q5": float(data[5]),
-        #     "actual_q6": float(data[6]),
-        #     "output_bit_register_65": bool(data[7]),  # for start bit
-        #     "output_bit_register_66": bool(data[8]),  # for object detection
-        # }
         data_dict = {
-            MSG_TOPICS.TIMESTAMP[0]: MSG_TOPICS.TIMESTAMP[1],
-            MSG_TOPICS.START_BIT[0]: MSG_TOPICS.START_BIT[1],
-            MSG_TOPICS.OBJECT_DETECTED[0]: MSG_TOPICS.OBJECT_DETECTED[1],
+            "timestamp": float(data[0]),
+            "actual_q0": float(data[1]),
+            "actual_q2": float(data[2]),
+            "actual_q3": float(data[3]),
+            "actual_q4": float(data[4]),
+            "actual_q5": float(data[5]),
+            "actual_q6": float(data[6]),
+            "output_bit_register_65": bool(data[7]),  # for start bit
+            "output_bit_register_66": bool(data[8]),  # for object detection
         }
+        # data_dict = {
+        #     MSG_TOPICS.TIMESTAMP[0]: MSG_TOPICS.TIMESTAMP[1],
+        #     MSG_TOPICS.START_BIT[0]: MSG_TOPICS.START_BIT[1],
+        #     MSG_TOPICS.OBJECT_DETECTED[0]: MSG_TOPICS.OBJECT_DETECTED[1],
+        # }
 
         # put data in the queue
         self.msg_queue.put(data_dict)
@@ -134,19 +134,24 @@ class DigitalUR:
 
         # If object_detected was the first True in a sequence of booleans
         object_grapped = not self.last_object_detected and object_detected
+
+        print(f"Object detected: {object_detected}")
+
         self.last_object_detected = object_detected
         # if object detected, reset timer
         # else check if timer has expired. If expired, return fault
         if object_grapped:
             # If an object was detected then
             self.time_of_last_message = time.time()
-            return (False, None)
+            return False, FAULT_TYPES.NO_FAULT
         else:
             if (
                 time.time() - self.time_of_last_message
                 > self.time_of_last_message_threshold
             ):
-                return (True, FAULT_TYPES.MISSING_OBJECT)
+                return True, FAULT_TYPES.MISSING_OBJECT
+            
+        return False, FAULT_TYPES.NO_FAULT
 
     def check_start_bit(self, data: str) -> bool:
         """Check the digital bit of the data"""
