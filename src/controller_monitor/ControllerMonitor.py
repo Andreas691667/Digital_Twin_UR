@@ -12,7 +12,7 @@ from time import sleep
 
 from rmq.RMQClient import Client
 from config.rmq_config import RMQ_CONFIG
-from config.msg_types import MSG_TYPES
+from config.msg_config import MSG_TYPES
 
 
 class ControllerMonitor:

@@ -9,6 +9,7 @@ from rmq.RMQClient import Client
 from config.rmq_config import RMQ_CONFIG
 from digitalur_states import DT_STATES
 from digitalur_fault_types import FAULT_TYPES
+from config.msg_config import MSG_TYPES, MSG_TOPICS
 
 
 class DigitalUR:
@@ -57,18 +58,22 @@ class DigitalUR:
 
         # format data as string
         data = json.loads(body)
+        # data_dict = {
+        #     "timestamp": float(data[0]),
+        #     "actual_q0": float(data[1]),
+        #     "actual_q2": float(data[2]),
+        #     "actual_q3": float(data[3]),
+        #     "actual_q4": float(data[4]),
+        #     "actual_q5": float(data[5]),
+        #     "actual_q6": float(data[6]),
+        #     "output_bit_register_65": bool(data[7]),  # for start bit
+        #     "output_bit_register_66": bool(data[8]),  # for object detection
+        # }
         data_dict = {
-            "timestamp": float(data[0]),
-            "actual_q0": float(data[1]),
-            "actual_q2": float(data[2]),
-            "actual_q3": float(data[3]),
-            "actual_q4": float(data[4]),
-            "actual_q5": float(data[5]),
-            "actual_q6": float(data[6]),
-            "output_bit_register_65": bool(data[7]),  # for start bit
-            "output_bit_register_66": bool(data[8]),  # for object detection
+            MSG_TOPICS.TIMESTAMP[0]: MSG_TOPICS.TIMESTAMP[1],
+            MSG_TOPICS.START_BIT[0]: MSG_TOPICS.START_BIT[1],
+            MSG_TOPICS.OBJECT_DETECTED[0]: MSG_TOPICS.OBJECT_DETECTED[1],
         }
-        
 
         # put data in the queue
         self.msg_queue.put(data_dict)
@@ -111,12 +116,12 @@ class DigitalUR:
         # in both cases go to waiting for task to start state
         if self.current_fault == FAULT_TYPES.MISSING_OBJECT:
             # send message to controller to stop program
-            msg = "STOP_PROGRAM None"
+            msg = f"{MSG_TYPES.STOP_PROGRAM} None"
             self.rmq_client_out.send_message(msg, RMQ_CONFIG.DT_EXCHANGE)
         elif self.current_fault == FAULT_TYPES.UNKOWN_FAULT:
             pass
 
-    # TODO: add proper return type       
+    # TODO: add proper return type
     def check_for_faults(self, data):
         """Check for faults in the data"""
         # check for faults here
