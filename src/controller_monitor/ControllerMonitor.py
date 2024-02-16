@@ -44,11 +44,11 @@ class ControllerMonitor:
             )
         )
 
-        self.init_robot()
+        self.init_robot_registers()
 
         self.controller_thread.start()
 
-    def init_robot(self):
+    def init_robot_registers(self):
         """initialize the robot"""
         self.load_program("/move-block-init.urp")
         self.play_program()
