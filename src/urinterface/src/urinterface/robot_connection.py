@@ -26,7 +26,7 @@ class RobotConnection:
         self.recording_thread = None
         self.recording_thread_queue = Queue()
         self.logging_process = None
-        controller_port = 30002
+        controller_port = 30003
         dashboard_port = 29999
 
         self.buff_size = 1024

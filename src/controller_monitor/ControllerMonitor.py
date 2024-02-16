@@ -4,6 +4,7 @@ from sys import path
 path.append("..")
 path.append("../urinterface/src")
 from urinterface.robot_connection import RobotConnection
+from urinterface.RTDEConnect import RTDEConnect
 from config.robot_config import ROBOT_CONFIG
 from threading import Thread, Event
 from pathlib import Path
@@ -13,6 +14,7 @@ from time import sleep
 from rmq.RMQClient import Client
 from config.rmq_config import RMQ_CONFIG
 from config.msg_config import MSG_TYPES
+from config.task_config import TASK_CONFIG
 import json
 
 
@@ -20,10 +22,14 @@ class ControllerMonitor:
     """Class responsible for all robot interaction"""
 
     def __init__(self) -> None:
-        self.robot_connection = RobotConnection(ROBOT_CONFIG.ROBOT_HOST)
         self.conf_file = "record_configuration.xml"
         self.log_file = "test_motion1.csv"
         self.log_file_path = Path("test_results") / Path(self.log_file)
+        self.robot_connection = RobotConnection(ROBOT_CONFIG.ROBOT_HOST)
+
+        self.rtde_connection = RTDEConnect(ROBOT_CONFIG.ROBOT_HOST, self.conf_file)
+
+        self.block_number = 1 # current block number being processed
 
         self.rmq_client_in = Client(host=RMQ_CONFIG.RMQ_SERVER_IP)
         self.rmq_client_out = Client(host=RMQ_CONFIG.RMQ_SERVER_IP)
@@ -55,6 +61,11 @@ class ControllerMonitor:
         sleep(1)
         print("Robot initialized")
         self.stop_program()
+
+    def initialize_task_registers(self):
+        """initialize the task registers with the waypoints for the current block number"""
+        values = TASK_CONFIG.block_config[self.block_number][TASK_CONFIG.WAYPOINTS]
+        self.rtde_connection.sendall("in", values)
 
     def configure_rmq_clients(self):
         """configures rmq client to receive data from DT"""
