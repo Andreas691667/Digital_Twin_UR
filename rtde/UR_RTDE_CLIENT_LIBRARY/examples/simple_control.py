@@ -1,4 +1,4 @@
-ROBOT_HOST = "10.0.0.221"
+ROBOT_HOST = "192.168.0.11"
 ROBOT_PORT = 30002
 
 import socket
@@ -35,8 +35,22 @@ end \n
 fun_abort() \n
 """
 
-con.send(script_move)
+script_write = b"""
+def fun(): \n
+\twrite_output_double_register(24, 1.7) \n
+end \n
+fun() \n
+"""
 
+script_gripper = b"""
+def fun(): \n
+\trq_activate() \n
+\trq_close() \n
+end \n
+fun() \n
+"""
+
+con.send(script_write)
 
 
 data = con.recv(1024)
