@@ -23,7 +23,7 @@ class ControllerMonitor:
 
     def __init__(self) -> None:
         self.conf_file = "record_configuration.xml"
-        self.log_file = "test_motion1.csv"
+        self.log_file = "robot_output.csv"
         self.log_file_path = Path("test_results") / Path(self.log_file)
         self.robot_connection = RobotConnection(ROBOT_CONFIG.ROBOT_HOST)
 
