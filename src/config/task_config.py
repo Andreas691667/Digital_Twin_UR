@@ -9,3 +9,11 @@ class TASK_CONFIG:
         JOINT_POSITIONS: "movej",
         STOP: "stopj"
     }
+
+    # matrix of 4 waypoints and grip percentage
+    block_config = [[0.5, 0.5, 0.5, 0.5, 0.5],
+        [0.5, 0.5, 0.5, 0.5, 0.5],
+        [0.5, 0.5, 0.5, 0.5, 0.5],
+        [0.5, 0.5, 0.5, 0.5, 0.5],
+        41
+    ]
