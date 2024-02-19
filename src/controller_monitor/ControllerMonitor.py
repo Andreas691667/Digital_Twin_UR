@@ -22,6 +22,7 @@ class ControllerMonitor:
     """Class responsible for all robot interaction"""
 
     def __init__(self) -> None:
+        self.program_running_name : str = ""
         self.conf_file = "record_configuration.xml"
         self.log_file = "robot_output.csv"
         self.log_file_path = Path("test_results") / Path(self.log_file)
@@ -30,6 +31,7 @@ class ControllerMonitor:
         self.rtde_connection = RTDEConnect(ROBOT_CONFIG.ROBOT_HOST, self.conf_file)
 
         self.block_number = 1 # current block number being processed
+        self.main_program_running = False # flag to check if main program is running
 
         self.rmq_client_in = Client(host=RMQ_CONFIG.RMQ_SERVER_IP)
         self.rmq_client_out = Client(host=RMQ_CONFIG.RMQ_SERVER_IP)
@@ -51,7 +53,6 @@ class ControllerMonitor:
         )
 
         self.init_robot_registers()
-
         self.controller_thread.start()
 
     def init_robot_registers(self):
@@ -66,6 +67,7 @@ class ControllerMonitor:
         """initialize the task registers with the waypoints for the current block number"""
         values = TASK_CONFIG.block_config[self.block_number][TASK_CONFIG.WAYPOINTS]
         self.rtde_connection.sendall("in", values)
+        print(f"Task registers initialized for block: {self.block_number} with values: {values}")
 
     def configure_rmq_clients(self):
         """configures rmq client to receive data from DT"""
@@ -111,15 +113,20 @@ class ControllerMonitor:
     def load_program(self, program_name: str) -> None:
         """Load program"""
         succ = self.robot_connection.load_program(program_name)
+        self.program_running_name = program_name
         print(f"Program loaded: {succ}")
 
-    def play_program(self) -> None:
+    def play_program(self, main_program = False) -> None:
         """Start loaded program"""
         program_started = self.robot_connection.play_program()
         if program_started:
             print(f"Program started: {program_started}")
         else:
             pass
+
+        if main_program:
+            sleep(1)
+            self.main_program_running = True
 
     def stop_program(self) -> None:
         """stop current exection"""
@@ -130,9 +137,17 @@ class ControllerMonitor:
         Listens for new control signals from the DT"""
         while not self.controller_thread_event.is_set():
             try:
-                msg_type, msg_body = self.controller_queue.get(timeout=1)
+                msg_type, msg_body = self.controller_queue.get(timeout=0.1)
+            # if empty, check if program is running
             except Empty:
-                pass
+                if self.main_program_running:
+                    self.rtde_connection.receive()
+                    if (not self.robot_connection.program_running()) and (self.block_number < TASK_CONFIG.BLOCKS):
+                        self.main_program_running = False
+                        self.block_number += 1
+                        print(f"Incremented block number to: {self.block_number}")
+                        self.initialize_task_registers()
+                        self.play_program(main_program=True)
             else:
                 if msg_type == MSG_TYPES.STOP_PROGRAM:
                     self.stop_program()
@@ -141,6 +156,7 @@ class ControllerMonitor:
         """shutdown everything: robot, rmq, threads"""
         self.stop_program()
         self.stop_monitoring()
+        # self.rtde_connection.shutdown()
         self.controller_thread_event.set()
         self.controller_thread.join()
         self.rmq_client_in.stop_consuming()

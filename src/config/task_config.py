@@ -9,6 +9,7 @@ class TASK_CONFIG:
     # matrix of 4 waypoints and grip percentage
     WAYPOINTS = "waypoints"
     GRIP_PERCENTAGE = "grip_percentage"
+    BLOCKS = 2  # number of blocks in the task
 
     """Config for the task.
     To access waypoints, use block_config[block_number][WAYPOINTS],
@@ -22,6 +23,15 @@ class TASK_CONFIG:
                   2.04, -1.85, -1.74, -1.099, 1.51, 0.55,
                   0.618, -1.72, -1.59, -1.32, 1.56, 0.27,
                   0.62, -1.88, -1.63, -1.24, 1.56, 0.23]
+            ,
+            GRIP_PERCENTAGE: 41,
+        },
+        2 : {
+            WAYPOINTS:
+                [2.82, -1.40, -1.91, -1.43, 1.58, 0.45,
+                 2.82, -1.51, -2.14, -1.08, 1.59, 0.49,
+                 0.63, -1.74, -1.46, -1.49, 1.56, 0.29,
+                 0.59, -1.83, -1.46, -1.43, 1.61, 0.20]
             ,
             GRIP_PERCENTAGE: 41,
         }

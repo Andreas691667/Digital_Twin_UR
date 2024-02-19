@@ -147,7 +147,13 @@ class RobotConnection:
         self._send_ascii_bytes(f"get loaded program\n", self.dashboard_socket)
         loaded_program = self.dashboard_socket.recv(1024).decode()
         return loaded_program
-
+    
+    ### ADDED
+    def program_running(self):
+        """Check if a program is running on the robot. Returns True if a program is running, False otherwise."""
+        self._send_ascii_bytes("running\n", self.dashboard_socket)
+        return self.dashboard_socket.recv(1024).decode().endswith("true\n")
+    ###
 
     def play_program(self):
         self._send_ascii_bytes("play\n", self.dashboard_socket)
