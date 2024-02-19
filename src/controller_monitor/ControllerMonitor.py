@@ -17,7 +17,6 @@ from config.msg_config import MSG_TYPES
 from config.task_config import TASK_CONFIG
 import json
 
-
 class ControllerMonitor:
     """Class responsible for all robot interaction"""
 
