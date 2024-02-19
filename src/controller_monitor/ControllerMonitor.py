@@ -53,7 +53,10 @@ class ControllerMonitor:
         )
 
         self.init_robot_registers()
+
         self.controller_thread.start()
+
+        self.monitor_thread.start()
 
     def init_robot_registers(self):
         """initialize the robot"""
@@ -99,10 +102,6 @@ class ControllerMonitor:
             self.controller_queue.put((msg_type, msg_body))
         except ValueError:
             print("Invalid message format")
-
-    def start_monitoring(self):
-        """start the monitor thread"""
-        self.monitor_thread.start()
 
     def stop_monitoring(self):
         """stop the monitor thread"""
