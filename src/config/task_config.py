@@ -9,6 +9,7 @@ class TASK_CONFIG:
     # matrix of 4 waypoints and grip percentage
     WAYPOINTS = "waypoints"
     GRIP_PERCENTAGE = "grip_percentage"
+    TIMING_THRESHOLD = "timing_threshold"
     BLOCKS = 2  # number of blocks in the task
 
     """Config for the task.
@@ -25,6 +26,7 @@ class TASK_CONFIG:
                   0.62, -1.88, -1.63, -1.24, 1.56, 0.23]
             ,
             GRIP_PERCENTAGE: 41,
+            TIMING_THRESHOLD: 0.5
         },
         2 : {
             WAYPOINTS:
@@ -34,5 +36,6 @@ class TASK_CONFIG:
                  0.59, -1.83, -1.46, -1.43, 1.61, 0.20]
             ,
             GRIP_PERCENTAGE: 41,
+            TIMING_THRESHOLD: 0.5
         }
     }

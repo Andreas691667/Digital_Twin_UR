@@ -106,10 +106,11 @@ class DigitalUR:
             elif self.state == DT_STATES.MONITORING_PT:
                 self.monitor_pt()
             elif self.state == DT_STATES.FAULT_RESOLUTION:
-                self.resolve_fault()
+                fault_msg = self.plan_fault_resolution()
+                self.execute_fault_resolution(fault_msg)
 
-    def resolve_fault(self) -> None:
-        """Resolve the fault"""
+    def plan_fault_resolution(self) -> None:
+        """Resolve the current fault"""
         # resolve the fault here
         # if fault resolved send new data to controller
         # if fault unresovled send could not resolve fault message to controller
@@ -117,14 +118,20 @@ class DigitalUR:
         if self.current_fault == FAULT_TYPES.MISSING_OBJECT:
             # send message to controller to stop program
             msg = f"{MSG_TYPES.STOP_PROGRAM} None"
-            self.rmq_client_out.send_message(msg, RMQ_CONFIG.DT_EXCHANGE)
         elif self.current_fault == FAULT_TYPES.UNKOWN_FAULT:
             pass
 
+        return msg
+
+
+    def execute_fault_resolution(self, fault_msg) -> None:
+        """Execute the fault resolution: send message to controller
+        fault_msg: The fault message to send to the controller"""
+        self.rmq_client_out.send_message(fault_msg, RMQ_CONFIG.DT_EXCHANGE)
         self.state = DT_STATES.WAITING_FOR_TASK_TO_START
 
     # TODO: add proper return type
-    def check_for_faults(self, data):
+    def analyse_data(self, data):
         """Check for faults in the data"""
         # check for faults here
         # if fault present return True, fault_type
@@ -167,7 +174,7 @@ class DigitalUR:
             # check the data for faults
             # if fault, send wait to controller go to fault resolution state
             # else pass
-            fault_present, fault_type = self.check_for_faults(monitor_data)
+            fault_present, fault_type = self.analyse_data(monitor_data)
             if fault_present:
                 print(f"Fault present: {fault_type}")
                 self.current_fault = fault_type

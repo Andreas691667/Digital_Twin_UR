@@ -19,7 +19,6 @@ from config.msg_config import MSG_TYPES
 from config.task_config import TASK_CONFIG
 import json
 
-
 class ControllerMonitor:
     """Class responsible for all robot interaction"""
 
@@ -62,6 +61,8 @@ class ControllerMonitor:
         # Attributes
         self.block_number = 1 # current block number being processed
         self.STATE =  CM_STATES.READY # flag to check if main program is running
+        # get own local copy of task config
+        self.task_config = TASK_CONFIG.block_config.copy()
 
         self.init_robot_registers()
 
@@ -79,7 +80,7 @@ class ControllerMonitor:
 
     def initialize_task_registers(self):
         """initialize the task registers with the waypoints for the current block number"""
-        values = TASK_CONFIG.block_config[self.block_number][TASK_CONFIG.WAYPOINTS]
+        values = self.task_config[self.block_number][TASK_CONFIG.WAYPOINTS]
         self.rtde_connection.sendall("in", values)
         print(f"Task registers initialized for block: {self.block_number} with values: {values}")
 
