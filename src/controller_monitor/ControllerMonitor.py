@@ -52,6 +52,9 @@ class ControllerMonitor:
             )
         )
 
+        # get own local copy of task config
+        self.task_config = TASK_CONFIG.block_config.copy()
+
         self.init_robot_registers()
         self.controller_thread.start()
 
@@ -65,7 +68,7 @@ class ControllerMonitor:
 
     def initialize_task_registers(self):
         """initialize the task registers with the waypoints for the current block number"""
-        values = TASK_CONFIG.block_config[self.block_number][TASK_CONFIG.WAYPOINTS]
+        values = self.task_config[self.block_number][TASK_CONFIG.WAYPOINTS]
         self.rtde_connection.sendall("in", values)
         print(f"Task registers initialized for block: {self.block_number} with values: {values}")
 
