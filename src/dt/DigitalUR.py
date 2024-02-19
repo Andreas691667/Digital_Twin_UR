@@ -110,6 +110,8 @@ class DigitalUR:
             elif self.state == DT_STATES.MONITORING_PT:
                 self.monitor_pt()
             elif self.state == DT_STATES.FAULT_RESOLUTION:
+                # stop program firstly
+                self.execute_fault_resolution(f"{MSG_TYPES.STOP_PROGRAM} None")
                 fault_msg = self.plan_fault_resolution()
                 self.execute_fault_resolution(fault_msg)
 
@@ -120,8 +122,8 @@ class DigitalUR:
         # if fault unresovled send could not resolve fault message to controller
         # in both cases go to waiting for task to start state
         if self.current_fault == FAULT_TYPES.MISSING_OBJECT:
-            # send message to controller to stop program
-            msg = f"{MSG_TYPES.STOP_PROGRAM} None"
+            
+
         elif self.current_fault == FAULT_TYPES.UNKOWN_FAULT:
             pass
 
