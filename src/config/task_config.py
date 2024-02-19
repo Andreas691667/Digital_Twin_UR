@@ -26,7 +26,7 @@ class TASK_CONFIG:
                   0.62, -1.88, -1.63, -1.24, 1.56, 0.23]
             ,
             GRIP_PERCENTAGE: 41,
-            TIMING_THRESHOLD: 0.5
+            TIMING_THRESHOLD: 3
         },
         2 : {
             WAYPOINTS:

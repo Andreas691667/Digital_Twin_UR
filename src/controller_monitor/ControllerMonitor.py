@@ -19,19 +19,20 @@ from config.msg_config import MSG_TYPES
 from config.task_config import TASK_CONFIG
 import json
 
+
 class ControllerMonitor:
     """Class responsible for all robot interaction"""
 
     def __init__(self) -> None:
-        self.program_running_name : str = ""
+        self.program_running_name: str = ""
         self.conf_file = "record_configuration.xml"
         self.log_file = "robot_output.csv"
         self.log_file_path = Path("test_results") / Path(self.log_file)
-        
+
         # Robot connection
         # Used for monitoring and dashboard service, e.g. load and play program
         self.robot_connection = RobotConnection(ROBOT_CONFIG.ROBOT_HOST)
-        
+
         # RTDE
         # Used for writing to the robot controller directly
         self.rtde_connection = RTDEConnect(ROBOT_CONFIG.ROBOT_HOST, self.conf_file)
@@ -59,16 +60,16 @@ class ControllerMonitor:
         )
 
         # Attributes
-        self.block_number = 1 # current block number being processed
-        self.STATE =  CM_STATES.READY # flag to check if main program is running
+        self.block_number = 1  # current block number being processed
+        self.STATE = CM_STATES.READY  # flag to check if main program is running
         # get own local copy of task config
         self.task_config = TASK_CONFIG.block_config.copy()
+        self.monitor_thread.start()
 
         self.init_robot_registers()
 
         self.controller_thread.start()
 
-        self.monitor_thread.start()
 
     def init_robot_registers(self):
         """initialize the robot"""
@@ -82,7 +83,9 @@ class ControllerMonitor:
         """initialize the task registers with the waypoints for the current block number"""
         values = self.task_config[self.block_number][TASK_CONFIG.WAYPOINTS]
         self.rtde_connection.sendall("in", values)
-        print(f"Task registers initialized for block: {self.block_number} with values: {values}")
+        print(
+            f"Task registers initialized for block: {self.block_number} with values: {values}"
+        )
 
     def configure_rmq_clients(self):
         """configures rmq client to receive data from DT"""
@@ -127,7 +130,7 @@ class ControllerMonitor:
         self.program_running_name = program_name
         print(f"Program loaded: {succ}")
 
-    def play_program(self, main_program = False) -> None:
+    def play_program(self, main_program=False) -> None:
         """Start loaded program"""
         program_started = self.robot_connection.play_program()
         if program_started:
@@ -137,7 +140,7 @@ class ControllerMonitor:
 
         if main_program:
             sleep(1)
-            self.task_program_started = True
+            self.STATE = CM_STATES.NORMAL_OPERATION
 
     def stop_program(self) -> None:
         """stop current exection"""
@@ -154,7 +157,9 @@ class ControllerMonitor:
                 # Task have begun
                 if self.STATE == CM_STATES.NORMAL_OPERATION:
                     self.rtde_connection.receive()
-                    if (not self.robot_connection.program_running()) and (self.block_number < TASK_CONFIG.BLOCKS):
+                    if (not self.robot_connection.program_running()) and (
+                        self.block_number < TASK_CONFIG.BLOCKS
+                    ):
                         self.STATE == CM_STATES.READY
                         self.block_number += 1
                         print(f"Incremented block number to: {self.block_number}")
@@ -162,7 +167,8 @@ class ControllerMonitor:
                         self.play_program(main_program=True)
             else:
                 if msg_type == MSG_TYPES.STOP_PROGRAM:
-                    self.stop_program()
+                    pass
+                    # self.stop_program()
 
     def shutdown(self):
         """shutdown everything: robot, rmq, threads"""

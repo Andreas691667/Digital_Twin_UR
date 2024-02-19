@@ -10,6 +10,7 @@ from config.rmq_config import RMQ_CONFIG
 from digitalur_states import DT_STATES
 from digitalur_fault_types import FAULT_TYPES
 from config.msg_config import MSG_TYPES, MSG_TOPICS
+from config.task_config import TASK_CONFIG
 
 
 class DigitalUR:
@@ -30,6 +31,9 @@ class DigitalUR:
         self.time_of_last_message = 0
         self.time_of_last_message_threshold = 3  # seconds
         self.last_object_detected = False
+        
+        self.current_block = 1 # current block number being processed
+        self.task_config = TASK_CONFIG.block_config.copy()
 
     def configure_rmq_clients(self):
         """Configures rmq_client_in to receive data from monitor
@@ -148,13 +152,15 @@ class DigitalUR:
         # if object detected, reset timer
         # else check if timer has expired. If expired, return fault
         if object_grapped:
-            # If an object was detected then
+            # If an object was grapped then
+            self.current_block += 1
+            print(f"Object grabbed in block {self.current_block}")
             self.time_of_last_message = time.time()
             return False, FAULT_TYPES.NO_FAULT
         else:
             if (
                 time.time() - self.time_of_last_message
-                > self.time_of_last_message_threshold
+                > self.task_config[self.current_block][TASK_CONFIG.TIMING_THRESHOLD]
             ):
                 return True, FAULT_TYPES.MISSING_OBJECT
             

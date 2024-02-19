@@ -100,7 +100,10 @@ class RTDEConnect:
         Receive a packet of data from RTDE at the frequency specified in instantiation of the Connector.
         :return: Packet of output data
         """
-        return self.con.receive()
+        try:
+            return self.con.receive()
+        except Exception:
+            return None
 
     def send(self, key, field, value):
         """
