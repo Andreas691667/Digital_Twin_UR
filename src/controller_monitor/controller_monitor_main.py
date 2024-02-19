@@ -4,8 +4,9 @@ import msvcrt
 
 if __name__ == "__main__":
 
+    # Instantiate ControllerMonitor
+    # States: Initializing -> Ready
     cm = ControllerMonitor()
-    cm.start_monitoring()
 
     sleep(0.5)
 

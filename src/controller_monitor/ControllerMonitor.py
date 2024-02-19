@@ -11,6 +11,8 @@ from pathlib import Path
 from queue import Queue, Empty
 from time import sleep
 
+from controller_monitor_states import CM_STATES
+
 from rmq.RMQClient import Client
 from config.rmq_config import RMQ_CONFIG
 from config.msg_config import MSG_TYPES
@@ -26,21 +28,26 @@ class ControllerMonitor:
         self.conf_file = "record_configuration.xml"
         self.log_file = "robot_output.csv"
         self.log_file_path = Path("test_results") / Path(self.log_file)
+        
+        # Robot connection
+        # Used for monitoring and dashboard service, e.g. load and play program
         self.robot_connection = RobotConnection(ROBOT_CONFIG.ROBOT_HOST)
-
+        
+        # RTDE
+        # Used for writing to the robot controller directly
         self.rtde_connection = RTDEConnect(ROBOT_CONFIG.ROBOT_HOST, self.conf_file)
 
-        self.block_number = 1 # current block number being processed
-        self.main_program_running = False # flag to check if main program is running
-
+        # RMQ connection
         self.rmq_client_in = Client(host=RMQ_CONFIG.RMQ_SERVER_IP)
         self.rmq_client_out = Client(host=RMQ_CONFIG.RMQ_SERVER_IP)
         self.configure_rmq_clients()
 
+        # Controller thread
         self.controller_thread = Thread(target=self.controller_worker)
         self.controller_thread_event = Event()
         self.controller_queue = Queue()
 
+        # Monitor thread
         self.monitor_thread = Thread(
             target=self.robot_connection.start_recording(
                 config_file=self.conf_file,
@@ -51,6 +58,10 @@ class ControllerMonitor:
                 rmq_client=self.rmq_client_out,
             )
         )
+
+        # Attributes
+        self.block_number = 1 # current block number being processed
+        self.STATE =  CM_STATES.READY # flag to check if main program is running
 
         self.init_robot_registers()
 
@@ -125,7 +136,7 @@ class ControllerMonitor:
 
         if main_program:
             sleep(1)
-            self.main_program_running = True
+            self.task_program_started = True
 
     def stop_program(self) -> None:
         """stop current exection"""
@@ -139,10 +150,11 @@ class ControllerMonitor:
                 msg_type, msg_body = self.controller_queue.get(timeout=0.1)
             # if empty, check if program is running
             except Empty:
-                if self.main_program_running:
+                # Task have begun
+                if self.STATE == CM_STATES.NORMAL_OPERATION:
                     self.rtde_connection.receive()
                     if (not self.robot_connection.program_running()) and (self.block_number < TASK_CONFIG.BLOCKS):
-                        self.main_program_running = False
+                        self.STATE == CM_STATES.READY
                         self.block_number += 1
                         print(f"Incremented block number to: {self.block_number}")
                         self.initialize_task_registers()
