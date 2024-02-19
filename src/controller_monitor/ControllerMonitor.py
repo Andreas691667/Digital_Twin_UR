@@ -151,12 +151,13 @@ class ControllerMonitor:
         Listens for new control signals from the DT"""
         while not self.controller_thread_event.is_set():
             try:
-                msg_type, msg_body = self.controller_queue.get(timeout=0.1)
+                self.rtde_connection.receive()
+                msg_type, msg_body = self.controller_queue.get(timeout=0.01)
             # if empty, check if program is running
             except Empty:
                 # Task have begun
                 if self.STATE == CM_STATES.NORMAL_OPERATION:
-                    self.rtde_connection.receive()
+                    
                     if (not self.robot_connection.program_running()) and (
                         self.block_number < TASK_CONFIG.BLOCKS
                     ):
@@ -167,15 +168,15 @@ class ControllerMonitor:
                         self.play_program(main_program=True)
             else:
                 if msg_type == MSG_TYPES.STOP_PROGRAM:
-                    pass
-                    # self.stop_program()
+                    self.STATE = CM_STATES.WAITING_FOR_DT
+                    self.stop_program()
 
     def shutdown(self):
         """shutdown everything: robot, rmq, threads"""
         self.stop_program()
-        self.stop_monitoring()
-        # self.rtde_connection.shutdown()
         self.controller_thread_event.set()
+        self.stop_monitoring()
         self.controller_thread.join()
         self.rmq_client_in.stop_consuming()
+        self.rtde_connection.shutdown()
         print("Shutdown complete")
