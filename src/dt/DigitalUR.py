@@ -29,10 +29,9 @@ class DigitalUR:
 
         # parameters for detecting a fault
         self.time_of_last_message = 0
-        self.time_of_last_message_threshold = 3  # seconds
         self.last_object_detected = False
-        
-        self.current_block = 1 # current block number being processed
+
+        self.current_block = 0  # current block number being processed
         self.task_config = TASK_CONFIG.block_config.copy()
 
     def configure_rmq_clients(self):
@@ -114,6 +113,8 @@ class DigitalUR:
                 self.execute_fault_resolution(f"{MSG_TYPES.STOP_PROGRAM} None")
                 fault_msg = self.plan_fault_resolution()
                 self.execute_fault_resolution(fault_msg)
+                self.state = DT_STATES.WAITING_FOR_TASK_TO_START
+                print("State transition -> WAITING_FOR_TASK_TO_START")
 
     def plan_fault_resolution(self) -> None:
         """Resolve the current fault"""
@@ -122,19 +123,33 @@ class DigitalUR:
         # if fault unresovled send could not resolve fault message to controller
         # in both cases go to waiting for task to start state
         if self.current_fault == FAULT_TYPES.MISSING_OBJECT:
-            
+            # from the current block, change two first rows in its config to the next block
+            for block_no in range(
+                self.current_block + 1, self.task_config[TASK_CONFIG.NO_BLOCKS]
+            ):
+                for i in range(2):
+                    self.task_config[block_no][TASK_CONFIG.WAYPOINTS][i] = (
+                        self.task_config[block_no + 1][TASK_CONFIG.WAYPOINTS][i]
+                    )
+                self.task_config[block_no][TASK_CONFIG.TIMING_THRESHOLD] = (
+                    self.task_config[block_no + 1][TASK_CONFIG.TIMING_THRESHOLD]
+                )
+
+            # remove the last block
+            self.task_config.pop(self.task_config[TASK_CONFIG.NO_BLOCKS])
+            self.task_config[TASK_CONFIG.NO_BLOCKS] -= 1
+
+            # print(f"New task config: \n {self.task_config}")
+
+            return f"{MSG_TYPES.NEW_TASK} {self.task_config}"
 
         elif self.current_fault == FAULT_TYPES.UNKOWN_FAULT:
             pass
-
-        return msg
-
 
     def execute_fault_resolution(self, fault_msg) -> None:
         """Execute the fault resolution: send message to controller
         fault_msg: The fault message to send to the controller"""
         self.rmq_client_out.send_message(fault_msg, RMQ_CONFIG.DT_EXCHANGE)
-        self.state = DT_STATES.WAITING_FOR_TASK_TO_START
 
     # TODO: add proper return type
     def analyse_data(self, data):
@@ -156,16 +171,16 @@ class DigitalUR:
         if object_grapped:
             # If an object was grapped then
             self.current_block += 1
-            print(f"Object grabbed in block {self.current_block}")
+            print(f"Object grapped in block {self.current_block}")
             self.time_of_last_message = time.time()
             return False, FAULT_TYPES.NO_FAULT
         else:
-            if (
+            if (self.current_block < self.task_config[TASK_CONFIG.NO_BLOCKS]) and (
                 time.time() - self.time_of_last_message
-                > self.task_config[self.current_block][TASK_CONFIG.TIMING_THRESHOLD]
+                > self.task_config[self.current_block + 1][TASK_CONFIG.TIMING_THRESHOLD]
             ):
                 return True, FAULT_TYPES.MISSING_OBJECT
-            
+
         return False, FAULT_TYPES.NO_FAULT
 
     def check_start_bit(self, data: str) -> bool:

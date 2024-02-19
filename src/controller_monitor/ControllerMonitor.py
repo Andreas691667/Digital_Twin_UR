@@ -1,5 +1,7 @@
 # from urinterface.robot_connection import RobotConnection
 from sys import path
+import numpy as np
+import ast
 
 path.append("..")
 path.append("../urinterface/src")
@@ -70,22 +72,30 @@ class ControllerMonitor:
 
         self.controller_thread.start()
 
-
     def init_robot_registers(self):
         """initialize the robot"""
         self.load_program("/move-block-init.urp")
         self.play_program()
-        sleep(1)
+        sleep(0.01)
         print("Robot initialized")
-        self.stop_program()
+        # self.stop_program()
 
     def initialize_task_registers(self):
         """initialize the task registers with the waypoints for the current block number"""
+
+        # print(f"Current config with type {type(self.task_config)}: \n {self.task_config}")
+
         values = self.task_config[self.block_number][TASK_CONFIG.WAYPOINTS]
-        self.rtde_connection.sendall("in", values)
+
+        # convert to np array and flatten it
+        values = np.array(values).flatten()
+        # convert to list
+        values = list(values)
         print(
             f"Task registers initialized for block: {self.block_number} with values: {values}"
         )
+
+        self.rtde_connection.sendall("in", values)
 
     def configure_rmq_clients(self):
         """configures rmq client to receive data from DT"""
@@ -108,7 +118,7 @@ class ControllerMonitor:
         body: The message body
         This function is called when a message is received from the server
         It is responsible for updating the queue of incoming messages"""
-        print(f" [x] Received msg from DT: {body}")
+        # print(f" [x] Received msg from DT: {body}")
         # get type and body
 
         try:
@@ -145,6 +155,7 @@ class ControllerMonitor:
     def stop_program(self) -> None:
         """stop current exection"""
         self.robot_connection.stop_program()
+        print("Program stopped")
 
     def controller_worker(self):
         """worker for the controller thread.
@@ -155,11 +166,10 @@ class ControllerMonitor:
                 msg_type, msg_body = self.controller_queue.get(timeout=0.01)
             # if empty, check if program is running
             except Empty:
-                # Task have begun
+                # Task has begun
                 if self.STATE == CM_STATES.NORMAL_OPERATION:
-                    
                     if (not self.robot_connection.program_running()) and (
-                        self.block_number < TASK_CONFIG.BLOCKS
+                        self.block_number < self.task_config[TASK_CONFIG.NO_BLOCKS]
                     ):
                         self.STATE == CM_STATES.READY
                         self.block_number += 1
@@ -170,6 +180,14 @@ class ControllerMonitor:
                 if msg_type == MSG_TYPES.STOP_PROGRAM:
                     self.STATE = CM_STATES.WAITING_FOR_DT
                     self.stop_program()
+
+                elif msg_type == MSG_TYPES.NEW_TASK:
+                    # replace single quotes with double quotes
+                    msg_body = str(msg_body)  # TODO: check if this is necessary
+                    msg_body = ast.literal_eval(msg_body)
+                    self.task_config = msg_body
+                    self.block_number = 0
+                    self.STATE = CM_STATES.NORMAL_OPERATION
 
     def shutdown(self):
         """shutdown everything: robot, rmq, threads"""
