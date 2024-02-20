@@ -66,8 +66,8 @@ class Client:
 
     def start_consumer_thread(self):
         """Start the consumer thread"""
-        self.consumer_thread = threading.Thread(target=self.__start_consuming)
-        self.consumer_thread.start()
+        self.RMQ_consumer_thread = threading.Thread(target=self.__start_consuming)
+        self.RMQ_consumer_thread.start()
 
     def configure_outgoing_channel(self, exchange_name, exchange_type):
         """Configure the publisher channel"""

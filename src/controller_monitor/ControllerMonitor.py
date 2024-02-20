@@ -171,30 +171,39 @@ class ControllerMonitor:
             except Empty:
                 # Task has begun
                 if self.STATE == CM_STATES.NORMAL_OPERATION:
+                    # 
                     if (not self.robot_connection.program_running()) and (
                         self.block_number < self.task_config[TASK_CONFIG.NO_BLOCKS]
                     ):
-                        self.STATE == CM_STATES.READY
                         self.block_number += 1
                         print(f"Incremented block number to: {self.block_number}")
                         self.initialize_task_registers()
                         self.play_program(main_program=True)
             # -- MESSAGE --
             else:
-                # TODO: Replace with WAIT
+                # Fault was detected, wait for DT to plan
                 if msg_type == MSG_TYPES.WAIT:
                     self.STATE = CM_STATES.WAITING_FOR_DT
                     self.stop_program()
 
-                # TODO: Replace with RESOLVED
+                # A resolution was send
                 elif msg_type == MSG_TYPES.RESOLVED:
-                    # replace single quotes with double quotes
-                    msg_body = str(msg_body)  # TODO: check if this is necessary
-                    msg_body = ast.literal_eval(msg_body)
-                    self.task_config = msg_body
-                    self.block_number = 0
+                    new_task = str(msg_body)                    # TODO: check if this is necessary
+                    self.__reconfigure_task(new_task)
                     self.STATE = CM_STATES.NORMAL_OPERATION
+                
+                # DT could not resolve
+                elif msg_type == MSG_TYPES.COULD_NOT_RESOLVE:
+                    pass
 
+    def __reconfigure_task (self, new_task: str) -> None:
+        """function for reconfiguring PT task"""
+        new_task_dict = ast.literal_eval(new_task)       # convert string to dict
+        self.task_config = new_task_dict                 # set new task
+        self.block_number = 0                            # reset block_number
+
+
+    
     def shutdown(self):
         """shutdown everything: robot, rmq, threads"""
         self.stop_program()
