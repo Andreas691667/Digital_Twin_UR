@@ -110,7 +110,7 @@ class DigitalUR:
                 self.monitor_pt()
             elif self.state == DT_STATES.FAULT_RESOLUTION:
                 # stop program firstly
-                self.execute_fault_resolution(f"{MSG_TYPES.STOP_PROGRAM} None")
+                self.execute_fault_resolution(f"{MSG_TYPES.WAIT} None")
                 fault_msg = self.plan_fault_resolution()
                 self.execute_fault_resolution(fault_msg)
                 self.state = DT_STATES.WAITING_FOR_TASK_TO_START
@@ -140,7 +140,7 @@ class DigitalUR:
             self.task_config[TASK_CONFIG.NO_BLOCKS] -= 1
 
             # return fault_msg with the new task_config
-            return f"{MSG_TYPES.NEW_TASK} {self.task_config}"
+            return f"{MSG_TYPES.RESOLVED} {self.task_config}"
 
         elif self.current_fault == FAULT_TYPES.UNKOWN_FAULT:
             pass

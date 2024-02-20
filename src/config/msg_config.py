@@ -1,7 +1,11 @@
 class MSG_TYPES:
     """Types of messages to be sent from DT to Controller"""
-    STOP_PROGRAM = "STOP_PROGRAM"
-    NEW_TASK = "NEW_TASK"
+    MONITOR = 0
+    WAIT = 1
+    RESOLVED = 2
+    COULD_NOT_RESOLVE = 3
+    
+
 
 
 class MSG_TOPICS:

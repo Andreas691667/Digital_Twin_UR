@@ -161,10 +161,13 @@ class ControllerMonitor:
         """worker for the controller thread.
         Listens for new control signals from the DT"""
         while not self.controller_thread_event.is_set():
+            
+            # Try to get message from RMQ queue, with data from PT
             try:
-                self.rtde_connection.receive()
+                self.rtde_connection.receive() # Needed in order to send new data to robot
                 msg_type, msg_body = self.controller_queue.get(timeout=0.01)
-            # if empty, check if program is running
+            
+            # -- NO MESSAGE --
             except Empty:
                 # Task has begun
                 if self.STATE == CM_STATES.NORMAL_OPERATION:
@@ -176,12 +179,15 @@ class ControllerMonitor:
                         print(f"Incremented block number to: {self.block_number}")
                         self.initialize_task_registers()
                         self.play_program(main_program=True)
+            # -- MESSAGE --
             else:
-                if msg_type == MSG_TYPES.STOP_PROGRAM:
+                # TODO: Replace with WAIT
+                if msg_type == MSG_TYPES.WAIT:
                     self.STATE = CM_STATES.WAITING_FOR_DT
                     self.stop_program()
 
-                elif msg_type == MSG_TYPES.NEW_TASK:
+                # TODO: Replace with RESOLVED
+                elif msg_type == MSG_TYPES.RESOLVED:
                     # replace single quotes with double quotes
                     msg_body = str(msg_body)  # TODO: check if this is necessary
                     msg_body = ast.literal_eval(msg_body)
