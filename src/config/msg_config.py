@@ -1,9 +1,9 @@
 class MSG_TYPES:
     """Types of messages to be sent from DT to Controller"""
-    MONITOR = 0
-    WAIT = 1
-    RESOLVED = 2
-    COULD_NOT_RESOLVE = 3
+    MONITOR = 0             # Used for monitor messages
+    WAIT = 1                # Used for DT->PT messages before fault have been resolved
+    RESOLVED = 2            # Used to send resolution 
+    COULD_NOT_RESOLVE = 3   # Used to send message where fault could not be resolved
     
 
 
