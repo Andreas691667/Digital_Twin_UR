@@ -118,29 +118,28 @@ class DigitalUR:
 
     def plan_fault_resolution(self) -> None:
         """Resolve the current fault"""
-        # resolve the fault here
+        # resolve the fault here based on current fault
         # if fault resolved send new data to controller
         # if fault unresovled send could not resolve fault message to controller
         # in both cases go to waiting for task to start state
         if self.current_fault == FAULT_TYPES.MISSING_OBJECT:
             # from the current block, change two first rows in its config to the next block
-            for block_no in range(
-                self.current_block + 1, self.task_config[TASK_CONFIG.NO_BLOCKS]
+            for block_no in range(                                                     # Iterate over blocks
+                self.current_block + 1, self.task_config[TASK_CONFIG.NO_BLOCKS]        # ... from the next block to the last block
             ):
-                for i in range(2):
-                    self.task_config[block_no][TASK_CONFIG.WAYPOINTS][i] = (
-                        self.task_config[block_no + 1][TASK_CONFIG.WAYPOINTS][i]
+                for i in range(2):                                                    # Iterate over the first two waypoints (i.e. block origin)
+                    self.task_config[block_no][TASK_CONFIG.WAYPOINTS][i] = (          # ... change the first two waypoints 
+                        self.task_config[block_no + 1][TASK_CONFIG.WAYPOINTS][i]      # ... to the next block's first two waypoints. 
                     )
-                self.task_config[block_no][TASK_CONFIG.TIMING_THRESHOLD] = (
+                self.task_config[block_no][TASK_CONFIG.TIMING_THRESHOLD] = (          # Change the timing threshold to the next block's threshold
                     self.task_config[block_no + 1][TASK_CONFIG.TIMING_THRESHOLD]
                 )
 
-            # remove the last block
+            # remove the last block and decrement the number of blocks
             self.task_config.pop(self.task_config[TASK_CONFIG.NO_BLOCKS])
             self.task_config[TASK_CONFIG.NO_BLOCKS] -= 1
 
-            # print(f"New task config: \n {self.task_config}")
-
+            # return fault_msg with the new task_config
             return f"{MSG_TYPES.NEW_TASK} {self.task_config}"
 
         elif self.current_fault == FAULT_TYPES.UNKOWN_FAULT:
@@ -151,35 +150,42 @@ class DigitalUR:
         fault_msg: The fault message to send to the controller"""
         self.rmq_client_out.send_message(fault_msg, RMQ_CONFIG.DT_EXCHANGE)
 
+    
     # TODO: add proper return type
     def analyse_data(self, data):
         """Check for faults in the data"""
-        # check for faults here
         # if fault present return True, fault_type
-        # else return False, None
-        # Check if timer has expired
+        # else return False, FAULT_TYPES.NO_FAULT
+        # Meaning of current_block: The block number currently being processed 
+        # What are we timing?: The time from block k grapped until block k+1 grapped
+        # TODO: Check if task is done before doing the rest! I.e. check for more blocks to move here??
+
 
         # check if object is detected
         object_detected = data["output_bit_register_66"]
 
-        # If object_detected was the first True in a sequence of booleans
+        # If object_detected was the first True in a sequence of booleans, then a new object was grapped
         object_grapped = not self.last_object_detected and object_detected
-
         self.last_object_detected = object_detected
+       
         # if object detected, reset timer
         # else check if timer has expired. If expired, return fault
+
+        # If we grap an object, we increment the current block being processed, i.e. it is initialized from 0
         if object_grapped:
-            # If an object was grapped then
-            self.current_block += 1
+            self.current_block += 1                                 # Increment block number
             print(f"Object grapped in block {self.current_block}")
-            self.time_of_last_message = time.time()
-            return False, FAULT_TYPES.NO_FAULT
+            self.time_of_last_message = time.time()                 # Reset timer
+            return False, FAULT_TYPES.NO_FAULT                      # No fault present (TODO: Not needed here?)
+        
+        # If we have not grapped an object, we check for timing constraints
+        # it is only when the timer have expired that we report a missing object
         else:
-            if (self.current_block < self.task_config[TASK_CONFIG.NO_BLOCKS]) and (
-                time.time() - self.time_of_last_message
-                > self.task_config[self.current_block + 1][TASK_CONFIG.TIMING_THRESHOLD]
+            if (self.current_block + 1 <= self.task_config[TASK_CONFIG.NO_BLOCKS]) and (  # If there are more blocks to move
+                time.time() - self.time_of_last_message                                   # ... time passed since last object was grapped
+                > self.task_config[self.current_block + 1][TASK_CONFIG.TIMING_THRESHOLD]  # ... the time has expired for next block's threshold
             ):
-                return True, FAULT_TYPES.MISSING_OBJECT
+                return True, FAULT_TYPES.MISSING_OBJECT                                   # ... a fault present (i.e. missing object)
 
         return False, FAULT_TYPES.NO_FAULT
 
