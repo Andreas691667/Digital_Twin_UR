@@ -73,7 +73,11 @@ class ControllerMonitor:
         self.controller_thread.start()
 
     def init_robot_registers(self):
-        """initialize the robot"""
+        """initialize the robot
+        startbit (bool 65) = False
+        detectionbit (bool 66) = False
+        activates gripper
+        """
         self.load_program("/move-block-init.urp")
         self.play_program()
         sleep(0.01)
