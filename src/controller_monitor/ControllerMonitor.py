@@ -166,17 +166,17 @@ class ControllerMonitor:
         """worker for the controller thread.
         Listens for new control signals from the DT"""
         while not self.controller_thread_event.is_set():
-            
+
             # Try to get message from RMQ queue, with data from PT
             try:
-                self.rtde_connection.receive() # Needed in order to send new data to robot
+                self.rtde_connection.receive()  # Needed in order to send new data to robot
                 msg_type, msg_body = self.controller_queue.get(timeout=0.01)
-            
+
             # -- NO MESSAGE --
             except Empty:
                 # Task has begun
                 if self.STATE == CM_STATES.NORMAL_OPERATION:
-                    # 
+                    #
                     if (not self.robot_connection.program_running()) and (
                         self.block_number < self.task_config[TASK_CONFIG.NO_BLOCKS]
                     ):
@@ -193,22 +193,20 @@ class ControllerMonitor:
 
                 # A resolution was send
                 elif msg_type == MSG_TYPES.RESOLVED:
-                    new_task = str(msg_body)                    # TODO: check if this is necessary
+                    new_task = str(msg_body)  # TODO: check if this is necessary
                     self.__reconfigure_task(new_task)
                     self.STATE = CM_STATES.NORMAL_OPERATION
-                
+
                 # DT could not resolve
                 elif msg_type == MSG_TYPES.COULD_NOT_RESOLVE:
                     pass
 
-    def __reconfigure_task (self, new_task: str) -> None:
+    def __reconfigure_task(self, new_task: str) -> None:
         """function for reconfiguring PT task"""
-        new_task_dict = ast.literal_eval(new_task)       # convert string to dict
-        self.task_config = new_task_dict                 # set new task
+        new_task_dict = ast.literal_eval(new_task)  # convert string to dict
+        self.task_config = new_task_dict  # set new task
         # self.block_number = 0                            # reset block_number
 
-
-    
     def shutdown(self):
         """shutdown everything: robot, rmq, threads"""
         self.stop_program()
