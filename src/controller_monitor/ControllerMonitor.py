@@ -12,6 +12,7 @@ from threading import Thread, Event
 from pathlib import Path
 from queue import Queue, Empty
 from time import sleep
+import msvcrt # for user input
 
 from controller_monitor_states import CM_STATES
 
@@ -63,15 +64,39 @@ class ControllerMonitor:
 
         # Attributes
         self.block_number = 1  # current block number being processed
-        self.STATE = CM_STATES.READY  # flag to check if main program is running
-        # get own local copy of task config
-        self.task_config = TASK_CONFIG.block_config.copy()
-        self.monitor_thread.start()
-
+        self.STATE = CM_STATES.INITIALIZING  # flag to check if main program is running
+        self.task_config = TASK_CONFIG.block_config.copy() # get own local copy of task config
+        
+        # Initialize robot registers
         self.init_robot_registers()
 
+        # Starts threads
+        self.monitor_thread.start()
         self.controller_thread.start()
+        sleep(0.5)
+        # Display message
+        print("Ready to load program")
 
+
+    def recieve_user_input(self) -> None:
+        """Blocking call that listens for user input"""
+        while True:
+            try:
+                k = msvcrt.getwche()
+                if k == "c":
+                    break
+                elif k in {"1", "2"}:
+                    print("sucess")
+                    if k == "2":
+                        self.STATE = CM_STATES.NORMAL_OPERATION
+                # reset k
+                k = "a"
+            except KeyboardInterrupt:
+                break
+
+
+        
+    
     def init_robot_registers(self):
         """initialize the robot
         startbit (bool 65) = False
@@ -81,6 +106,7 @@ class ControllerMonitor:
         self.load_program("/move-block-init.urp")
         self.play_program()
         sleep(0.01)
+        self.load_program("/move_registers.urp")
         print("Robot initialized")
         # self.stop_program()
 
@@ -182,13 +208,16 @@ class ControllerMonitor:
                 if self.STATE == CM_STATES.NORMAL_OPERATION:
                     # Subtask is done, and there is more blocks to move
                     if (not self.robot_connection.program_running()) and (
-                        self.block_number < self.task_config[TASK_CONFIG.NO_BLOCKS]
+                        self.block_number <= self.task_config[TASK_CONFIG.NO_BLOCKS]
                     ):
-                        # Increment block number to next
-                        self.block_number += 1
                         print(f"Incremented block number to: {self.block_number}")
                         self.initialize_task_registers()
                         self.play_program(main_program=True)
+                        # Increment block number to next
+                        self.block_number += 1
+                
+                if self.STATE == CM_STATES.READY:
+                    pass
                     
             # -- MESSAGE --
             else:

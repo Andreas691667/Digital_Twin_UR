@@ -7,24 +7,5 @@ if __name__ == "__main__":
     # Instantiate ControllerMonitor
     # States: Initializing -> Ready
     cm = ControllerMonitor()
-
-    sleep(0.5)
-
-    print("Ready to load program")
-
-    while True:
-        try:
-            k = msvcrt.getwche()
-            if k == "c":
-                break
-            elif k in {"1", "2"}:
-                if k == "2":
-                    cm.initialize_task_registers()
-                    cm.load_program("/move_registers.urp")
-                    cm.play_program(main_program=True)
-            # reset k
-            k = "a"
-        except KeyboardInterrupt:
-            break
-
+    cm.recieve_user_input()
     cm.shutdown()
