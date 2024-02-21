@@ -203,9 +203,9 @@ class ControllerMonitor:
 
     def __reconfigure_task(self, new_task: str) -> None:
         """function for reconfiguring PT task"""
-        new_task_dict = ast.literal_eval(new_task)  # convert string to dict
-        self.task_config = new_task_dict  # set new task
-        # self.block_number = 0                            # reset block_number
+        new_task_dict = ast.literal_eval(new_task)        # convert string to dict
+        self.task_config = new_task_dict                  # set new task
+        self.block_number -= 1                            # reset block_number
 
     def shutdown(self):
         """shutdown everything: robot, rmq, threads"""
