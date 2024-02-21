@@ -176,14 +176,16 @@ class ControllerMonitor:
             except Empty:
                 # Task has begun
                 if self.STATE == CM_STATES.NORMAL_OPERATION:
-                    #
+                    # Subtask is done, and there is more blocks to move
                     if (not self.robot_connection.program_running()) and (
                         self.block_number < self.task_config[TASK_CONFIG.NO_BLOCKS]
                     ):
+                        # Increment block number to next
                         self.block_number += 1
                         print(f"Incremented block number to: {self.block_number}")
                         self.initialize_task_registers()
                         self.play_program(main_program=True)
+                    
             # -- MESSAGE --
             else:
                 # Fault was detected, wait for DT to plan
