@@ -26,10 +26,10 @@ class Client:
         connection = pika.BlockingConnection(
             pika.ConnectionParameters(
                 host=self.__host,
-                port=self.__port,
-                credentials=pika.PlainCredentials(
-                    RMQ_CREDENTIALS.RMQ_USERNAME, RMQ_CREDENTIALS.RMQ_PASSWORD
-                ),
+                port=self.__port
+                # credentials=pika.PlainCredentials(
+                #     RMQ_CREDENTIALS.RMQ_USERNAME, RMQ_CREDENTIALS.RMQ_PASSWORD
+                # ),
             )
         )
         # The channel object

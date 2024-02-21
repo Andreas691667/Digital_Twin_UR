@@ -16,12 +16,13 @@ class TASK_CONFIG:
     To access waypoints, use block_config[block_number][WAYPOINTS],
     where block_number is the block number.
     To access grip percentage, use block_config[block_number][GRIP_PERCENTAGE],
-    where block_number is the block number."""
+    where block_number is the block number.
+    """
     block_config = {
         NO_BLOCKS: 3,
         1: {
             WAYPOINTS: [
-                [2.04, -1.81, -1.44, -1.41, 1.57, 0.54],
+                [2.04, -1.81, -1.44, -1.41, 1.57, 0.54], 
                 [2.04, -1.85, -1.74, -1.099, 1.51, 0.55],
                 [0.618, -1.72, -1.59, -1.32, 1.56, 0.27],
                 [0.62, -1.88, -1.63, -1.24, 1.56, 0.23],

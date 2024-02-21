@@ -123,21 +123,34 @@ class DigitalUR:
         # if fault unresovled send could not resolve fault message to controller
         # in both cases go to waiting for task to start state
         if self.current_fault == FAULT_TYPES.MISSING_OBJECT:
-            # from the current block, change two first rows in its config to the next block
+            # print(f"Task config before (1): \n {self.task_config}")
+            # # 1) remove the blocks that have already been moved
+            # for block_no in range(self.current_block):
+            #     self.task_config.pop(block_no+1)
+            # self.task_config[TASK_CONFIG.NO_BLOCKS] -= self.current_block
+            
+            print(f"Task config after (1): \n {self.task_config}")
+            # 2) from the current block, change two first rows in its config to the next block
             for block_no in range(                                                     # Iterate over blocks
                 self.current_block + 1, self.task_config[TASK_CONFIG.NO_BLOCKS]        # ... from the next block to the last block
             ):
-                for i in range(2):                                                    # Iterate over the first two waypoints (i.e. block origin)
+                
+                # Iterate over the first two waypoints (i.e. block origin)
+                for i in range(2):                                                   
                     self.task_config[block_no][TASK_CONFIG.WAYPOINTS][i] = (          # ... change the first two waypoints 
                         self.task_config[block_no + 1][TASK_CONFIG.WAYPOINTS][i]      # ... to the next block's first two waypoints. 
                     )
-                self.task_config[block_no][TASK_CONFIG.TIMING_THRESHOLD] = (          # Change the timing threshold to the next block's threshold
+                
+                # Change the timing threshold to the next block's threshold
+                self.task_config[block_no][TASK_CONFIG.TIMING_THRESHOLD] = (          
                     self.task_config[block_no + 1][TASK_CONFIG.TIMING_THRESHOLD]
                 )
 
             # remove the last block and decrement the number of blocks
             self.task_config.pop(self.task_config[TASK_CONFIG.NO_BLOCKS])
             self.task_config[TASK_CONFIG.NO_BLOCKS] -= 1
+
+            print(f"Task config after (2): \n {self.task_config}")
 
             # return fault_msg with the new task_config
             return f"{MSG_TYPES.RESOLVED} {self.task_config}"
@@ -185,6 +198,7 @@ class DigitalUR:
                 time.time() - self.time_of_last_message                                   # ... time passed since last object was grapped
                 > self.task_config[self.current_block + 1][TASK_CONFIG.TIMING_THRESHOLD]  # ... the time has expired for next block's threshold
             ):
+                print(f"Missing object {self.current_block}")
                 return True, FAULT_TYPES.MISSING_OBJECT                                   # ... a fault present (i.e. missing object)
 
         return False, FAULT_TYPES.NO_FAULT

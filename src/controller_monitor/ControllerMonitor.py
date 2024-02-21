@@ -125,6 +125,11 @@ class ControllerMonitor:
             data = json.loads(body)
             msg_type, msg_body = data.split(" ", 1)
             self.controller_queue.put((msg_type, msg_body))
+            print("----- DT MESSAGE ----")
+            print(msg_type)
+            print(msg_body)
+            print(self.block_number)
+            print("----------------------")
         except ValueError:
             print("Invalid message format")
 
@@ -200,7 +205,7 @@ class ControllerMonitor:
         """function for reconfiguring PT task"""
         new_task_dict = ast.literal_eval(new_task)       # convert string to dict
         self.task_config = new_task_dict                 # set new task
-        self.block_number = 0                            # reset block_number
+        # self.block_number = 0                            # reset block_number
 
 
     
