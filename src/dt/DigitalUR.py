@@ -128,21 +128,30 @@ class DigitalUR:
             # for block_no in range(self.current_block):
             #     self.task_config.pop(block_no+1)
             # self.task_config[TASK_CONFIG.NO_BLOCKS] -= self.current_block
-            
+
             print(f"Task config after (1): \n {self.task_config}")
             # 2) from the current block, change two first rows in its config to the next block
-            for block_no in range(                                                     # Iterate over blocks
-                self.current_block + 1, self.task_config[TASK_CONFIG.NO_BLOCKS]        # ... from the next block to the last block
+            for block_no in range(  # Iterate over blocks
+                self.current_block + 1,
+                self.task_config[
+                    TASK_CONFIG.NO_BLOCKS
+                ],  # ... from the next block to the last block
             ):
-                
+
                 # Iterate over the first two waypoints (i.e. block origin)
-                for i in range(2):                                                   
-                    self.task_config[block_no][TASK_CONFIG.WAYPOINTS][i] = (          # ... change the first two waypoints 
-                        self.task_config[block_no + 1][TASK_CONFIG.WAYPOINTS][i]      # ... to the next block's first two waypoints. 
-                    )
-                
+                for i in range(2):
+                    self.task_config[block_no][TASK_CONFIG.WAYPOINTS][
+                        i
+                    ] = self.task_config[  # ... change the first two waypoints
+                        block_no + 1
+                    ][
+                        TASK_CONFIG.WAYPOINTS
+                    ][
+                        i
+                    ]  # ... to the next block's first two waypoints.
+
                 # Change the timing threshold to the next block's threshold
-                self.task_config[block_no][TASK_CONFIG.TIMING_THRESHOLD] = (          
+                self.task_config[block_no][TASK_CONFIG.TIMING_THRESHOLD] = (
                     self.task_config[block_no + 1][TASK_CONFIG.TIMING_THRESHOLD]
                 )
 
@@ -163,43 +172,54 @@ class DigitalUR:
         fault_msg: The fault message to send to the controller"""
         self.rmq_client_out.send_message(fault_msg, RMQ_CONFIG.DT_EXCHANGE)
 
-    
     # TODO: add proper return type
     def analyse_data(self, data):
         """Check for faults in the data"""
         # if fault present return True, fault_type
         # else return False, FAULT_TYPES.NO_FAULT
-        # Meaning of current_block: The block number currently being processed 
+        # Meaning of current_block: The block number currently being processed
         # What are we timing?: The time from block k grapped until block k+1 grapped
         # TODO: Check if task is done before doing the rest! I.e. check for more blocks to move here??
-
 
         # check if object is detected
         object_detected = data["output_bit_register_66"]
 
-        # If object_detected was the first True in a sequence of booleans, then a new object was grapped
+        # If object_detected was the first True in a sequence of booleans, 
+        # then a new object was grapped
         object_grapped = not self.last_object_detected and object_detected
         self.last_object_detected = object_detected
-       
+
         # if object detected, reset timer
         # else check if timer has expired. If expired, return fault
 
-        # If we grap an object, we increment the current block being processed, i.e. it is initialized from 0
+        # If we grap an object, we increment the current block being processed, 
+        # i.e. it is initialized from 0
         if object_grapped:
-            self.current_block += 1                                 # Increment block number
+            self.current_block += 1  # Increment block number
             print(f"Object grapped in block {self.current_block}")
-            self.time_of_last_message = time.time()                 # Reset timer
-            return False, FAULT_TYPES.NO_FAULT                      # No fault present (TODO: Not needed here?)
-        
+            self.time_of_last_message = time.time()  # Reset timer
+            return (
+                False,
+                FAULT_TYPES.NO_FAULT,
+            )  # No fault present (TODO: Not needed here?)
+
         # If we have not grapped an object, we check for timing constraints
         # it is only when the timer have expired that we report a missing object
         else:
-            if (self.current_block + 1 <= self.task_config[TASK_CONFIG.NO_BLOCKS]) and (  # If there are more blocks to move
-                time.time() - self.time_of_last_message                                   # ... time passed since last object was grapped
-                > self.task_config[self.current_block + 1][TASK_CONFIG.TIMING_THRESHOLD]  # ... the time has expired for next block's threshold
+            if (
+                self.current_block + 1 <= self.task_config[TASK_CONFIG.NO_BLOCKS]
+            ) and (  # If there are more blocks to move
+                time.time()
+                - self.time_of_last_message  # ... time passed since last object was grapped
+                > self.task_config[self.current_block + 1][
+                    TASK_CONFIG.TIMING_THRESHOLD
+                ]  # ... the time has expired for next block's threshold
             ):
                 print(f"Missing object {self.current_block}")
-                return True, FAULT_TYPES.MISSING_OBJECT                                   # ... a fault present (i.e. missing object)
+                return (
+                    True,
+                    FAULT_TYPES.MISSING_OBJECT,
+                )  # ... a fault present (i.e. missing object)
 
         return False, FAULT_TYPES.NO_FAULT
 
