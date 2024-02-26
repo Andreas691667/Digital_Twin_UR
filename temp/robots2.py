@@ -23,30 +23,33 @@ class UR3e(rtb.DHRobot):
         L6 = rtb.RevoluteMDH(d=0.0921, a=0, alpha=-pi / 2)
         super().__init__([L1, L2, L3, L4, L5, L6], name="UR5e")
 
+        # L1 = rtb.RevoluteMDH(d=0.15185, a=0, alpha=pi/2)
+        # L2 = rtb.RevoluteMDH(d=0, a=-0.24355, alpha=0)
+        # L3 = rtb.RevoluteMDH(d=0, a=-0.2132, alpha=0)  # changed a to negative
+        # L4 = rtb.RevoluteMDH(d=0.13105, a=0, alpha=pi/2)  # changed a to negative
+        # L5 = rtb.RevoluteMDH(d=0.08535, a=0, alpha=-pi / 2)
+        # L6 = rtb.RevoluteMDH(d=0.0921, a=0, alpha=0)
+
 
 class UR3e_RL(UR3e):
     def compute_xyz_flexcell(self, X, Y, Z=0, rx=0, ry=0, rz=0):
         ## Inversed axis, (x->y,y->x)
         # Z_table_level = 0.20
-        Z_table_level = -0.209
+        Z_table_level = 0.163
         # Z_table_level = 0.05
         YMIN = 0
-        YMAX = 18
+        YMAX = 4
         XMIN = 0
-        XMAX = 17
+        XMAX = 8
         HOLE_DIST = 0.04
-        x_min = -0.00588
-        x_max = 0.455  # 0.45
-        y_min = -0.542
-        y_max = 0.297
-        # comp_x = x_max - ((X)*HOLE_DIST)
-        # comp_y = y_min + ((Y)*HOLE_DIST)
+        x_max = 0.152
+        x_min = -0.1312  # 0.45
+        y_max = 0.4729
+        y_min = 0.2834
+
         comp_x = x_min + ((X) * HOLE_DIST)
         comp_y = y_min + ((Y) * HOLE_DIST)
         comp_z = Z_table_level + Z * HOLE_DIST
-        rx = rx
-        ry = ry
-        rz = rz
 
         return comp_x, comp_y, comp_z
 
@@ -63,7 +66,8 @@ class UR3e_RL(UR3e):
                 )
             )
         )  # Rotation of pi around the y-axis
-        sol1 = self.ikine_LM(T, q0=[0, 0, 0, -np.pi / 2, 0, np.pi / 2])
+        sol1 = self.ikine_LM(T, q0=[0, -np.pi / 2, 0, -np.pi / 2, 0, 0])
+
         if sol1.success:
             solution1 = sol1.q
             if rounded:
@@ -75,10 +79,13 @@ class UR3e_RL(UR3e):
 # main
 if __name__ == "__main__":
     ur = UR3e_RL()
-    x, y, z = ur.compute_xyz_flexcell(10, 0)
-    print(x, y, z)
-    q = ur.compute_ik_num(x, y, z)
+    x_, y_, z_ = ur.compute_xyz_flexcell(9, 0)
+    print(x_, y_, z_)
+    q = ur.compute_ik_num(x_, y_, z_)
     print(q)
+    q_deg = q * 180 / np.pi
+    print(q_deg)
+
 
 # class KukaLBR_RL(KukaLBR):
 #     def __init__(self,motion_time=2.0,mqtt_enabled=False,mqtt_address="127.0.0.1",mqtt_port=1883,zmq_enabled=False,zmq_port=5557):
