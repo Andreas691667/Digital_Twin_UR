@@ -22,9 +22,15 @@ class UR3e(rtb.DHRobot):
 class UR3e_RL(UR3e):
     """Model of the Universal Robotics UR3e robot arm with additional methods"""
 
-    def compute_xyz_flexcell(self, X, Y, Z=0, rx=0, ry=0, rz=0):
+    def __compute_xyz_flexcell(self, X, Y, grip_pos : bool, Z=0, rx=0, ry=0, rz=0):
         """Compute the x, y, z position of the flexcell based on the hole number"""
-        Z_table_level = 0.163
+        
+        
+        if grip_pos:
+            Z_table_level = 0.185
+        else:
+            Z_table_level = 0.216
+
         YMIN = 0
         YMAX = 4
         XMIN = 0
@@ -41,7 +47,7 @@ class UR3e_RL(UR3e):
 
         return comp_x, comp_y, comp_z
 
-    def compute_ik_num(self, x, y, z, rounded=False):
+    def __compute_ik_num(self, x, y, z, rounded=False):
         """Compute the inverse kinematics for the UR3e robot arm"""
         T = SE3(
             trnorm(
@@ -63,3 +69,8 @@ class UR3e_RL(UR3e):
                 solution1 = np.round(solution1, 2)
             return solution1
         return np.nan
+    
+    def compute_joint_positions(self, x, y, grip_pos : bool = False):
+        """Compute the joint positions for the UR3e robot arm"""
+        x, y, z = self.__compute_xyz_flexcell(x, y, grip_pos)
+        return self.__compute_ik_num(x, y, z, rounded=False)

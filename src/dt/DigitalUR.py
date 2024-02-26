@@ -11,6 +11,7 @@ from digitalur_states import DT_STATES
 from digitalur_fault_types import FAULT_TYPES
 from config.msg_config import MSG_TYPES, MSG_TOPICS
 from config.task_config import TASK_CONFIG
+from ur3e.ur3e import UR3e_RL
 
 
 class DigitalUR:
@@ -23,6 +24,9 @@ class DigitalUR:
         self.msg_queue = Queue()
         self.state_machine_stop_event = threading.Event()
         self.state_machine_thread = threading.Thread(target=self.state_machine)
+
+        # model of the UR3e robot
+        self.robot = UR3e_RL()
 
         self.current_fault: FAULT_TYPES = None
         self.state_machine_thread.start()

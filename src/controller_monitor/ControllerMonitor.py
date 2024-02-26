@@ -20,6 +20,7 @@ from rmq.RMQClient import Client
 from config.rmq_config import RMQ_CONFIG
 from config.msg_config import MSG_TYPES
 from config.task_config import TASK_CONFIG
+from ur3e.ur3e import UR3e_RL
 import json
 
 
@@ -31,6 +32,9 @@ class ControllerMonitor:
         self.conf_file = "record_configuration.xml"
         self.log_file = "robot_output.csv"
         self.log_file_path = Path("test_results") / Path(self.log_file)
+
+        # model of the robot
+        self.robot_model = UR3e_RL()
 
         # Robot connection
         # Used for monitoring and dashboard service, e.g. load and play program
@@ -66,7 +70,7 @@ class ControllerMonitor:
         self.block_number = 1  # current block number being processed
         self.STATE = CM_STATES.INITIALIZING  # flag to check if main program is running
         self.task_config = (
-            TASK_CONFIG.block_config.copy()
+            TASK_CONFIG.block_test.copy()
         )  # get own local copy of task config
 
         # Initialize robot registers
@@ -113,12 +117,19 @@ class ControllerMonitor:
 
         # print(f"Current config with type {type(self.task_config)}: \n {self.task_config}")
 
-        values = self.task_config[self.block_number][TASK_CONFIG.WAYPOINTS]
+        origin = self.task_config[self.block_number][TASK_CONFIG.ORIGIN]
+        target = self.task_config[self.block_number][TASK_CONFIG.TARGET]
 
-        # convert to np array and flatten it
-        values = np.array(values).flatten()
-        # convert to list
-        values = list(values)
+        origin_q_start = self.robot_model.compute_joint_positions(origin[TASK_CONFIG.x], origin[TASK_CONFIG.y])
+        origin_q = self.robot_model.compute_joint_positions(origin[TASK_CONFIG.x], origin[TASK_CONFIG.y], grip_pos=True)
+        target_q_start = self.robot_model.compute_joint_positions(target[TASK_CONFIG.x], target[TASK_CONFIG.y])
+        target_q = self.robot_model.compute_joint_positions(target[TASK_CONFIG.x], target[TASK_CONFIG.y], grip_pos=True)
+
+        values = np.hstack((origin_q_start, origin_q, target_q_start, target_q))
+        values = list(np.array(values).flatten())
+
+        print(values)
+
         print(
             f"Task registers initialized for block: {self.block_number} with values: {values}"
         )

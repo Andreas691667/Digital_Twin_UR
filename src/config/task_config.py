@@ -12,6 +12,11 @@ class TASK_CONFIG:
     TIMING_THRESHOLD = "timing_threshold"
     NO_BLOCKS = "blocks"  # number of blocks in the task
 
+    ORIGIN = "origin"
+    TARGET = "target"
+    x = "x"
+    y = "y"
+
     """Config for the task.
     To access waypoints, use block_config[block_number][WAYPOINTS],
     where block_number is the block number.
@@ -49,5 +54,21 @@ class TASK_CONFIG:
             ],
             GRIP_PERCENTAGE: 41,
             TIMING_THRESHOLD: 13,
+        },
+    }
+
+    block_test = {
+        NO_BLOCKS: 1,
+        1: {
+            ORIGIN: {
+                x : 0,
+                y: 0,
+            },
+            TARGET: {
+                x: 0,
+                y: 5,
+            },
+            GRIP_PERCENTAGE: 41,
+            TIMING_THRESHOLD: 6,
         },
     }
