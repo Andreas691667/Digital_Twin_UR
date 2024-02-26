@@ -12,7 +12,7 @@ from threading import Thread, Event
 from pathlib import Path
 from queue import Queue, Empty
 from time import sleep
-import msvcrt # for user input
+import msvcrt  # for user input
 
 from controller_monitor_states import CM_STATES
 
@@ -65,8 +65,10 @@ class ControllerMonitor:
         # Attributes
         self.block_number = 1  # current block number being processed
         self.STATE = CM_STATES.INITIALIZING  # flag to check if main program is running
-        self.task_config = TASK_CONFIG.block_config.copy() # get own local copy of task config
-        
+        self.task_config = (
+            TASK_CONFIG.block_config.copy()
+        )  # get own local copy of task config
+
         # Initialize robot registers
         self.init_robot_registers()
 
@@ -76,7 +78,6 @@ class ControllerMonitor:
         sleep(0.5)
         # Display message
         print("Ready to load program")
-
 
     def recieve_user_input(self) -> None:
         """Blocking call that listens for user input"""
@@ -94,9 +95,6 @@ class ControllerMonitor:
             except KeyboardInterrupt:
                 break
 
-
-        
-    
     def init_robot_registers(self):
         """initialize the robot
         startbit (bool 65) = False
@@ -215,10 +213,10 @@ class ControllerMonitor:
                         self.play_program(main_program=True)
                         # Increment block number to next
                         self.block_number += 1
-                
+
                 if self.STATE == CM_STATES.READY:
                     pass
-                    
+
             # -- MESSAGE --
             else:
                 # Fault was detected, wait for DT to plan
@@ -238,9 +236,9 @@ class ControllerMonitor:
 
     def __reconfigure_task(self, new_task: str) -> None:
         """function for reconfiguring PT task"""
-        new_task_dict = ast.literal_eval(new_task)        # convert string to dict
-        self.task_config = new_task_dict                  # set new task
-        self.block_number -= 1                            # reset block_number
+        new_task_dict = ast.literal_eval(new_task)  # convert string to dict
+        self.task_config = new_task_dict  # set new task
+        self.block_number -= 1  # reset block_number
 
     def shutdown(self):
         """shutdown everything: robot, rmq, threads"""
