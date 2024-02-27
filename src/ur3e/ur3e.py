@@ -22,20 +22,24 @@ class UR3e(rtb.DHRobot):
 class UR3e_RL(UR3e):
     """Model of the Universal Robotics UR3e robot arm with additional methods"""
 
-    def __compute_xyz_flexcell(self, X, Y, grip_pos : bool, Z=0, rx=0, ry=0, rz=0):
+    def __compute_xyz_flexcell(self, X, Y, grip_pos: bool, Z=0, rx=0, ry=0, rz=0):
         """Compute the x, y, z position of the flexcell based on the hole number"""
-        
-        
+
+        # if grip_pos is True, the robot is in the grip position
+        # else it should be higher from the block
         if grip_pos:
             Z_table_level = 0.185
         else:
             Z_table_level = 0.235
 
+        # TODO: Update these and put them in config
         YMIN = 0
         YMAX = 4
         XMIN = 0
         XMAX = 8
         HOLE_DIST = 0.04
+
+        # TODO: Update these and put them in config (*_max not used yet)
         x_max = 0.152
         x_min = -0.12051  # 0.45
         y_max = 0.4729
@@ -62,7 +66,8 @@ class UR3e_RL(UR3e):
             )
         )  # Rotation of pi around the y-axis
 
-        q0_ = [-pi/2, -pi/4, pi/4, -pi/2, -pi/2, pi]
+        # initial guess vector 
+        q0_ = [-pi / 2, -pi / 4, pi / 4, -pi / 2, -pi / 2, pi]
         # q0_ = [-2.33, -0.66, 0.76, -pi/2, -pi/2, 2.35]
         # sol1 = self.ikine_LM(T, q0=[0, -np.pi / 2, 0, -np.pi / 2, 0, 0])
         sol1 = self.ikine_LM(T, q0=q0_)
@@ -73,8 +78,8 @@ class UR3e_RL(UR3e):
                 solution1 = np.round(solution1, 2)
             return solution1
         return np.nan
-    
-    def compute_joint_positions(self, x, y, grip_pos : bool = False):
+
+    def compute_joint_positions(self, x, y, grip_pos: bool = False):
         """Compute the joint positions for the UR3e robot arm"""
         x, y, z = self.__compute_xyz_flexcell(x, y, grip_pos)
         return self.__compute_ik_num(x, y, z, rounded=False)

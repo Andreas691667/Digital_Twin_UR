@@ -23,7 +23,7 @@ class TASK_CONFIG:
     To access grip percentage, use block_config[block_number][GRIP_PERCENTAGE],
     where block_number is the block number.
     """
-    block_config = {
+    block_config_joint_positions = {
         NO_BLOCKS: 3,
         1: {
             WAYPOINTS: [
