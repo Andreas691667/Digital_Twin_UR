@@ -70,7 +70,7 @@ class ControllerMonitor:
         self.block_number = 1  # current block number being processed
         self.STATE = CM_STATES.INITIALIZING  # flag to check if main program is running
         self.task_config = (
-            TASK_CONFIG.block_test.copy()
+            TASK_CONFIG.block_config_square.copy()
         )  # get own local copy of task config
 
         # Initialize robot registers
@@ -125,14 +125,26 @@ class ControllerMonitor:
         target_q_start = self.robot_model.compute_joint_positions(target[TASK_CONFIG.x], target[TASK_CONFIG.y])
         target_q = self.robot_model.compute_joint_positions(target[TASK_CONFIG.x], target[TASK_CONFIG.y], grip_pos=True)
 
+        # check if any is nan
+        if np.isnan(origin_q_start).any():
+            print("Origin_q_start is nan")
+            self.shutdown()
+        if np.isnan(origin_q).any():
+            print("Origin_q is nan")
+            self.shutdown()
+        if np.isnan(target_q_start).any():
+            print("Target_q_start is nan")
+            self.shutdown()
+        if np.isnan(target_q).any():
+            print("Target_q is nan")
+            self.shutdown()
+
         values = np.hstack((origin_q_start, origin_q, target_q_start, target_q))
         values = list(np.array(values).flatten())
 
-        print(values)
+        # print(values)
 
-        print(
-            f"Task registers initialized for block: {self.block_number} with values: {values}"
-        )
+        print(f"Task registers initialized for block: {self.block_number}")
 
         self.rtde_connection.sendall("in", values)
 

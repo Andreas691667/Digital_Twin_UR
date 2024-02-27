@@ -27,7 +27,7 @@ class TASK_CONFIG:
         NO_BLOCKS: 3,
         1: {
             WAYPOINTS: [
-                [2.04, -1.81, -1.44, -1.41, 1.57, 0.54], 
+                [2.04, -1.81, -1.44, -1.41, 1.57, 0.54],
                 [2.04, -1.85, -1.74, -1.099, 1.51, 0.55],
                 [0.618, -1.72, -1.59, -1.32, 1.56, 0.27],
                 [0.62, -1.88, -1.63, -1.24, 1.56, 0.23],
@@ -57,18 +57,153 @@ class TASK_CONFIG:
         },
     }
 
-    block_test = {
+    block_config_1_block = {
         NO_BLOCKS: 1,
         1: {
             ORIGIN: {
-                x : 0,
+                x: 0,
                 y: 0,
             },
             TARGET: {
-                x: 0,
-                y: 5,
+                x: 12,
+                y: -5,
             },
-            GRIP_PERCENTAGE: 41,
+            TIMING_THRESHOLD: 6,
+        },
+    }
+
+    block_config_square = {
+        NO_BLOCKS: 12,
+        1: {
+            ORIGIN: {
+                x: 4,
+                y: 0,
+            },
+            TARGET: {
+                x: 13,
+                y: -5,
+            },
+            TIMING_THRESHOLD: 6,
+        },
+        2: {
+            ORIGIN: {
+                x: 5,
+                y: 1,
+            },
+            TARGET: {
+                x: 12,
+                y: -5,
+            },
+            TIMING_THRESHOLD: 6,
+        },
+        3: {
+            ORIGIN: {
+                x: 6,
+                y: 0,
+            },
+            TARGET: {
+                x: 11,
+                y: -5,
+            },
+            TIMING_THRESHOLD: 6,
+        },
+        4: {
+            ORIGIN: {
+                x: 7,
+                y: 1,
+            },
+            TARGET: {
+                x: 10,
+                y: -5,
+            },
+            TIMING_THRESHOLD: 6,
+        },
+        5: {
+            ORIGIN: {
+                x: 8,
+                y: 0,
+            },
+            TARGET: {
+                x: 13,
+                y: -4,
+            },
+            TIMING_THRESHOLD: 6,
+        },
+        6: {
+            ORIGIN: {
+                x: 9,
+                y: 1,
+            },
+            TARGET: {
+                x: 10,
+                y: -4,
+            },
+            TIMING_THRESHOLD: 6,
+        },
+        7: {
+            ORIGIN: {
+                x: 10,
+                y: 0,
+            },
+            TARGET: {
+                x: 13,
+                y: -3,
+            },
+            TIMING_THRESHOLD: 6,
+        },
+        8: {
+            ORIGIN: {
+                x: 11,
+                y: 1,
+            },
+            TARGET: {
+                x: 10,
+                y: -3,
+            },
+            TIMING_THRESHOLD: 6,
+        },
+        9: {
+            ORIGIN: {
+                x: 12,
+                y: 0,
+            },
+            TARGET: {
+                x: 13,
+                y: -2,
+            },
+            TIMING_THRESHOLD: 6,
+        },
+        10: {
+            ORIGIN: {
+                x: 13,
+                y: 1,
+            },
+            TARGET: {
+                x: 12,
+                y: -2,
+            },
+            TIMING_THRESHOLD: 6,
+        },
+        11: {
+            ORIGIN: {
+                x: 14,
+                y: 0,
+            },
+            TARGET: {
+                x: 11,
+                y: -2,
+            },
+            TIMING_THRESHOLD: 6,
+        },
+        12: {
+            ORIGIN: {
+                x: 8,
+                y: 2,
+            },
+            TARGET: {
+                x: 10,
+                y: -2,
+            },
             TIMING_THRESHOLD: 6,
         },
     }

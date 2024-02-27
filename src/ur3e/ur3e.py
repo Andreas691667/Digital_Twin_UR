@@ -29,7 +29,7 @@ class UR3e_RL(UR3e):
         if grip_pos:
             Z_table_level = 0.185
         else:
-            Z_table_level = 0.216
+            Z_table_level = 0.235
 
         YMIN = 0
         YMAX = 4
@@ -37,9 +37,9 @@ class UR3e_RL(UR3e):
         XMAX = 8
         HOLE_DIST = 0.04
         x_max = 0.152
-        x_min = -0.1312  # 0.45
+        x_min = -0.12051  # 0.45
         y_max = 0.4729
-        y_min = 0.2834
+        y_min = 0.28071
 
         comp_x = x_min + ((X) * HOLE_DIST)
         comp_y = y_min + ((Y) * HOLE_DIST)
@@ -61,7 +61,11 @@ class UR3e_RL(UR3e):
                 )
             )
         )  # Rotation of pi around the y-axis
-        sol1 = self.ikine_LM(T, q0=[0, -np.pi / 2, 0, -np.pi / 2, 0, 0])
+
+        q0_ = [-pi/2, -pi/4, pi/4, -pi/2, -pi/2, pi]
+        # q0_ = [-2.33, -0.66, 0.76, -pi/2, -pi/2, 2.35]
+        # sol1 = self.ikine_LM(T, q0=[0, -np.pi / 2, 0, -np.pi / 2, 0, 0])
+        sol1 = self.ikine_LM(T, q0=q0_)
 
         if sol1.success:
             solution1 = sol1.q
