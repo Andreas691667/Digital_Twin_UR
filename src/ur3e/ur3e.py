@@ -16,7 +16,7 @@ class UR3e(rtb.DHRobot):
         link4 = rtb.RevoluteMDH(d=0.13105, a=-0.2132, alpha=0)  # changed a to negative
         link5 = rtb.RevoluteMDH(d=0.08535, a=0, alpha=pi / 2)
         link6 = rtb.RevoluteMDH(d=0.0921, a=0, alpha=-pi / 2)
-        super().__init__([link1, link2, link3, link4, link5, link6], name="UR5e")
+        super().__init__([link1, link2, link3, link4, link5, link6], name="UR3e")
 
 
 class UR3e_RL(UR3e):
