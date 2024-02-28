@@ -11,7 +11,7 @@ from digitalur_states import DT_STATES
 from digitalur_fault_types import FAULT_TYPES
 from config.msg_config import MSG_TYPES, MSG_TOPICS
 from config.task_config import TASK_CONFIG
-from ur3e.ur3e import UR3e_RL
+from ur3e.UR3e import UR3e
 
 
 class DigitalUR:
@@ -26,7 +26,7 @@ class DigitalUR:
         self.state_machine_thread = threading.Thread(target=self.state_machine)
 
         # model of the UR3e robot
-        self.robot = UR3e_RL()
+        self.robot = UR3e()
 
         self.current_fault: FAULT_TYPES = None
         self.state_machine_thread.start()
@@ -36,7 +36,7 @@ class DigitalUR:
         self.last_object_detected = False
 
         self.current_block = 0  # current block number being processed
-        self.task_config = TASK_CONFIG.block_config.copy()
+        self.task_config = TASK_CONFIG.block_config_heart.copy()
 
     def configure_rmq_clients(self):
         """Configures rmq_client_in to receive data from monitor
@@ -139,12 +139,19 @@ class DigitalUR:
                 self.current_block + 1, self.task_config[TASK_CONFIG.NO_BLOCKS]        # ... from the next block to the last block
             ):
                 
-                # Iterate over the first two waypoints (i.e. block origin)
-                for i in range(2):                                                   
-                    self.task_config[block_no][TASK_CONFIG.WAYPOINTS][i] = (          # ... change the first two waypoints 
-                        self.task_config[block_no + 1][TASK_CONFIG.WAYPOINTS][i]      # ... to the next block's first two waypoints. 
-                    )
-                
+                # # Iterate over the first two waypoints (i.e. block origin)
+                # for i in range(2):                                                   
+                #     self.task_config[block_no][TASK_CONFIG.WAYPOINTS][i] = (          # ... change the first two waypoints 
+                #         self.task_config[block_no + 1][TASK_CONFIG.WAYPOINTS][i]      # ... to the next block's first two waypoints. 
+                #     )
+
+                self.task_config[block_no][TASK_CONFIG][TASK_CONFIG.x]   = (                      # Change the x-coordinate to the next block's x-coordinate
+                    self.task_config[block_no + 1][TASK_CONFIG][TASK_CONFIG.x]
+                )
+                self.task_config[block_no][TASK_CONFIG][TASK_CONFIG.y]   = (                      # Change the y-coordinate to the next block's y-coordinate
+                    self.task_config[block_no + 1][TASK_CONFIG][TASK_CONFIG.y]
+                )
+
                 # Change the timing threshold to the next block's threshold
                 self.task_config[block_no][TASK_CONFIG.TIMING_THRESHOLD] = (          
                     self.task_config[block_no + 1][TASK_CONFIG.TIMING_THRESHOLD]
