@@ -17,6 +17,31 @@ class TASK_CONFIG:
     x = "x"
     y = "y"
 
+    Z_BASE_MIN = "Z_BASE_MIN" 
+    HOLE_DIST = "HOLE_DIST"
+    Z_BASE_MIN = "Z_BASE_MIN"
+    X_BASE_MAX = "X_BASE_MAX"
+    X_BASE_MIN = "X_BASE_MIN"
+    Y_BASE_MAX = "Y_BASE_MAX"
+    Y_BASE_MIN = "Y_BASE_MIN"
+
+    GRID_PARAMETERS = {
+        HOLE_DIST: 0.04,
+        Z_BASE_MIN: 0.173,
+        X_BASE_MAX: 0.152,
+        X_BASE_MIN: -0.12051,  # 0.45
+        Y_BASE_MAX: 0.4729,
+        Y_BASE_MIN: 0.28071,
+    }
+
+    GRIP_Z = "GRIP_Z"
+    BEFORE_GRIP_Z = "BEFORE_GRIP_Z"
+    GRID_COORDINATES = {
+        GRIP_Z: 0.3,
+        BEFORE_GRIP_Z: 1.55
+    }
+    
+
     """Config for the task.
     To access waypoints, use block_config[block_number][WAYPOINTS],
     where block_number is the block number.
@@ -203,6 +228,166 @@ class TASK_CONFIG:
             TARGET: {
                 x: 10,
                 y: -2,
+            },
+            TIMING_THRESHOLD: 6,
+        },
+    }
+
+    block_config_heart = {
+        NO_BLOCKS: 14,
+        1: {
+            ORIGIN: {
+                x: 10,
+                y: 1,
+            },
+            TARGET: {
+                x: 13,
+                y: -4,
+            },
+            TIMING_THRESHOLD: 6,
+        },
+        2: {
+            ORIGIN: {
+                x: 10,
+                y: 3,
+            },
+            TARGET: {
+                x: 12,
+                y: -5,
+            },
+            TIMING_THRESHOLD: 6,
+        },
+        3: {
+            ORIGIN: {
+                x: 4,
+                y: 1,
+            },
+            TARGET: {
+                x: 11,
+                y: -6,
+            },
+            TIMING_THRESHOLD: 6,
+        },
+        4: {
+            ORIGIN: {
+                x: 12,
+                y: 1,
+            },
+            TARGET: {
+                x: 10,
+                y: -7,
+            },
+            TIMING_THRESHOLD: 6,
+        },
+        5: {
+            ORIGIN: {
+                x: 2,
+                y: 1,
+            },
+            TARGET: {
+                x: 10,
+                y: -8.5,
+            },
+            TIMING_THRESHOLD: 6,
+        },
+        6: {
+            ORIGIN: {
+                x: 2,
+                y: 3,
+            },
+            TARGET: {
+                x: 11,
+                y: -9,
+            },
+            TIMING_THRESHOLD: 6,
+        },
+        7: {
+            ORIGIN: {
+                x: 6,
+                y: 5,
+            },
+            TARGET: {
+                x: 12,
+                y: -8,
+            },
+            TIMING_THRESHOLD: 6,
+        },
+        8: {
+            ORIGIN: {
+                x: 4,
+                y: 5,
+            },
+            TARGET: {
+                x: 13,
+                y: -7,
+            },
+            TIMING_THRESHOLD: 6,
+        },
+        9: {
+            ORIGIN: {
+                x: 4,
+                y: 3,
+            },
+            TARGET: {
+                x: 14,
+                y: -8,
+            },
+            TIMING_THRESHOLD: 6,
+        },
+        10: {
+            ORIGIN: {
+                x: 8,
+                y: 1,
+            },
+            TARGET: {
+                x: 15,
+                y: -9,
+            },
+            TIMING_THRESHOLD: 6,
+        },
+        11: {
+            ORIGIN: {
+                x: 8,
+                y: 3,
+            },
+            TARGET: {
+                x: 16,
+                y: -8.5,
+            },
+            TIMING_THRESHOLD: 6,
+        },
+        12: {
+            ORIGIN: {
+                x: 0,
+                y: 1,
+            },
+            TARGET: {
+                x: 16,
+                y: -7,
+            },
+            TIMING_THRESHOLD: 6,
+        },
+        
+        13: {
+            ORIGIN: {
+                x: 6,
+                y: 1,
+            },
+            TARGET: {
+                x: 15,
+                y: -6,
+            },
+            TIMING_THRESHOLD: 6,
+        },
+        
+        14: {
+            ORIGIN: {
+                x: 6,
+                y: 3,
+            },
+            TARGET: {
+                x: 14,
+                y: -5,
             },
             TIMING_THRESHOLD: 6,
         },

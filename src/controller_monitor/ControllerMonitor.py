@@ -20,7 +20,7 @@ from rmq.RMQClient import Client
 from config.rmq_config import RMQ_CONFIG
 from config.msg_config import MSG_TYPES
 from config.task_config import TASK_CONFIG
-from ur3e.ur3e import UR3e_RL
+from ur3e.UR3e import UR3e
 import json
 
 
@@ -34,7 +34,7 @@ class ControllerMonitor:
         self.log_file_path = Path("test_results") / Path(self.log_file)
 
         # model of the robot
-        self.robot_model = UR3e_RL()
+        self.robot_model = UR3e()
 
         # Robot connection
         # Used for monitoring and dashboard service, e.g. load and play program
@@ -70,7 +70,7 @@ class ControllerMonitor:
         self.block_number = 1  # current block number being processed
         self.STATE = CM_STATES.INITIALIZING  # flag to check if main program is running
         self.task_config = (
-            TASK_CONFIG.block_config_square.copy()
+            TASK_CONFIG.block_config_heart.copy()
         )  # get own local copy of task config
 
         # Initialize robot registers
