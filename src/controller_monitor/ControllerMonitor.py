@@ -20,7 +20,7 @@ from rmq.RMQClient import Client
 from config.rmq_config import RMQ_CONFIG
 from config.msg_config import MSG_TYPES
 from config.task_config import TASK_CONFIG
-from ur3e.UR3e import UR3e
+from ur3e.ur3e import UR3e
 import json
 
 

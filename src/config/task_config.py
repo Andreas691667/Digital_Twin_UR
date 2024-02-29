@@ -244,7 +244,7 @@ class TASK_CONFIG:
                 x: 13,
                 y: -4,
             },
-            TIMING_THRESHOLD: 17,
+            TIMING_THRESHOLD: 18,
         },
         2: {
             ORIGIN: {
@@ -255,7 +255,7 @@ class TASK_CONFIG:
                 x: 12,
                 y: -5,
             },
-            TIMING_THRESHOLD: 17,
+            TIMING_THRESHOLD: 18,
         },
         3: {
             ORIGIN: {
@@ -266,7 +266,7 @@ class TASK_CONFIG:
                 x: 11,
                 y: -6,
             },
-            TIMING_THRESHOLD: 17,
+            TIMING_THRESHOLD: 18,
         },
         4: {
             ORIGIN: {
@@ -277,7 +277,7 @@ class TASK_CONFIG:
                 x: 10,
                 y: -7,
             },
-            TIMING_THRESHOLD: 17,
+            TIMING_THRESHOLD: 18,
         },
         5: {
             ORIGIN: {
@@ -288,7 +288,7 @@ class TASK_CONFIG:
                 x: 10,
                 y: -8.5,
             },
-            TIMING_THRESHOLD: 17,
+            TIMING_THRESHOLD: 18,
         },
         6: {
             ORIGIN: {
@@ -299,7 +299,7 @@ class TASK_CONFIG:
                 x: 11,
                 y: -9,
             },
-            TIMING_THRESHOLD: 17,
+            TIMING_THRESHOLD: 18,
         },
         7: {
             ORIGIN: {
@@ -310,7 +310,7 @@ class TASK_CONFIG:
                 x: 12,
                 y: -8,
             },
-            TIMING_THRESHOLD: 17,
+            TIMING_THRESHOLD: 18,
         },
         8: {
             ORIGIN: {
@@ -321,7 +321,7 @@ class TASK_CONFIG:
                 x: 13,
                 y: -7,
             },
-            TIMING_THRESHOLD: 17,
+            TIMING_THRESHOLD: 18,
         },
         9: {
             ORIGIN: {
@@ -332,7 +332,7 @@ class TASK_CONFIG:
                 x: 14,
                 y: -8,
             },
-            TIMING_THRESHOLD: 17,
+            TIMING_THRESHOLD: 18,
         },
         10: {
             ORIGIN: {
@@ -343,7 +343,7 @@ class TASK_CONFIG:
                 x: 15,
                 y: -9,
             },
-            TIMING_THRESHOLD: 17,
+            TIMING_THRESHOLD: 18,
         },
         11: {
             ORIGIN: {
@@ -354,7 +354,7 @@ class TASK_CONFIG:
                 x: 16,
                 y: -8.5,
             },
-            TIMING_THRESHOLD: 17,
+            TIMING_THRESHOLD: 18,
         },
         12: {
             ORIGIN: {
@@ -365,7 +365,7 @@ class TASK_CONFIG:
                 x: 16,
                 y: -7,
             },
-            TIMING_THRESHOLD: 17,
+            TIMING_THRESHOLD: 18,
         },
         
         13: {
@@ -377,7 +377,7 @@ class TASK_CONFIG:
                 x: 15,
                 y: -6,
             },
-            TIMING_THRESHOLD: 17,
+            TIMING_THRESHOLD: 18,
         },
         
         14: {
@@ -389,6 +389,6 @@ class TASK_CONFIG:
                 x: 14,
                 y: -5,
             },
-            TIMING_THRESHOLD: 17,
+            TIMING_THRESHOLD: 18,
         },
     }

@@ -58,9 +58,9 @@ class UR3e(rtb.DHRobot):
         )  # Rotation of pi around the y-axis
 
         
-        # q0_ = [-2.33, -0.66, 0.76, -pi/2, -pi/2, 2.35]
+        q0_ = [-2.33, -0.66, 0.76, -pi/2, -pi/2, 2.35]
         # sol1 = self.ikine_LM(T, q0=[0, -np.pi / 2, 0, -np.pi / 2, 0, 0])
-        sol1 = self.ikine_LM(T, q0=self.q0_)
+        sol1 = self.ikine_LM(T, q0=q0_)
 
         if sol1.success:
             solution1 = sol1.q

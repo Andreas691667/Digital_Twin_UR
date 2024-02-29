@@ -11,7 +11,7 @@ from digitalur_states import DT_STATES
 from digitalur_fault_types import FAULT_TYPES
 from config.msg_config import MSG_TYPES, MSG_TOPICS
 from config.task_config import TASK_CONFIG
-from ur3e.UR3e import UR3e
+from ur3e.ur3e import UR3e
 
 
 class DigitalUR:
@@ -145,11 +145,11 @@ class DigitalUR:
                 #         self.task_config[block_no + 1][TASK_CONFIG.WAYPOINTS][i]      # ... to the next block's first two waypoints. 
                 #     )
 
-                self.task_config[block_no][TASK_CONFIG][TASK_CONFIG.x]   = (                      # Change the x-coordinate to the next block's x-coordinate
-                    self.task_config[block_no + 1][TASK_CONFIG][TASK_CONFIG.x]
+                self.task_config[block_no][TASK_CONFIG.ORIGIN][TASK_CONFIG.x]   = (                      # Change the x-coordinate to the next block's x-coordinate
+                    self.task_config[block_no + 1][TASK_CONFIG.ORIGIN][TASK_CONFIG.x]
                 )
-                self.task_config[block_no][TASK_CONFIG][TASK_CONFIG.y]   = (                      # Change the y-coordinate to the next block's y-coordinate
-                    self.task_config[block_no + 1][TASK_CONFIG][TASK_CONFIG.y]
+                self.task_config[block_no][TASK_CONFIG.ORIGIN][TASK_CONFIG.y]   = (                      # Change the y-coordinate to the next block's y-coordinate
+                    self.task_config[block_no + 1][TASK_CONFIG.ORIGIN][TASK_CONFIG.y]
                 )
 
                 # Change the timing threshold to the next block's threshold
