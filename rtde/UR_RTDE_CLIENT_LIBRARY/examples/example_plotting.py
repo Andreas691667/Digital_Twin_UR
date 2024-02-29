@@ -22,16 +22,27 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+# import matplotlib.pyplot as plt
+
+# import sys
+
+# sys.path.append("..")
+# import rtde.csv_reader as csv_reader
+
+# with open("robot_output.csv") as csvfile:
+#     r = csv_reader.CSVReader(csvfile)
+
+# # plot
+# plt.plot(r.timestamp, r.actual_q_0)
+# plt.show()
+
+
+import pandas as pd
 import matplotlib.pyplot as plt
 
-import sys
+r = pd.read_csv("robot_output.csv",sep=" ")
+print(r.head())
 
-sys.path.append("..")
-import rtde.csv_reader as csv_reader
-
-with open("robot_data.csv") as csvfile:
-    r = csv_reader.CSVReader(csvfile)
-
-# plot
-plt.plot(r.timestamp, r.actual_q_0)
+plt.figure()
+r.plot("timestamp", "actual_q_0")
 plt.show()

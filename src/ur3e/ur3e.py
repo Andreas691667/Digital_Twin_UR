@@ -15,7 +15,8 @@ class UR3e(rtb.DHRobot):
     """Model of the Universal Robotics UR3e robot arm"""
 
     def __init__(self):
-        link1 = rtb.RevoluteMDH(d=0.15185, a=0, alpha=0)
+        link1 = rtb.RevoluteMDH(d=0.15185, a=0, alpha=0, flip=True)
+        # qlim=[2.39, 5.06]
         link2 = rtb.RevoluteMDH(d=0, a=0, alpha=pi / 2)
         link3 = rtb.RevoluteMDH(d=0, a=-0.24355, alpha=0)  # changed a to negative
         link4 = rtb.RevoluteMDH(d=0.13105, a=-0.2132, alpha=0)  # changed a to negative
@@ -58,9 +59,11 @@ class UR3e(rtb.DHRobot):
         )  # Rotation of pi around the y-axis
 
         
-        q0_ = [-2.33, -0.66, 0.76, -pi/2, -pi/2, 2.35]
+        q0_ = [(3*pi)/2, -0.66, 0.76, -pi/2, -pi/2, 2.35]
         # sol1 = self.ikine_LM(T, q0=[0, -np.pi / 2, 0, -np.pi / 2, 0, 0])
+        # sol1 = self.ikine_LM(T, q0=q0_, joint_limits=True)
         sol1 = self.ikine_LM(T, q0=q0_)
+
 
         if sol1.success:
             solution1 = sol1.q
