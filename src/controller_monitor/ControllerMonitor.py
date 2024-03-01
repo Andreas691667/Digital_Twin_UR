@@ -54,6 +54,10 @@ class ControllerMonitor:
         self.controller_thread_event = Event()
         self.controller_queue = Queue()
 
+        # shutdown thread
+        self.shutdown_thread = Thread(target=self.shutdown)
+        self.shutdown_event = Event()
+
         # Monitor thread
         self.monitor_thread = Thread(
             target=self.robot_connection.start_recording(
@@ -70,8 +74,9 @@ class ControllerMonitor:
         self.block_number = 1  # current block number being processed
         self.STATE = CM_STATES.INITIALIZING  # flag to check if main program is running
         self.task_config = (
-            TASK_CONFIG.block_config_heart.copy()
+            TASK_CONFIG.block_config_1_block.copy()
         )  # get own local copy of task config
+        self.task_finished : bool = False # flag to check if overall task is finished
 
         # Initialize robot registers
         self.init_robot_registers()
@@ -79,25 +84,49 @@ class ControllerMonitor:
         # Starts threads
         self.monitor_thread.start()
         self.controller_thread.start()
+        self.shutdown_thread.start()
         sleep(0.5)
         # Display message
-        print("Ready to load program")
+        print("\n [USER] Ready to play program. Press '2' to start, 'c' to exit \n")
 
     def recieve_user_input(self) -> None:
         """Blocking call that listens for user input"""
-        while True:
-            try:
-                k = msvcrt.getwche()
-                if k == "c":
-                    break
-                elif k in {"1", "2"}:
-                    print("sucess")
-                    if k == "2":
-                        self.STATE = CM_STATES.NORMAL_OPERATION
-                # reset k
-                k = "a"
-            except KeyboardInterrupt:
-                break
+        try:
+            k = msvcrt.getwche()
+            if k == "c":
+                print("Exiting")
+                self.shutdown_event.set()
+            elif k == "2":
+                self.STATE = CM_STATES.NORMAL_OPERATION
+            
+            elif k == "i" and self.task_finished:
+                # invert task
+                self.invert_task()
+            # reset k
+            k = "a"
+        except KeyboardInterrupt:
+            print("Exiting")
+            self.shutdown_event.set()
+
+    def invert_task(self):
+        """Invert the task"""
+        # invert task
+        # set block number to 1
+        # set task_finished to False
+        # set state to NORMAL_OPERATION
+        # initialize task registers
+
+        # print old
+        for i in range(1, self.task_config[TASK_CONFIG.NO_BLOCKS] + 1):
+            self.task_config[i][TASK_CONFIG.ORIGIN], self.task_config[i][TASK_CONFIG.TARGET] = (
+            self.task_config[i][TASK_CONFIG.TARGET], self.task_config[i][TASK_CONFIG.ORIGIN])
+
+        self.block_number = 1
+        self.task_finished = False
+        self.rtde_connection = RTDEConnect(ROBOT_CONFIG.ROBOT_HOST, self.conf_file)
+
+        self.STATE = CM_STATES.NORMAL_OPERATION
+
 
     def init_robot_registers(self):
         """initialize the robot
@@ -109,8 +138,8 @@ class ControllerMonitor:
         self.play_program()
         sleep(0.01)
         self.load_program("/move_registers.urp")
-        print("Robot initialized")
-        # self.stop_program()
+        print("Robot initialization finished")
+        self.STATE = CM_STATES.WAITING_FOR_USER_INPUT
 
     def initialize_task_registers(self):
         """initialize the task registers with the waypoints for the current block number"""
@@ -194,7 +223,7 @@ class ControllerMonitor:
         """Load program"""
         succ = self.robot_connection.load_program(program_name)
         self.program_running_name = program_name
-        print(f"Program loaded: {succ}")
+        print(f"Program '{program_name}' loaded: {succ}")
 
     def play_program(self, main_program=False) -> None:
         """Start loaded program"""
@@ -220,7 +249,8 @@ class ControllerMonitor:
 
             # Try to get message from RMQ queue, with data from PT
             try:
-                self.rtde_connection.receive()  # Needed in order to send new data to robot
+                if self.rtde_connection.is_active():
+                    self.rtde_connection.receive()  # Needed in order to send new data to robot
                 msg_type, msg_body = self.controller_queue.get(timeout=0.01)
 
             # -- NO MESSAGE --
@@ -237,8 +267,17 @@ class ControllerMonitor:
                         # Increment block number to next
                         self.block_number += 1
 
-                if self.STATE == CM_STATES.READY:
-                    pass
+                    # All blocks are done
+                    elif self.block_number >= self.task_config[TASK_CONFIG.NO_BLOCKS] and (
+                        not self.robot_connection.program_running()                  
+                    ):
+                        print("\n [USER] Task is done. Press 'i' to perform inverse task. Press 'c' to exit \n")
+                        self.rtde_connection.shutdown()
+                        self.STATE = CM_STATES.WAITING_FOR_USER_INPUT
+                        self.task_finished = True
+
+                elif self.STATE == CM_STATES.WAITING_FOR_USER_INPUT:
+                    self.recieve_user_input()
 
             # -- MESSAGE --
             else:
@@ -265,10 +304,17 @@ class ControllerMonitor:
 
     def shutdown(self):
         """shutdown everything: robot, rmq, threads"""
+        while not self.shutdown_event.is_set():
+            sleep(0.01)
+        
+        print("Shutting down")
         self.stop_program()
         self.controller_thread_event.set()
         self.stop_monitoring()
         self.controller_thread.join()
         self.rmq_client_in.stop_consuming()
-        self.rtde_connection.shutdown()
+
+        if self.rtde_connection.is_active():
+            self.rtde_connection.shutdown()
+
         print("Shutdown complete")
