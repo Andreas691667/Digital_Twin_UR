@@ -93,6 +93,7 @@ class DigitalUR:
                 self.start_consuming()
                 self.state = DT_STATES.WAITING_FOR_TASK_TO_START
                 print("State transition -> WAITING_FOR_TASK_TO_START")
+                
             elif self.state == DT_STATES.WAITING_FOR_TASK_TO_START:
                 try:
                     data = self.msg_queue.get()
