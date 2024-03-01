@@ -15,8 +15,10 @@ class UR3e(rtb.DHRobot):
     """Model of the Universal Robotics UR3e robot arm"""
 
     def __init__(self):
-        link1 = rtb.RevoluteMDH(d=0.15185, a=0, alpha=0, flip=True)
+        link1 = rtb.RevoluteMDH(d=0.15185, a=0, alpha=0, qlim=[-3.82, -1])
         # qlim=[2.39, 5.06]
+        # [-4.36, -1.13]
+        # [-1, -3.82]
         link2 = rtb.RevoluteMDH(d=0, a=0, alpha=pi / 2)
         link3 = rtb.RevoluteMDH(d=0, a=-0.24355, alpha=0)  # changed a to negative
         link4 = rtb.RevoluteMDH(d=0.13105, a=-0.2132, alpha=0)  # changed a to negative
@@ -62,7 +64,7 @@ class UR3e(rtb.DHRobot):
         q0_ = [(3*pi)/2, -0.66, 0.76, -pi/2, -pi/2, 2.35]
         # sol1 = self.ikine_LM(T, q0=[0, -np.pi / 2, 0, -np.pi / 2, 0, 0])
         # sol1 = self.ikine_LM(T, q0=q0_, joint_limits=True)
-        sol1 = self.ikine_LM(T, q0=q0_)
+        sol1 = self.ikine_LM(T, q0=q0_, joint_limits=False)
 
 
         if sol1.success:
@@ -82,4 +84,23 @@ class UR3e(rtb.DHRobot):
         BEFORE_GRIP_Z = TASK_CONFIG.GRID_COORDINATES[TASK_CONFIG.BEFORE_GRIP_Z]
         z_g = GRIP_Z if grip_pos else BEFORE_GRIP_Z
         x, y, z = self.__compute_base_coordinates(x_g, y_g, z_g)
-        return self.__compute_ik_num(x, y, z, rounded=False)
+        q = self.__compute_ik_num(x, y, z, rounded=False)
+        q_valid = self.check_joint_validity(q)
+        return q_valid
+    
+    def check_joint_validity(self, q):
+        """Check if the joint positions are valid"""
+        # get base position
+        if q[0] < 0:
+            q[0] += 2*pi
+        
+        return q
+
+
+# if __name__ == "__main__":
+#     ur = UR3e()
+#     q = ur.compute_joint_positions(-3,5, grip_pos=True)
+#     q = ur.check_joint_validity(q)
+#     print(q)
+#     # print in degrees
+#     print(np.rad2deg(q))
