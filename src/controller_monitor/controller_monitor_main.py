@@ -7,5 +7,5 @@ if __name__ == "__main__":
     # Instantiate ControllerMonitor
     # States: Initializing -> Ready
     cm = ControllerMonitor()
-    cm.recieve_user_input()
-    cm.shutdown()
+    # cm.recieve_user_input()
+    # cm.shutdown()
