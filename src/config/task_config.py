@@ -46,6 +46,41 @@ class TASK_CONFIG:
     class MITIGATION_STRATEGIES:
         SHIFT_ORIGIN = "SHIFT_ORIGIN"
         TRY_PICK_STOCK = "TRY_PICK_STOCK"
+    
+    # COORDINATES OF PICK_STOCK
+    PICK_STOCK_COORDINATES = {
+        1: {
+            ORIGIN: {
+                x: -3,
+                y: 1
+            },
+            TIMING_THRESHOLD: 5,
+        },
+        
+        2: {
+            ORIGIN: {
+                x: -5,
+                y: 1
+            },
+            TIMING_THRESHOLD: 5,
+        },
+        
+        3: {
+            ORIGIN: {
+                x: -4,
+                y: 2
+            },
+            TIMING_THRESHOLD: 5,
+        },
+        
+        4: {
+            ORIGIN: {
+                x: -3,
+                y: 3
+            },
+            TIMING_THRESHOLD: 3,
+        },
+    }
 
 
 
@@ -100,7 +135,7 @@ class TASK_CONFIG:
                 x: 12,
                 y: -5,
             },
-            TIMING_THRESHOLD: 6,
+            TIMING_THRESHOLD: 5,
         },
     }
 
@@ -251,7 +286,7 @@ class TASK_CONFIG:
                 x: 13,
                 y: -4,
             },
-            TIMING_THRESHOLD: 18,
+            TIMING_THRESHOLD: 5,
         },
         2: {
             ORIGIN: {
@@ -262,7 +297,7 @@ class TASK_CONFIG:
                 x: 12,
                 y: -5,
             },
-            TIMING_THRESHOLD: 18,
+            TIMING_THRESHOLD: 10, #works
         },
         3: {
             ORIGIN: {
@@ -273,7 +308,7 @@ class TASK_CONFIG:
                 x: 11,
                 y: -6,
             },
-            TIMING_THRESHOLD: 18,
+            TIMING_THRESHOLD: 12, #works
         },
         4: {
             ORIGIN: {
@@ -284,7 +319,7 @@ class TASK_CONFIG:
                 x: 10,
                 y: -7,
             },
-            TIMING_THRESHOLD: 18,
+            TIMING_THRESHOLD: 10, #works
         },
         5: {
             ORIGIN: {
@@ -295,7 +330,7 @@ class TASK_CONFIG:
                 x: 10,
                 y: -8.5,
             },
-            TIMING_THRESHOLD: 18,
+            TIMING_THRESHOLD: 10, # works
         },
         6: {
             ORIGIN: {
@@ -306,7 +341,7 @@ class TASK_CONFIG:
                 x: 11,
                 y: -9,
             },
-            TIMING_THRESHOLD: 18,
+            TIMING_THRESHOLD: 12,
         },
         7: {
             ORIGIN: {
@@ -317,7 +352,7 @@ class TASK_CONFIG:
                 x: 12,
                 y: -8,
             },
-            TIMING_THRESHOLD: 18,
+            TIMING_THRESHOLD: 12,
         },
         8: {
             ORIGIN: {
@@ -328,7 +363,7 @@ class TASK_CONFIG:
                 x: 13,
                 y: -7,
             },
-            TIMING_THRESHOLD: 18,
+            TIMING_THRESHOLD: 12,
         },
         9: {
             ORIGIN: {
@@ -339,7 +374,7 @@ class TASK_CONFIG:
                 x: 14,
                 y: -8,
             },
-            TIMING_THRESHOLD: 18,
+            TIMING_THRESHOLD: 10,
         },
         10: {
             ORIGIN: {
@@ -350,7 +385,7 @@ class TASK_CONFIG:
                 x: 15,
                 y: -9,
             },
-            TIMING_THRESHOLD: 18,
+            TIMING_THRESHOLD: 12,
         },
         11: {
             ORIGIN: {
@@ -361,7 +396,7 @@ class TASK_CONFIG:
                 x: 16,
                 y: -8.5,
             },
-            TIMING_THRESHOLD: 18,
+            TIMING_THRESHOLD: 12,
         },
         12: {
             ORIGIN: {
@@ -372,7 +407,7 @@ class TASK_CONFIG:
                 x: 16,
                 y: -7,
             },
-            TIMING_THRESHOLD: 18,
+            TIMING_THRESHOLD: 12,
         },
         
         13: {
@@ -384,7 +419,7 @@ class TASK_CONFIG:
                 x: 15,
                 y: -6,
             },
-            TIMING_THRESHOLD: 18,
+            TIMING_THRESHOLD: 12,
         },
         
         14: {
@@ -396,6 +431,6 @@ class TASK_CONFIG:
                 x: 14,
                 y: -5,
             },
-            TIMING_THRESHOLD: 18,
+            TIMING_THRESHOLD: 12,
         },
     }

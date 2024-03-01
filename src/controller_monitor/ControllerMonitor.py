@@ -72,6 +72,7 @@ class ControllerMonitor:
         self.task_config = (
             TASK_CONFIG.block_config_heart.copy()
         )  # get own local copy of task config
+        self.dt_timer_finished = False
 
         # Initialize robot registers
         self.init_robot_registers()
@@ -238,6 +239,9 @@ class ControllerMonitor:
                         self.block_number += 1
 
                 if self.STATE == CM_STATES.READY:
+                    pass
+
+                if self.STATE == CM_STATES.WAITING_FOR_DT:
                     pass
 
             # -- MESSAGE --

@@ -94,6 +94,9 @@ class UR3e(rtb.DHRobot):
         if q[0] < 0:
             q[0] += 2*pi
         
+        if q[-1] < 0: 
+            q[-1] += 2*pi
+        
         return q
 
 

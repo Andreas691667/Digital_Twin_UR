@@ -4,7 +4,7 @@ class MSG_TYPES:
     WAIT = "WAIT"                # Used for DT->PT messages before fault have been resolved
     RESOLVED = "RESOLVED"            # Used to send resolution 
     COULD_NOT_RESOLVE = "COULD_NOT_RESOLVE"   # Used to send message where fault could not be resolved
-    
+    FINISHED_TIMING = "FINISHED_TIMING"
 
 
 

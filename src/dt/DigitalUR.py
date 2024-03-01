@@ -37,6 +37,7 @@ class DigitalUR:
 
         self.current_block = 0  # current block number being processed
         self.task_config = TASK_CONFIG.block_config_heart.copy()
+        self.pick_stock_tried = 1
 
     def configure_rmq_clients(self):
         """Configures rmq_client_in to receive data from monitor
@@ -120,7 +121,7 @@ class DigitalUR:
                 self.state = DT_STATES.WAITING_FOR_TASK_TO_START
                 print("State transition -> WAITING_FOR_TASK_TO_START")
 
-    def plan_fault_resolution(self, mitigation_stragety: str) -> None:
+    def plan_fault_resolution(self, mitigation_strategy: str) -> None:
         """Resolve the current fault"""
         # resolve the fault here based on current fault and mitigation stragety
         # if fault resolved send new data to controller
@@ -129,7 +130,7 @@ class DigitalUR:
 
         
         if self.current_fault == FAULT_TYPES.MISSING_OBJECT:
-            if mitigation_stragety == TASK_CONFIG.MITIGATION_STRATEGIES.SHIFT_ORIGIN:
+            if mitigation_strategy == TASK_CONFIG.MITIGATION_STRATEGIES.SHIFT_ORIGIN:
                 # print(f"Task config before (1): \n {self.task_config}")
                 # # 1) remove the blocks that have already been moved
                 # for block_no in range(self.current_block):
@@ -168,8 +169,15 @@ class DigitalUR:
 
                 # return fault_msg with the new task_config
                 return f"{MSG_TYPES.RESOLVED} {self.task_config}"
-            elif mitigation_stragety == TASK_CONFIG.MITIGATION_STRATEGIES.TRY_PICK_STOCK:
-                pass
+            
+            elif mitigation_strategy == TASK_CONFIG.MITIGATION_STRATEGIES.TRY_PICK_STOCK:
+                # For block[j] try PICK_STOCK[i++]
+                self.task_config[self.current_block+1][TASK_CONFIG.ORIGIN] = TASK_CONFIG.PICK_STOCK_COORDINATES[self.pick_stock_tried][TASK_CONFIG.ORIGIN]
+                self.task_config[self.current_block+1][TASK_CONFIG.TIMING_THRESHOLD] = TASK_CONFIG.PICK_STOCK_COORDINATES[self.pick_stock_tried][TASK_CONFIG.TIMING_THRESHOLD]
+                self.time_of_last_message = time.time() # Reset timer  
+                self.pick_stock_tried += 1
+                return f"{MSG_TYPES.RESOLVED} {self.task_config}"
+                
 
         elif self.current_fault == FAULT_TYPES.UNKOWN_FAULT:
             pass
@@ -205,8 +213,9 @@ class DigitalUR:
         # If we grap an object, we increment the current block being processed, i.e. it is initialized from 0
         if object_grapped:
             self.current_block += 1                                 # Increment block number
-            print(f"Object grapped in block {self.current_block}")
             self.time_of_last_message = time.time()                 # Reset timer
+            self.pick_stock_tried = 1                               # Reset pick_stock_tried
+            print(f"Object grapped in block {self.current_block}")
             return False, FAULT_TYPES.NO_FAULT                      # No fault present (TODO: Not needed here?)
         
         # If we have not grapped an object, we check for timing constraints
