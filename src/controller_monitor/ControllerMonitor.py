@@ -28,6 +28,15 @@ class ControllerMonitor:
     """Class responsible for all robot interaction"""
 
     def __init__(self) -> None:
+
+        # Attributes
+        self.STATE = CM_STATES.INITIALIZING  # flag to check if main program is running
+        self.block_number = 1  # current block number being processed
+        self.task_config = (
+            TASK_CONFIG.block_config_heart.copy()
+        )  # get own local copy of task config
+        self.task_finished : bool = False # flag to check if overall task is finished
+
         self.program_running_name: str = ""
         self.conf_file = "record_configuration.xml"
         self.log_file = "robot_output.csv"
@@ -48,6 +57,7 @@ class ControllerMonitor:
         self.rmq_client_in = Client(host=RMQ_CONFIG.RMQ_SERVER_IP)
         self.rmq_client_out = Client(host=RMQ_CONFIG.RMQ_SERVER_IP)
         self.configure_rmq_clients()
+        # self.publish_task_config_to_dt()
 
         # Controller thread
         self.controller_thread = Thread(target=self.controller_worker)
@@ -70,13 +80,6 @@ class ControllerMonitor:
             )
         )
 
-        # Attributes
-        self.block_number = 1  # current block number being processed
-        self.STATE = CM_STATES.INITIALIZING  # flag to check if main program is running
-        self.task_config = (
-            TASK_CONFIG.block_config_1_block.copy()
-        )  # get own local copy of task config
-        self.task_finished : bool = False # flag to check if overall task is finished
 
         # Initialize robot registers
         self.init_robot_registers()
@@ -88,6 +91,17 @@ class ControllerMonitor:
         sleep(0.5)
         # Display message
         print("\n [USER] Ready to play program. Press '2' to start, 'c' to exit \n")
+
+    def publish_task_config_to_dt(self) -> None:
+        """Publish the task to the DT"""
+
+        # construct msg with type: task_config and body: task_config
+        msg = f"TASK_CONFIG {self.task_config}"
+
+        self.rmq_client_out.send_message(
+            json.dumps(msg), RMQ_CONFIG.DT_EXCHANGE
+        )
+        print("Task config published to DT")
 
     def recieve_user_input(self) -> None:
         """Blocking call that listens for user input"""
