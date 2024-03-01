@@ -17,6 +17,7 @@ class TASK_CONFIG:
     x = "x"
     y = "y"
 
+    # GRID PARAMETERS AND COORDINATES
     Z_BASE_MIN = "Z_BASE_MIN" 
     HOLE_DIST = "HOLE_DIST"
     Z_BASE_MIN = "Z_BASE_MIN"
@@ -41,6 +42,12 @@ class TASK_CONFIG:
         BEFORE_GRIP_Z: 1.55
     }
     
+    # MITIGATION STRATEGIES
+    class MITIGATION_STRATEGIES:
+        SHIFT_ORIGIN = "SHIFT_ORIGIN"
+        TRY_PICK_STOCK = "TRY_PICK_STOCK"
+
+
 
     """Config for the task.
     To access waypoints, use block_config[block_number][WAYPOINTS],

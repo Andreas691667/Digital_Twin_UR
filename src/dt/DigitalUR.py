@@ -115,59 +115,66 @@ class DigitalUR:
             elif self.state == DT_STATES.FAULT_RESOLUTION:
                 # stop program firstly
                 self.execute_fault_resolution(f"{MSG_TYPES.WAIT} None")
-                fault_msg = self.plan_fault_resolution()
+                fault_msg = self.plan_fault_resolution(TASK_CONFIG.MITIGATION_STRATEGIES.TRY_PICK_STOCK)
                 self.execute_fault_resolution(fault_msg)
                 self.state = DT_STATES.WAITING_FOR_TASK_TO_START
                 print("State transition -> WAITING_FOR_TASK_TO_START")
 
-    def plan_fault_resolution(self) -> None:
+    def plan_fault_resolution(self, mitigation_stragety: str) -> None:
         """Resolve the current fault"""
-        # resolve the fault here based on current fault
+        # resolve the fault here based on current fault and mitigation stragety
         # if fault resolved send new data to controller
         # if fault unresovled send could not resolve fault message to controller
         # in both cases go to waiting for task to start state
+
+        
         if self.current_fault == FAULT_TYPES.MISSING_OBJECT:
-            # print(f"Task config before (1): \n {self.task_config}")
-            # # 1) remove the blocks that have already been moved
-            # for block_no in range(self.current_block):
-            #     self.task_config.pop(block_no+1)
-            # self.task_config[TASK_CONFIG.NO_BLOCKS] -= self.current_block
-            
-            print(f"Task config after (1): \n {self.task_config}")
-            # 2) from the current block, change two first rows in its config to the next block
-            for block_no in range(                                                     # Iterate over blocks
-                self.current_block + 1, self.task_config[TASK_CONFIG.NO_BLOCKS]        # ... from the next block to the last block
-            ):
+            if mitigation_stragety == TASK_CONFIG.MITIGATION_STRATEGIES.SHIFT_ORIGIN:
+                # print(f"Task config before (1): \n {self.task_config}")
+                # # 1) remove the blocks that have already been moved
+                # for block_no in range(self.current_block):
+                #     self.task_config.pop(block_no+1)
+                # self.task_config[TASK_CONFIG.NO_BLOCKS] -= self.current_block
                 
-                # # Iterate over the first two waypoints (i.e. block origin)
-                # for i in range(2):                                                   
-                #     self.task_config[block_no][TASK_CONFIG.WAYPOINTS][i] = (          # ... change the first two waypoints 
-                #         self.task_config[block_no + 1][TASK_CONFIG.WAYPOINTS][i]      # ... to the next block's first two waypoints. 
-                #     )
+                print(f"Task config after (1): \n {self.task_config}")
+                # 2) from the current block, change two first rows in its config to the next block
+                for block_no in range(                                                     # Iterate over blocks
+                    self.current_block + 1, self.task_config[TASK_CONFIG.NO_BLOCKS]        # ... from the next block to the last block
+                ):
+                    
+                    # # Iterate over the first two waypoints (i.e. block origin)
+                    # for i in range(2):                                                   
+                    #     self.task_config[block_no][TASK_CONFIG.WAYPOINTS][i] = (          # ... change the first two waypoints 
+                    #         self.task_config[block_no + 1][TASK_CONFIG.WAYPOINTS][i]      # ... to the next block's first two waypoints. 
+                    #     )
 
-                self.task_config[block_no][TASK_CONFIG.ORIGIN][TASK_CONFIG.x]   = (                      # Change the x-coordinate to the next block's x-coordinate
-                    self.task_config[block_no + 1][TASK_CONFIG.ORIGIN][TASK_CONFIG.x]
-                )
-                self.task_config[block_no][TASK_CONFIG.ORIGIN][TASK_CONFIG.y]   = (                      # Change the y-coordinate to the next block's y-coordinate
-                    self.task_config[block_no + 1][TASK_CONFIG.ORIGIN][TASK_CONFIG.y]
-                )
+                    self.task_config[block_no][TASK_CONFIG.ORIGIN][TASK_CONFIG.x]   = (                      # Change the x-coordinate to the next block's x-coordinate
+                        self.task_config[block_no + 1][TASK_CONFIG.ORIGIN][TASK_CONFIG.x]
+                    )
+                    self.task_config[block_no][TASK_CONFIG.ORIGIN][TASK_CONFIG.y]   = (                      # Change the y-coordinate to the next block's y-coordinate
+                        self.task_config[block_no + 1][TASK_CONFIG.ORIGIN][TASK_CONFIG.y]
+                    )
 
-                # Change the timing threshold to the next block's threshold
-                self.task_config[block_no][TASK_CONFIG.TIMING_THRESHOLD] = (          
-                    self.task_config[block_no + 1][TASK_CONFIG.TIMING_THRESHOLD]
-                )
+                    # Change the timing threshold to the next block's threshold
+                    self.task_config[block_no][TASK_CONFIG.TIMING_THRESHOLD] = (          
+                        self.task_config[block_no + 1][TASK_CONFIG.TIMING_THRESHOLD]
+                    )
 
-            # remove the last block and decrement the number of blocks
-            self.task_config.pop(self.task_config[TASK_CONFIG.NO_BLOCKS])
-            self.task_config[TASK_CONFIG.NO_BLOCKS] -= 1
+                # remove the last block and decrement the number of blocks
+                self.task_config.pop(self.task_config[TASK_CONFIG.NO_BLOCKS])
+                self.task_config[TASK_CONFIG.NO_BLOCKS] -= 1
 
-            print(f"Task config after (2): \n {self.task_config}")
+                print(f"Task config after (2): \n {self.task_config}")
 
-            # return fault_msg with the new task_config
-            return f"{MSG_TYPES.RESOLVED} {self.task_config}"
+                # return fault_msg with the new task_config
+                return f"{MSG_TYPES.RESOLVED} {self.task_config}"
+            elif mitigation_stragety == TASK_CONFIG.MITIGATION_STRATEGIES.TRY_PICK_STOCK:
+                pass
 
         elif self.current_fault == FAULT_TYPES.UNKOWN_FAULT:
             pass
+
+        
 
     def execute_fault_resolution(self, fault_msg) -> None:
         """Execute the fault resolution: send message to controller
