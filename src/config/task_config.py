@@ -237,7 +237,7 @@ class TASK_CONFIG:
         NO_BLOCKS: 14,
         1: {
             ORIGIN: {
-                x: 10,
+                x: -1,
                 y: 1,
             },
             TARGET: {
@@ -248,8 +248,8 @@ class TASK_CONFIG:
         },
         2: {
             ORIGIN: {
-                x: 10,
-                y: 3,
+                x: 1,
+                y: 1,
             },
             TARGET: {
                 x: 12,
@@ -259,7 +259,7 @@ class TASK_CONFIG:
         },
         3: {
             ORIGIN: {
-                x: 4,
+                x: 3,
                 y: 1,
             },
             TARGET: {
@@ -270,7 +270,7 @@ class TASK_CONFIG:
         },
         4: {
             ORIGIN: {
-                x: 12,
+                x: 5,
                 y: 1,
             },
             TARGET: {
@@ -281,7 +281,7 @@ class TASK_CONFIG:
         },
         5: {
             ORIGIN: {
-                x: 2,
+                x: 7,
                 y: 1,
             },
             TARGET: {
@@ -292,7 +292,7 @@ class TASK_CONFIG:
         },
         6: {
             ORIGIN: {
-                x: 2,
+                x: -1,
                 y: 3,
             },
             TARGET: {
@@ -303,8 +303,8 @@ class TASK_CONFIG:
         },
         7: {
             ORIGIN: {
-                x: 6,
-                y: 5,
+                x: 1,
+                y: 3,
             },
             TARGET: {
                 x: 12,
@@ -314,8 +314,8 @@ class TASK_CONFIG:
         },
         8: {
             ORIGIN: {
-                x: 4,
-                y: 5,
+                x: 3,
+                y: 3,
             },
             TARGET: {
                 x: 13,
@@ -325,7 +325,7 @@ class TASK_CONFIG:
         },
         9: {
             ORIGIN: {
-                x: 4,
+                x: 5,
                 y: 3,
             },
             TARGET: {
@@ -336,8 +336,8 @@ class TASK_CONFIG:
         },
         10: {
             ORIGIN: {
-                x: 8,
-                y: 1,
+                x: 7,
+                y: 3,
             },
             TARGET: {
                 x: 15,
@@ -347,8 +347,8 @@ class TASK_CONFIG:
         },
         11: {
             ORIGIN: {
-                x: 8,
-                y: 3,
+                x: -1,
+                y: 5,
             },
             TARGET: {
                 x: 16,
@@ -358,8 +358,8 @@ class TASK_CONFIG:
         },
         12: {
             ORIGIN: {
-                x: 0,
-                y: 1,
+                x: 1,
+                y: 5,
             },
             TARGET: {
                 x: 16,
@@ -370,8 +370,8 @@ class TASK_CONFIG:
         
         13: {
             ORIGIN: {
-                x: 6,
-                y: 1,
+                x: 3,
+                y: 5,
             },
             TARGET: {
                 x: 15,
@@ -382,8 +382,8 @@ class TASK_CONFIG:
         
         14: {
             ORIGIN: {
-                x: 6,
-                y: 3,
+                x: 5,
+                y: 5,
             },
             TARGET: {
                 x: 14,
