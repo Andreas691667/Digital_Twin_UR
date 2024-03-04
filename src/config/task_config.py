@@ -70,7 +70,7 @@ class TASK_CONFIG:
                 x: -4,
                 y: 2
             },
-            TIMING_THRESHOLD: 5,
+            TIMING_THRESHOLD: 4,
         },
         
         4: {
@@ -78,7 +78,7 @@ class TASK_CONFIG:
                 x: -3,
                 y: 3
             },
-            TIMING_THRESHOLD: 3,
+            TIMING_THRESHOLD: 10,
         },
     }
 

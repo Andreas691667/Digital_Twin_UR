@@ -1,5 +1,5 @@
 class FAULT_TYPES:
     """Class for the fault types that DT can handle"""
-    MISSING_OBJECT = 0
-    UNKOWN_FAULT = 1
-    NO_FAULT = 2
+    MISSING_OBJECT = "MISSING_OBJECT"
+    UNKOWN_FAULT = "UNKOWN_FAULT"
+    NO_FAULT = "NO_FAULT"

@@ -233,8 +233,6 @@ class ControllerMonitor:
             self.controller_queue.put((msg_type, msg_body))
             print("----- DT MESSAGE ----")
             print(msg_type)
-            print(msg_body)
-            print(self.block_number)
             print("----------------------")
         except ValueError:
             print("Invalid message format")
@@ -287,7 +285,7 @@ class ControllerMonitor:
                     if (not self.robot_connection.program_running()) and (
                         self.block_number <= self.task_config[TASK_CONFIG.NO_BLOCKS]
                     ):
-                        print(f"Incremented block number to: {self.block_number}")
+                        print(f"Ready to take block number: {self.block_number}")
                         self.initialize_task_registers()
                         self.play_program(main_program=True)
                         # Increment block number to next

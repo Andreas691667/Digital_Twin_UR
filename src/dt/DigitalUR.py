@@ -117,7 +117,7 @@ class DigitalUR:
             elif self.state == DT_STATES.FAULT_RESOLUTION:
                 # stop program firstly
                 self.execute_fault_resolution(f"{MSG_TYPES.WAIT} None")
-                fault_msg = self.plan_fault_resolution(TASK_CONFIG.MITIGATION_STRATEGIES.TRY_PICK_STOCK)
+                fault_msg = self.plan_fault_resolution(TASK_CONFIG.MITIGATION_STRATEGIES.SHIFT_ORIGIN)
                 self.execute_fault_resolution(fault_msg)
                 self.state = DT_STATES.WAITING_FOR_TASK_TO_START
                 print("State transition -> WAITING_FOR_TASK_TO_START")
@@ -226,7 +226,7 @@ class DigitalUR:
                 time.time() - self.time_of_last_message                                   # ... time passed since last object was grapped
                 > self.task_config[self.current_block + 1][TASK_CONFIG.TIMING_THRESHOLD]  # ... the time has expired for next block's threshold
             ):
-                print(f"Missing object {self.current_block}")
+                print(f"Missing object {self.current_block + 1}")
                 return True, FAULT_TYPES.MISSING_OBJECT                                   # ... a fault present (i.e. missing object)
 
         return False, FAULT_TYPES.NO_FAULT
