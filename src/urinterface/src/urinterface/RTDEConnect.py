@@ -60,6 +60,11 @@ class RTDEConnect:
             5: 'Resuming',
             6: 'Retracting'
         }
+
+        ### ADDED
+        self.active : bool = False
+        ####
+
         self._initialize()
 
     def _initialize(self):
@@ -94,6 +99,15 @@ class RTDEConnect:
         if not self.con.send_start():
             print('Could not connect. Exiting...')
             sys.exit()
+        
+        ### ADDED
+        self.active = True
+        ####
+    
+    ### ADDED
+    def is_active(self):
+        return self.active
+    ####
 
     def receive(self):
         """
@@ -141,6 +155,9 @@ class RTDEConnect:
         """
         self.con.send_pause()
         self.con.disconnect()
+        ### ADDED
+        self.active = False
+        ####
 
     @staticmethod
     def _csvparse(csvlist, parsed_dict):
