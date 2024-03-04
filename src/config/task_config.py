@@ -132,7 +132,7 @@ class TASK_CONFIG:
                 y: -5,
                 ROTATE_WRIST: False,
             },
-            TIMING_THRESHOLD: 7,
+            TIMING_THRESHOLD: 11,
         },
         2: {
             ORIGIN: {
@@ -154,7 +154,7 @@ class TASK_CONFIG:
                 ROTATE_WRIST: False,
             },
             TARGET: {
-                x: 12,
+                x: 10,
                 y: -4,
                 ROTATE_WRIST: False,
             },
