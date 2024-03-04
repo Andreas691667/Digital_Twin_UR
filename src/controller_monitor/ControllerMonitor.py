@@ -33,7 +33,7 @@ class ControllerMonitor:
         self.STATE = CM_STATES.INITIALIZING  # flag to check if main program is running
         self.block_number = 1  # current block number being processed
         self.task_config = (
-            TASK_CONFIG.block_config_heart.copy()
+            TASK_CONFIG.block_config_1_block.copy()
         )  # get own local copy of task config
         self.task_finished : bool = False # flag to check if overall task is finished
 
@@ -170,10 +170,16 @@ class ControllerMonitor:
         origin = self.task_config[self.block_number][TASK_CONFIG.ORIGIN]
         target = self.task_config[self.block_number][TASK_CONFIG.TARGET]
 
-        origin_q_start = self.robot_model.compute_joint_positions(origin[TASK_CONFIG.x], origin[TASK_CONFIG.y])
-        origin_q = self.robot_model.compute_joint_positions(origin[TASK_CONFIG.x], origin[TASK_CONFIG.y], grip_pos=True)
-        target_q_start = self.robot_model.compute_joint_positions(target[TASK_CONFIG.x], target[TASK_CONFIG.y])
-        target_q = self.robot_model.compute_joint_positions(target[TASK_CONFIG.x], target[TASK_CONFIG.y], grip_pos=True)
+        origin_q_start = self.robot_model.compute_joint_positions(origin[TASK_CONFIG.x],
+                                                                  origin[TASK_CONFIG.y])
+        origin_q = self.robot_model.compute_joint_positions(origin[TASK_CONFIG.x],
+                                                            origin[TASK_CONFIG.y],
+                                                            grip_pos=True)
+        target_q_start = self.robot_model.compute_joint_positions(target[TASK_CONFIG.x],
+                                                                  target[TASK_CONFIG.y])
+        target_q = self.robot_model.compute_joint_positions(target[TASK_CONFIG.x],
+                                                            target[TASK_CONFIG.y],
+                                                            grip_pos=True)
 
         # check if any is nan
         if np.isnan(origin_q_start).any():
@@ -292,6 +298,8 @@ class ControllerMonitor:
                     elif self.block_number >= self.task_config[TASK_CONFIG.NO_BLOCKS] and (
                         not self.robot_connection.program_running()                  
                     ):
+                        self.__go_to_home()
+                        sleep(1)
                         print("\n [USER] Task is done. Press 'i' to perform inverse task. Press 'c' to exit \n")
                         self.rtde_connection.shutdown()
                         self.STATE = CM_STATES.WAITING_FOR_USER_INPUT
@@ -319,6 +327,12 @@ class ControllerMonitor:
                 # DT could not resolve
                 elif msg_type == MSG_TYPES.COULD_NOT_RESOLVE:
                     pass
+
+    def __go_to_home(self):
+        """Go to home position"""
+        home_q = self.robot_model.compute_joint_positions(TASK_CONFIG.HOME_POSITION[TASK_CONFIG.x],
+                                                          TASK_CONFIG.HOME_POSITION[TASK_CONFIG.y])
+        self.robot_connection.movej(home_q)
 
     def __reconfigure_task(self, new_task: str) -> None:
         """function for reconfiguring PT task"""
