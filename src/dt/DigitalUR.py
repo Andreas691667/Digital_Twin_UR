@@ -12,6 +12,7 @@ from digitalur_fault_types import FAULT_TYPES
 from config.msg_config import MSG_TYPES, MSG_TOPICS
 from config.task_config import TASK_CONFIG
 from ur3e.ur3e import UR3e
+from task_validator.TaskValidator import TaskValidator
 
 
 class DigitalUR:
@@ -36,14 +37,16 @@ class DigitalUR:
         self.last_object_detected = False
 
         self.current_block = -1  # current block number being processed
-        self.task_config = TASK_CONFIG.block_config_heart.copy()
+        self.task_config = TASK_CONFIG.block_config_close_blocks.copy()
         self.pick_stock_tried = 1
+
+        self.task_validator = TaskValidator()
 
     def configure_rmq_clients(self):
         """Configures rmq_client_in to receive data from monitor
         and rmq_client_out to send data to controller"""
         self.rmq_client_in.configure_incoming_channel(
-            self.on_monitor_message, RMQ_CONFIG.MONITOR_EXCHANGE, RMQ_CONFIG.FANOUT
+            self.on_monitor_message, RMQ_CONFIG.MONITOR_EXCHANGE, RMQ_CONFIG.FANOUT, RMQ_CONFIG.DT_QUEUE
         )
 
         self.rmq_client_out.configure_outgoing_channel(
@@ -92,6 +95,11 @@ class DigitalUR:
             if self.state == DT_STATES.INITIALIZING:
                 self.configure_rmq_clients()
                 self.start_consuming()
+
+                # validate the task
+                self.validate_task()
+
+
                 self.state = DT_STATES.WAITING_FOR_TASK_TO_START
                 print("State transition -> WAITING_FOR_TASK_TO_START")
                 
@@ -118,9 +126,21 @@ class DigitalUR:
                 # stop program firstly
                 self.execute_fault_resolution(f"{MSG_TYPES.WAIT} None")
                 fault_msg = self.plan_fault_resolution(TASK_CONFIG.MITIGATION_STRATEGIES.SHIFT_ORIGIN)
+                self.validate_task()
                 self.execute_fault_resolution(fault_msg)
                 self.state = DT_STATES.WAITING_FOR_TASK_TO_START
                 print("State transition -> WAITING_FOR_TASK_TO_START")
+
+    def validate_task(self):
+        """Validate the task using the task validator"""
+        valid, self.task_config = self.task_validator.validate_task(self.task_config)
+        if valid:
+            msg = f"{MSG_TYPES.TASK_VALIDATED} {self.task_config}"
+        
+        else:
+            msg = f"{MSG_TYPES.COULD_NOT_RESOLVE} None"
+        self.execute_fault_resolution(msg)
+        print("DT sent new config")
 
     def plan_fault_resolution(self, mitigation_strategy: str) -> None:
         """Resolve the current fault"""
@@ -217,14 +237,22 @@ class DigitalUR:
             self.time_of_last_message = time.time()                 # Reset timer
             self.pick_stock_tried = 1                               # Reset pick_stock_tried
             print(f"Object grapped in block {self.current_block}")
+
+            # If we have grapped the last object, we are done
+            # go to waiting for task to start state
+            if self.current_block == self.task_config[TASK_CONFIG.NO_BLOCKS]-1:
+                print("Task done")
+                self.state = DT_STATES.WAITING_FOR_TASK_TO_START
+                print("State transition -> WAITING_FOR_TASK_TO_START")
+
             return False, FAULT_TYPES.NO_FAULT                      # No fault present (TODO: Not needed here?)
         
         # If we have not grapped an object, we check for timing constraints
         # it is only when the timer have expired that we report a missing object
         else:
-            if (self.current_block + 1 <= self.task_config[TASK_CONFIG.NO_BLOCKS]) and (  # If there are more blocks to move
+            if (self.current_block+1 < self.task_config[TASK_CONFIG.NO_BLOCKS]) and (      # If there are more blocks to move
                 time.time() - self.time_of_last_message                                   # ... time passed since last object was grapped
-                > self.task_config[self.current_block + 1][TASK_CONFIG.TIMING_THRESHOLD]  # ... the time has expired for next block's threshold
+                > self.task_config[self.current_block+1][TASK_CONFIG.TIMING_THRESHOLD]  # ... the time has expired for next block's threshold
             ):
                 print(f"Missing object {self.current_block}")
                 return True, FAULT_TYPES.MISSING_OBJECT                                   # ... a fault present (i.e. missing object)

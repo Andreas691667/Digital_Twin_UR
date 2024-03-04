@@ -17,6 +17,8 @@ class TASK_CONFIG:
     x = "x"
     y = "y"
 
+    ROTATE_WRIST = "ROTATE_WRIST"
+
     # GRID PARAMETERS AND COORDINATES
     Z_BASE_MIN = "Z_BASE_MIN" 
     HOLE_DIST = "HOLE_DIST"
@@ -30,7 +32,7 @@ class TASK_CONFIG:
         HOLE_DIST: 0.04,
         Z_BASE_MIN: 0.173,
         X_BASE_MAX: 0.152,
-        X_BASE_MIN: -0.12051, 
+        X_BASE_MIN: -0.12051,
         Y_BASE_MAX: 0.4729,
         Y_BASE_MIN: 0.28071,
     }
@@ -41,6 +43,13 @@ class TASK_CONFIG:
         GRIP_Z: 0.3,
         BEFORE_GRIP_Z: 1.55
     }
+
+
+    # width of gripper
+    GRIPPER_WIDTH = 0.06 # in meters
+
+    # max block width
+    BLOCK_WIDTH = 0.035 # in meters
     
     # MITIGATION STRATEGIES
     class MITIGATION_STRATEGIES:
@@ -96,6 +105,63 @@ class TASK_CONFIG:
         x : 11,
         y : 2
     }
+
+    block_config_close_blocks = {
+        NO_BLOCKS : 4,
+        0: {
+            ORIGIN: {
+                x: 0,
+                y: 0,
+                ROTATE_WRIST: False,
+            },
+            TARGET: {
+                x: 12,
+                y: -5,
+                ROTATE_WRIST: False,
+            },
+            TIMING_THRESHOLD: 50,
+        },
+        1: {
+            ORIGIN: {
+                x: 1,
+                y: 0,
+                ROTATE_WRIST: False,
+            },
+            TARGET: {
+                x: 11,
+                y: -5,
+                ROTATE_WRIST: False,
+            },
+            TIMING_THRESHOLD: 7,
+        },
+        2: {
+            ORIGIN: {
+                x: 2,
+                y: 0,
+                ROTATE_WRIST: False,
+            },
+            TARGET: {
+                x: 11,
+                y: -4,
+                ROTATE_WRIST: False,
+            },
+            TIMING_THRESHOLD: 50,
+        },
+        3: {
+            ORIGIN: {
+                x: 3,
+                y: 0,
+                ROTATE_WRIST: False,
+            },
+            TARGET: {
+                x: 12,
+                y: -4,
+                ROTATE_WRIST: False,
+            },
+            TIMING_THRESHOLD: 50,
+        }
+    }
+
 
     block_config_joint_positions = {
         NO_BLOCKS: 3,
@@ -289,21 +355,25 @@ class TASK_CONFIG:
             ORIGIN: {
                 x: -1,
                 y: 1,
+                ROTATE_WRIST: False,
             },
             TARGET: {
                 x: 13,
                 y: -4,
+                ROTATE_WRIST: False,
             },
-            TIMING_THRESHOLD: 5,
+            TIMING_THRESHOLD: 10,
         },
         1: {
             ORIGIN: {
                 x: 1,
                 y: 1,
+                ROTATE_WRIST: False,
             },
             TARGET: {
                 x: 12,
                 y: -5,
+                ROTATE_WRIST: False,
             },
             TIMING_THRESHOLD: 10, #works
         },
@@ -311,10 +381,12 @@ class TASK_CONFIG:
             ORIGIN: {
                 x: 3,
                 y: 1,
+                ROTATE_WRIST: False,
             },
             TARGET: {
                 x: 11,
                 y: -6,
+                ROTATE_WRIST: False,
             },
             TIMING_THRESHOLD: 12, #works
         },
@@ -322,10 +394,12 @@ class TASK_CONFIG:
             ORIGIN: {
                 x: 5,
                 y: 1,
+                ROTATE_WRIST: False,
             },
             TARGET: {
                 x: 10,
                 y: -7,
+                ROTATE_WRIST: False,
             },
             TIMING_THRESHOLD: 10, #works
         },
@@ -333,10 +407,12 @@ class TASK_CONFIG:
             ORIGIN: {
                 x: 7,
                 y: 1,
+                ROTATE_WRIST: False,
             },
             TARGET: {
                 x: 10,
                 y: -8.5,
+                ROTATE_WRIST: False,
             },
             TIMING_THRESHOLD: 10, # works
         },
@@ -344,10 +420,12 @@ class TASK_CONFIG:
             ORIGIN: {
                 x: -1,
                 y: 3,
+                ROTATE_WRIST: False,
             },
             TARGET: {
                 x: 11,
                 y: -9,
+                ROTATE_WRIST: False,
             },
             TIMING_THRESHOLD: 12,
         },
@@ -355,10 +433,12 @@ class TASK_CONFIG:
             ORIGIN: {
                 x: 1,
                 y: 3,
+                ROTATE_WRIST: False,
             },
             TARGET: {
                 x: 12,
                 y: -8,
+                ROTATE_WRIST: False,
             },
             TIMING_THRESHOLD: 12,
         },
@@ -366,10 +446,12 @@ class TASK_CONFIG:
             ORIGIN: {
                 x: 3,
                 y: 3,
+                ROTATE_WRIST: False,
             },
             TARGET: {
                 x: 13,
                 y: -7,
+                ROTATE_WRIST: False,
             },
             TIMING_THRESHOLD: 12,
         },
@@ -377,10 +459,12 @@ class TASK_CONFIG:
             ORIGIN: {
                 x: 5,
                 y: 3,
+                ROTATE_WRIST: False,
             },
             TARGET: {
                 x: 14,
                 y: -8,
+                ROTATE_WRIST: False,
             },
             TIMING_THRESHOLD: 10,
         },
@@ -388,10 +472,12 @@ class TASK_CONFIG:
             ORIGIN: {
                 x: 7,
                 y: 3,
+                ROTATE_WRIST: False,
             },
             TARGET: {
                 x: 15,
                 y: -9,
+                ROTATE_WRIST: False,
             },
             TIMING_THRESHOLD: 12,
         },
@@ -399,10 +485,12 @@ class TASK_CONFIG:
             ORIGIN: {
                 x: -1,
                 y: 5,
+                ROTATE_WRIST: False,
             },
             TARGET: {
                 x: 16,
                 y: -8.5,
+                ROTATE_WRIST: False,
             },
             TIMING_THRESHOLD: 12,
         },
@@ -410,10 +498,12 @@ class TASK_CONFIG:
             ORIGIN: {
                 x: 1,
                 y: 5,
+                ROTATE_WRIST: False,
             },
             TARGET: {
                 x: 16,
                 y: -7,
+                ROTATE_WRIST: False,
             },
             TIMING_THRESHOLD: 12,
         },
@@ -422,22 +512,25 @@ class TASK_CONFIG:
             ORIGIN: {
                 x: 3,
                 y: 5,
+                ROTATE_WRIST: False,
             },
             TARGET: {
                 x: 15,
                 y: -6,
+                ROTATE_WRIST: False,
             },
             TIMING_THRESHOLD: 12,
-        },
-        
+        },        
         13: {
             ORIGIN: {
                 x: 5,
                 y: 5,
+                ROTATE_WRIST: False,
             },
             TARGET: {
                 x: 14,
                 y: -5,
+                ROTATE_WRIST: False,
             },
             TIMING_THRESHOLD: 12,
         },
