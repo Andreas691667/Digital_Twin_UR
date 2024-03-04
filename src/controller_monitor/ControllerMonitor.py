@@ -81,7 +81,7 @@ class ControllerMonitor:
         )
 
         # Attributes
-        self.block_number = 1  # current block number being processed
+        self.block_number = 0  # current block number being processed
         self.STATE = CM_STATES.INITIALIZING  # flag to check if main program is running
         self.task_config = (
             TASK_CONFIG.block_config_heart.copy()
@@ -138,11 +138,11 @@ class ControllerMonitor:
         # initialize task registers
 
         # print old
-        for i in range(1, self.task_config[TASK_CONFIG.NO_BLOCKS] + 1):
+        for i in range(self.task_config[TASK_CONFIG.NO_BLOCKS]):
             self.task_config[i][TASK_CONFIG.ORIGIN], self.task_config[i][TASK_CONFIG.TARGET] = (
             self.task_config[i][TASK_CONFIG.TARGET], self.task_config[i][TASK_CONFIG.ORIGIN])
 
-        self.block_number = 1
+        self.block_number = 0
         self.task_finished = False
         self.rtde_connection = RTDEConnect(ROBOT_CONFIG.ROBOT_HOST, self.conf_file)
 
@@ -284,9 +284,10 @@ class ControllerMonitor:
             except Empty:
                 # Task has begun
                 if self.STATE == CM_STATES.NORMAL_OPERATION:
+                    # self.recieve_user_input()
                     # Subtask is done, and there is more blocks to move
                     if (not self.robot_connection.program_running()) and (
-                        self.block_number <= self.task_config[TASK_CONFIG.NO_BLOCKS]
+                        self.block_number < self.task_config[TASK_CONFIG.NO_BLOCKS] 
                     ):
                         print(f"Incremented block number to: {self.block_number}")
                         self.initialize_task_registers()

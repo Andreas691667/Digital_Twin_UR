@@ -10,7 +10,7 @@ class TASK_CONFIG:
     WAYPOINTS = "waypoints"
     GRIP_PERCENTAGE = "grip_percentage"
     TIMING_THRESHOLD = "timing_threshold"
-    NO_BLOCKS = "blocks"  # number of blocks in the task
+    NO_BLOCKS = "no_blocks"  # number of blocks in the task
 
     ORIGIN = "origin"
     TARGET = "target"
@@ -133,7 +133,7 @@ class TASK_CONFIG:
 
     block_config_1_block = {
         NO_BLOCKS: 1,
-        1: {
+        0: {
             ORIGIN: {
                 x: 0,
                 y: 0,
@@ -146,9 +146,10 @@ class TASK_CONFIG:
         },
     }
 
+    ### DONT USE
     block_config_square = {
         NO_BLOCKS: 12,
-        1: {
+        0: {
             ORIGIN: {
                 x: 4,
                 y: 0,
@@ -159,7 +160,7 @@ class TASK_CONFIG:
             },
             TIMING_THRESHOLD: 17,
         },
-        2: {
+        1: {
             ORIGIN: {
                 x: 5,
                 y: 1,
@@ -170,7 +171,7 @@ class TASK_CONFIG:
             },
             TIMING_THRESHOLD: 17,
         },
-        3: {
+        2: {
             ORIGIN: {
                 x: 6,
                 y: 0,
@@ -181,7 +182,7 @@ class TASK_CONFIG:
             },
             TIMING_THRESHOLD: 17,
         },
-        4: {
+        3: {
             ORIGIN: {
                 x: 7,
                 y: 1,
@@ -284,7 +285,7 @@ class TASK_CONFIG:
 
     block_config_heart = {
         NO_BLOCKS: 14,
-        1: {
+        0: {
             ORIGIN: {
                 x: -1,
                 y: 1,
@@ -295,7 +296,7 @@ class TASK_CONFIG:
             },
             TIMING_THRESHOLD: 5,
         },
-        2: {
+        1: {
             ORIGIN: {
                 x: 1,
                 y: 1,
@@ -306,7 +307,7 @@ class TASK_CONFIG:
             },
             TIMING_THRESHOLD: 10, #works
         },
-        3: {
+        2: {
             ORIGIN: {
                 x: 3,
                 y: 1,
@@ -317,7 +318,7 @@ class TASK_CONFIG:
             },
             TIMING_THRESHOLD: 12, #works
         },
-        4: {
+        3: {
             ORIGIN: {
                 x: 5,
                 y: 1,
@@ -328,7 +329,7 @@ class TASK_CONFIG:
             },
             TIMING_THRESHOLD: 10, #works
         },
-        5: {
+        4: {
             ORIGIN: {
                 x: 7,
                 y: 1,
@@ -339,7 +340,7 @@ class TASK_CONFIG:
             },
             TIMING_THRESHOLD: 10, # works
         },
-        6: {
+        5: {
             ORIGIN: {
                 x: -1,
                 y: 3,
@@ -350,7 +351,7 @@ class TASK_CONFIG:
             },
             TIMING_THRESHOLD: 12,
         },
-        7: {
+        6: {
             ORIGIN: {
                 x: 1,
                 y: 3,
@@ -361,7 +362,7 @@ class TASK_CONFIG:
             },
             TIMING_THRESHOLD: 12,
         },
-        8: {
+        7: {
             ORIGIN: {
                 x: 3,
                 y: 3,
@@ -372,7 +373,7 @@ class TASK_CONFIG:
             },
             TIMING_THRESHOLD: 12,
         },
-        9: {
+        8: {
             ORIGIN: {
                 x: 5,
                 y: 3,
@@ -383,7 +384,7 @@ class TASK_CONFIG:
             },
             TIMING_THRESHOLD: 10,
         },
-        10: {
+        9: {
             ORIGIN: {
                 x: 7,
                 y: 3,
@@ -394,7 +395,7 @@ class TASK_CONFIG:
             },
             TIMING_THRESHOLD: 12,
         },
-        11: {
+        10: {
             ORIGIN: {
                 x: -1,
                 y: 5,
@@ -405,7 +406,7 @@ class TASK_CONFIG:
             },
             TIMING_THRESHOLD: 12,
         },
-        12: {
+        11: {
             ORIGIN: {
                 x: 1,
                 y: 5,
@@ -417,7 +418,7 @@ class TASK_CONFIG:
             TIMING_THRESHOLD: 12,
         },
         
-        13: {
+        12: {
             ORIGIN: {
                 x: 3,
                 y: 5,
@@ -429,7 +430,7 @@ class TASK_CONFIG:
             TIMING_THRESHOLD: 12,
         },
         
-        14: {
+        13: {
             ORIGIN: {
                 x: 5,
                 y: 5,

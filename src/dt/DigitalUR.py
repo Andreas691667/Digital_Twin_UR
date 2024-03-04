@@ -35,7 +35,7 @@ class DigitalUR:
         self.time_of_last_message = 0
         self.last_object_detected = False
 
-        self.current_block = 0  # current block number being processed
+        self.current_block = -1  # current block number being processed
         self.task_config = TASK_CONFIG.block_config_heart.copy()
         self.pick_stock_tried = 1
 
@@ -117,7 +117,7 @@ class DigitalUR:
             elif self.state == DT_STATES.FAULT_RESOLUTION:
                 # stop program firstly
                 self.execute_fault_resolution(f"{MSG_TYPES.WAIT} None")
-                fault_msg = self.plan_fault_resolution(TASK_CONFIG.MITIGATION_STRATEGIES.TRY_PICK_STOCK)
+                fault_msg = self.plan_fault_resolution(TASK_CONFIG.MITIGATION_STRATEGIES.SHIFT_ORIGIN)
                 self.execute_fault_resolution(fault_msg)
                 self.state = DT_STATES.WAITING_FOR_TASK_TO_START
                 print("State transition -> WAITING_FOR_TASK_TO_START")
@@ -141,7 +141,7 @@ class DigitalUR:
                 print(f"Task config after (1): \n {self.task_config}")
                 # 2) from the current block, change two first rows in its config to the next block
                 for block_no in range(                                                     # Iterate over blocks
-                    self.current_block + 1, self.task_config[TASK_CONFIG.NO_BLOCKS]        # ... from the next block to the last block
+                    self.current_block + 1, self.task_config[TASK_CONFIG.NO_BLOCKS]-1        # ... from the next block to the last block
                 ):
                     
                     # # Iterate over the first two waypoints (i.e. block origin)
@@ -163,7 +163,7 @@ class DigitalUR:
                     )
 
                 # remove the last block and decrement the number of blocks
-                self.task_config.pop(self.task_config[TASK_CONFIG.NO_BLOCKS])
+                self.task_config.pop(self.task_config[TASK_CONFIG.NO_BLOCKS] - 1)
                 self.task_config[TASK_CONFIG.NO_BLOCKS] -= 1
 
                 print(f"Task config after (2): \n {self.task_config}")
