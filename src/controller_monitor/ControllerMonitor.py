@@ -86,7 +86,6 @@ class ControllerMonitor:
         self.task_config = (
             TASK_CONFIG.block_config_heart.copy()
         )  # get own local copy of task config
-        self.dt_timer_finished = False
 
         # Initialize robot registers
         self.init_robot_registers()
