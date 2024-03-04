@@ -8,4 +8,4 @@
 # src/ur_rtde_client_library/__pycache__/
 # rtde/UR_RTDE_CLIENT_LIBRARY/rtde/__pycache__/
 __pycache__/
-src/controller_monitor/test_results/
+src/controller_monitor/test_results/*
