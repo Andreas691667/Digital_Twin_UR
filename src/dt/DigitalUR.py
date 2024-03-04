@@ -143,12 +143,6 @@ class DigitalUR:
                 for block_no in range(                                                     # Iterate over blocks
                     self.current_block + 1, self.task_config[TASK_CONFIG.NO_BLOCKS]        # ... from the next block to the last block
                 ):
-                    
-                    # # Iterate over the first two waypoints (i.e. block origin)
-                    # for i in range(2):                                                   
-                    #     self.task_config[block_no][TASK_CONFIG.WAYPOINTS][i] = (          # ... change the first two waypoints 
-                    #         self.task_config[block_no + 1][TASK_CONFIG.WAYPOINTS][i]      # ... to the next block's first two waypoints. 
-                    #     )
 
                     self.task_config[block_no][TASK_CONFIG.ORIGIN][TASK_CONFIG.x]   = (                      # Change the x-coordinate to the next block's x-coordinate
                         self.task_config[block_no + 1][TASK_CONFIG.ORIGIN][TASK_CONFIG.x]
