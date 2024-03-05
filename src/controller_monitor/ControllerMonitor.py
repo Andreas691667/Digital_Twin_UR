@@ -108,6 +108,11 @@ class ControllerMonitor:
             json.dumps(msg), RMQ_CONFIG.DT_EXCHANGE
         )
         print("Task config published to DT")
+    
+    def publish_IK_solution_to_dt (self, IK_sol) -> None:
+        """published IK solution to DT, such that DT can calculate threshold"""
+        self.rmq_client_out.send_message(IK_sol, RMQ_CONFIG.DT_EXCHANGE)
+        print("IK solution published to DT")
 
     def recieve_user_input(self) -> None:
         """Blocking call that listens for user input"""
@@ -161,46 +166,9 @@ class ControllerMonitor:
         print("Robot initialization finished")
         self.STATE = CM_STATES.WAITING_FOR_USER_INPUT
 
-    def initialize_task_registers(self):
-        """initialize the task registers with the waypoints for the current block number"""
-
-        # print(f"Current config with type {type(self.task_config)}: \n {self.task_config}")
-
-        origin = self.task_config[self.block_number][TASK_CONFIG.ORIGIN]
-        target = self.task_config[self.block_number][TASK_CONFIG.TARGET]
-
-        origin_q_start = self.robot_model.compute_joint_positions(origin[TASK_CONFIG.x],
-                                                                  origin[TASK_CONFIG.y])
-        origin_q = self.robot_model.compute_joint_positions(origin[TASK_CONFIG.x],
-                                                            origin[TASK_CONFIG.y],
-                                                            grip_pos=True)
-        target_q_start = self.robot_model.compute_joint_positions(target[TASK_CONFIG.x],
-                                                                  target[TASK_CONFIG.y])
-        target_q = self.robot_model.compute_joint_positions(target[TASK_CONFIG.x],
-                                                            target[TASK_CONFIG.y],
-                                                            grip_pos=True)
-
-        # check if any is nan
-        if np.isnan(origin_q_start).any():
-            print("Origin_q_start is nan")
-            self.shutdown()
-        if np.isnan(origin_q).any():
-            print("Origin_q is nan")
-            self.shutdown()
-        if np.isnan(target_q_start).any():
-            print("Target_q_start is nan")
-            self.shutdown()
-        if np.isnan(target_q).any():
-            print("Target_q is nan")
-            self.shutdown()
-
-        values = np.hstack((origin_q_start, origin_q, target_q_start, target_q))
-        values = list(np.array(values).flatten())
-
-        # print(values)
-
+    def __initialize_task_registers(self, values) -> None:
+        """initialize the task registers"""
         print(f"Task registers initialized for block: {self.block_number}")
-
         self.rtde_connection.sendall("in", values)
 
     def configure_rmq_clients(self):
@@ -266,6 +234,44 @@ class ControllerMonitor:
         self.robot_connection.stop_program()
         print("Program stopped")
 
+    def __get_register_values (self) -> list:
+        """Gets the register values corresponding to the block to move"""
+        # Get Origin and Target of current block
+        origin = self.task_config[self.block_number][TASK_CONFIG.ORIGIN]
+        target = self.task_config[self.block_number][TASK_CONFIG.TARGET]
+
+        # Calculate joint positions
+        origin_q_start = self.robot_model.compute_joint_positions(origin[TASK_CONFIG.x],
+                                                                  origin[TASK_CONFIG.y])
+        origin_q = self.robot_model.compute_joint_positions(origin[TASK_CONFIG.x],
+                                                            origin[TASK_CONFIG.y],
+                                                            grip_pos=True)
+        target_q_start = self.robot_model.compute_joint_positions(target[TASK_CONFIG.x],
+                                                                  target[TASK_CONFIG.y])
+        target_q = self.robot_model.compute_joint_positions(target[TASK_CONFIG.x],
+                                                            target[TASK_CONFIG.y],
+                                                            grip_pos=True)
+
+        # Check if any is nan
+        if np.isnan(origin_q_start).any():
+            print("Origin_q_start is nan")
+            self.shutdown()
+        if np.isnan(origin_q).any():
+            print("Origin_q is nan")
+            self.shutdown()
+        if np.isnan(target_q_start).any():
+            print("Target_q_start is nan")
+            self.shutdown()
+        if np.isnan(target_q).any():
+            print("Target_q is nan")
+            self.shutdown()
+
+        # Combine and cast to list
+        values = np.hstack((origin_q_start, origin_q, target_q_start, target_q))
+        values = list(np.array(values).flatten())
+
+        return values
+
     def controller_worker(self):
         """worker for the controller thread.
         Listens for new control signals from the DT"""
@@ -286,9 +292,20 @@ class ControllerMonitor:
                         self.block_number <= self.task_config[TASK_CONFIG.NO_BLOCKS]
                     ):
                         print(f"Ready to take block number: {self.block_number}")
-                        self.initialize_task_registers()
+                        
+                        # 1) get register values, by computing inverse kinematics
+                        register_values = self.__get_register_values()
+
+                        # 2) send register values to DT
+                        
+
+                        # 2) initialize task registers
+                        self.__initialize_task_registers(register_values)
+
+                        # 3) play the program
                         self.play_program(main_program=True)
-                        # Increment block number to next
+
+                        # 4) Increment block number to next
                         self.block_number += 1
 
                     # All blocks are done
