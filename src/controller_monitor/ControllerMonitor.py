@@ -31,10 +31,11 @@ class ControllerMonitor:
 
         # Attributes
         self.STATE = CM_STATES.INITIALIZING  # flag to check if main program is running
-        self.block_number = 1  # current block number being processed
+        self.block_number = 0  # current block number being processed
         self.task_config = (
-            TASK_CONFIG.block_config_1_block.copy()
+            TASK_CONFIG.block_config_close_blocks.copy()
         )  # get own local copy of task config
+        self.dt_timer_finished : bool = False # flag to check if overall task is finished
         self.task_finished : bool = False # flag to check if overall task is finished
 
         self.program_running_name: str = ""
@@ -80,12 +81,13 @@ class ControllerMonitor:
             )
         )
 
-        # Attributes
-        self.block_number = 1  # current block number being processed
-        self.STATE = CM_STATES.INITIALIZING  # flag to check if main program is running
-        self.task_config = (
-            TASK_CONFIG.block_config_heart.copy()
-        )  # get own local copy of task config
+        # # Attributes
+        # self.block_number = 0  # current block number being processed
+        # self.STATE = CM_STATES.INITIALIZING  # flag to check if main program is running
+        # self.task_config = (
+        #     TASK_CONFIG.block_config_heart.copy()
+        # )  # get own local copy of task config
+        # self.dt_timer_finished = False
 
         # Initialize robot registers
         self.init_robot_registers()
@@ -136,12 +138,11 @@ class ControllerMonitor:
         # set state to NORMAL_OPERATION
         # initialize task registers
 
-        # print old
-        for i in range(1, self.task_config[TASK_CONFIG.NO_BLOCKS] + 1):
+        for i in range(self.task_config[TASK_CONFIG.NO_BLOCKS]):
             self.task_config[i][TASK_CONFIG.ORIGIN], self.task_config[i][TASK_CONFIG.TARGET] = (
             self.task_config[i][TASK_CONFIG.TARGET], self.task_config[i][TASK_CONFIG.ORIGIN])
 
-        self.block_number = 1
+        self.block_number = 0
         self.task_finished = False
         self.rtde_connection = RTDEConnect(ROBOT_CONFIG.ROBOT_HOST, self.conf_file)
 
@@ -169,16 +170,9 @@ class ControllerMonitor:
         origin = self.task_config[self.block_number][TASK_CONFIG.ORIGIN]
         target = self.task_config[self.block_number][TASK_CONFIG.TARGET]
 
-        origin_q_start = self.robot_model.compute_joint_positions(origin[TASK_CONFIG.x],
-                                                                  origin[TASK_CONFIG.y])
-        origin_q = self.robot_model.compute_joint_positions(origin[TASK_CONFIG.x],
-                                                            origin[TASK_CONFIG.y],
-                                                            grip_pos=True)
-        target_q_start = self.robot_model.compute_joint_positions(target[TASK_CONFIG.x],
-                                                                  target[TASK_CONFIG.y])
-        target_q = self.robot_model.compute_joint_positions(target[TASK_CONFIG.x],
-                                                            target[TASK_CONFIG.y],
-                                                            grip_pos=True)
+        origin_q_start, origin_q, target_q_start, target_q = self.robot_model.compute_joint_positions_origin_target(
+            origin, target
+        )
 
         # check if any is nan
         if np.isnan(origin_q_start).any():
@@ -206,7 +200,7 @@ class ControllerMonitor:
     def configure_rmq_clients(self):
         """configures rmq client to receive data from DT"""
         self.rmq_client_in.configure_incoming_channel(
-            self.on_rmq_message_cb, RMQ_CONFIG.DT_EXCHANGE, RMQ_CONFIG.FANOUT
+            self.on_rmq_message_cb, RMQ_CONFIG.DT_EXCHANGE, RMQ_CONFIG.FANOUT, RMQ_CONFIG.MONITOR_QUEUE
         )
 
         self.rmq_client_out.configure_outgoing_channel(
@@ -233,6 +227,8 @@ class ControllerMonitor:
             self.controller_queue.put((msg_type, msg_body))
             print("----- DT MESSAGE ----")
             print(msg_type)
+            # print(msg_body)
+            # print(self.block_number)
             print("----------------------")
         except ValueError:
             print("Invalid message format")
@@ -281,9 +277,10 @@ class ControllerMonitor:
             except Empty:
                 # Task has begun
                 if self.STATE == CM_STATES.NORMAL_OPERATION:
+                    # self.recieve_user_input()
                     # Subtask is done, and there is more blocks to move
                     if (not self.robot_connection.program_running()) and (
-                        self.block_number <= self.task_config[TASK_CONFIG.NO_BLOCKS]
+                        self.block_number < self.task_config[TASK_CONFIG.NO_BLOCKS] 
                     ):
                         print(f"Ready to take block number: {self.block_number}")
                         self.initialize_task_registers()
@@ -315,27 +312,36 @@ class ControllerMonitor:
                     self.STATE = CM_STATES.WAITING_FOR_DT
                     self.stop_program()
 
+                elif msg_type == MSG_TYPES.TASK_VALIDATED:
+                    self.__reconfigure_task(msg_body, decr=False)
+
                 # A resolution was send
                 elif msg_type == MSG_TYPES.RESOLVED:
                     new_task = str(msg_body)  # TODO: check if this is necessary
-                    self.__reconfigure_task(new_task)
+                    self.__reconfigure_task(new_task, decr=True)
                     self.STATE = CM_STATES.NORMAL_OPERATION
 
                 # DT could not resolve
                 elif msg_type == MSG_TYPES.COULD_NOT_RESOLVE:
-                    pass
+                    print("DT could not resolve")
+                    self.robot_connection.popup("DT could not resolve. Task not possible. Exiting")
+                    self.shutdown_event.set()
 
     def __go_to_home(self):
         """Go to home position"""
-        home_q = self.robot_model.compute_joint_positions(TASK_CONFIG.HOME_POSITION[TASK_CONFIG.x],
+        home_q = self.robot_model.compute_joint_positions_xy(TASK_CONFIG.HOME_POSITION[TASK_CONFIG.x],
                                                           TASK_CONFIG.HOME_POSITION[TASK_CONFIG.y])
         self.robot_connection.movej(home_q)
 
-    def __reconfigure_task(self, new_task: str) -> None:
+    def __reconfigure_task(self, new_task: str, decr:bool) -> None:
         """function for reconfiguring PT task"""
         new_task_dict = ast.literal_eval(new_task)  # convert string to dict
         self.task_config = new_task_dict  # set new task
-        self.block_number -= 1  # reset block_number
+        
+        if decr:
+            self.block_number -= 1
+        else:
+            pass
 
     def shutdown(self):
         """shutdown everything: robot, rmq, threads"""

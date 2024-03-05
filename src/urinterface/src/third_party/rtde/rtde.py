@@ -209,7 +209,8 @@ class RTDE(object):
         elif cmd == Command.RTDE_DATA_PACKAGE:
             return self.__unpack_data_package(payload, self.__output_config)
         else:
-            _log.error('Unknown package command: ' + str(cmd))
+            pass
+            # _log.error('Unknown package command: ' + str(cmd))
 
     def __sendAndReceive(self, cmd, payload=b''):
         if self.__sendall(cmd, payload):
@@ -243,12 +244,16 @@ class RTDE(object):
         while self.is_connected():
             readable, _, xlist = select.select([self.__sock], [], [self.__sock], DEFAULT_TIMEOUT)
             if len(readable):
-                more = self.__sock.recv(4096)
+                try:
+                    more = self.__sock.recv(4096)
+                except socket.error as e:
+                    more = b'0'
+                    # print(e)
                 #When the controller stops while the script is running
-                if len(more) == 0:
-                    _log.error('received 0 bytes from Controller, probable cause: Controller has stopped')
-                    self.__trigger_disconnected()  
-                    raise RTDEException('received 0 bytes from Controller')
+                # if len(more) == 0:
+                #     _log.error('received 0 bytes from Controller, probable cause: Controller has stopped')
+                #     self.__trigger_disconnected()  
+                #     raise RTDEException('received 0 bytes from Controller')
 
                 self.__buf = self.__buf + more
 

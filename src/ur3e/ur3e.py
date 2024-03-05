@@ -6,6 +6,7 @@ from spatialmath.base import trnorm
 import roboticstoolbox as rtb
 from numpy import pi
 from sys import path
+
 path.append("..")
 from config.task_config import TASK_CONFIG
 
@@ -24,7 +25,7 @@ class UR3e(rtb.DHRobot):
         link4 = rtb.RevoluteMDH(d=0.13105, a=-0.2132, alpha=0)  # changed a to negative
         link5 = rtb.RevoluteMDH(d=0.08535, a=0, alpha=pi / 2)
         link6 = rtb.RevoluteMDH(d=0.0921, a=0, alpha=-pi / 2)
-        
+
         # Get parameters from config
         self.X_BASE_MIN = TASK_CONFIG.GRID_PARAMETERS[TASK_CONFIG.X_BASE_MIN]
         self.Y_BASE_MIN = TASK_CONFIG.GRID_PARAMETERS[TASK_CONFIG.Y_BASE_MIN]
@@ -60,26 +61,24 @@ class UR3e(rtb.DHRobot):
             )
         )  # Rotation of pi around the y-axis
 
-        
-        q0_ = [(3*pi)/2, -0.66, 0.76, -pi/2, -pi/2, 2.35]
+        q0_ = [(3 * pi) / 2, -0.66, 0.76, -pi / 2, -pi / 2, 2.35]
         # sol1 = self.ikine_LM(T, q0=[0, -np.pi / 2, 0, -np.pi / 2, 0, 0])
         # sol1 = self.ikine_LM(T, q0=q0_, joint_limits=True)
         sol1 = self.ikine_LM(T, q0=q0_, joint_limits=False)
-
 
         if sol1.success:
             solution1 = sol1.q
             if rounded:
                 solution1 = np.round(solution1, 2)
-            
+
             # Update guess
             # self.q0_ = solution1
 
             return solution1
         return np.nan
 
-    def compute_joint_positions(self, x_g, y_g, grip_pos: bool = False):
-        """Compute the joint positions for the UR3e robot arm"""
+    def compute_joint_positions_xy(self, x_g, y_g, grip_pos: bool = False):
+        """Compute the joint positions for the UR3e robot arm given x and y of the grid"""
         GRIP_Z = TASK_CONFIG.GRID_COORDINATES[TASK_CONFIG.GRIP_Z]
         BEFORE_GRIP_Z = TASK_CONFIG.GRID_COORDINATES[TASK_CONFIG.BEFORE_GRIP_Z]
         z_g = GRIP_Z if grip_pos else BEFORE_GRIP_Z
@@ -87,16 +86,40 @@ class UR3e(rtb.DHRobot):
         q = self.__compute_ik_num(x, y, z, rounded=False)
         q_valid = self.check_joint_validity(q)
         return q_valid
-    
+
+    def compute_joint_positions_origin_target(self, origin, target):
+        """Compute the joint positions for the UR3e robot arm given origin and target"""
+        origin_q_start = self.compute_joint_positions_xy(
+            origin[TASK_CONFIG.x], origin[TASK_CONFIG.y]
+        )
+        origin_q = self.compute_joint_positions_xy(
+            origin[TASK_CONFIG.x], origin[TASK_CONFIG.y], grip_pos=True
+        )
+        target_q_start = self.compute_joint_positions_xy(
+            target[TASK_CONFIG.x], target[TASK_CONFIG.y]
+        )
+        target_q = self.compute_joint_positions_xy(
+            target[TASK_CONFIG.x], target[TASK_CONFIG.y], grip_pos=True
+        )
+
+        if origin[TASK_CONFIG.ROTATE_WRIST]:
+            origin_q_start[-1] -= pi/2
+            origin_q[-1] -= pi/2
+        if target[TASK_CONFIG.ROTATE_WRIST]:
+            target_q_start[-1] -= pi/2
+            target_q[-1] -= pi/2
+
+        return origin_q_start, origin_q, target_q_start, target_q
+
     def check_joint_validity(self, q):
         """Check if the joint positions are valid"""
         # get base position
         if q[0] < 0:
-            q[0] += 2*pi
-        
-        if q[-1] < 0: 
-            q[-1] += 2*pi
-        
+            q[0] += 2 * pi
+
+        if q[-1] < 0:
+            q[-1] += 2 * pi
+
         return q
 
 

@@ -153,6 +153,10 @@ class RobotConnection:
         """Check if a program is running on the robot. Returns True if a program is running, False otherwise."""
         self._send_ascii_bytes("running\n", self.dashboard_socket)
         return self.dashboard_socket.recv(1024).decode().endswith("true\n")
+    
+    def popup(self, message):
+        self._send_ascii_bytes(f"popup {message}\n", self.dashboard_socket)
+        return self.dashboard_socket.recv(1024).decode()
     ###
 
     def play_program(self):

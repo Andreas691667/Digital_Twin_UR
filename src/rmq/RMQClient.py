@@ -37,7 +37,7 @@ class Client:
 
         return channel
 
-    def configure_incoming_channel(self, on_message_clb, exchange_name, exch_type):
+    def configure_incoming_channel(self, on_message_clb, exchange_name, exch_type, queue_name=""):
         """Configure the consumer channel"""
         if self.channel_type != "":
             print("Error in RMQ config. Channel already configured")
@@ -49,7 +49,7 @@ class Client:
 
             # Declare the queue (Name is generated uniquely by RMQ)
             # Incoming message queue
-            result = self.channel.queue_declare(queue="", exclusive=True)
+            result = self.channel.queue_declare(queue=queue_name, exclusive=True, durable=True)
             incoming_message_queue = result.method.queue
 
             # Bind the queue to the exchange
