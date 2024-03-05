@@ -56,7 +56,7 @@ def publish_topics(topics, state):
     else:
         pub_topic(topics, state)
 
-def _read_csv_stream(filename, samples, output_names, output_types, publish_topic, read_row_function, _thread_log, rmq_client=None):
+def _read_csv_stream(filename, samples, output_names, output_types, publish_topic, read_row_function, _thread_log, rmq_client=None, publish_topic_rmq=None):
     write_mode = 'w'
 
     with open(filename, write_mode) as csvfile:
@@ -90,13 +90,13 @@ def _read_csv_stream(filename, samples, output_names, output_types, publish_topi
 
             #### ADDED (Andreas)  ####
             if rmq_client is not None:
-                rmq_client.send_message(data, "MONITOR_EXCHANGE")
+                rmq_client.send_message(f'{publish_topic_rmq} {data}', "MONITOR_EXCHANGE")
             ####
 
             i += 1
 
 
-def _recording_thread(rtde_con, config_file, filename, frequency, samples, communication_queue: Queue, publish_topic=None, rmq_client=None):
+def _recording_thread(rtde_con, config_file, filename, frequency, samples, communication_queue: Queue, publish_topic=None, rmq_client=None, pubish_topic_rmq=None):
     _thread_log = logging.getLogger("Recording")
 
     rtde_con, output_names, output_types = _start_recording(rtde_con, config_file, frequency, _thread_log)
@@ -121,7 +121,7 @@ def _recording_thread(rtde_con, config_file, filename, frequency, samples, commu
 
         return state, keep_running
 
-    _read_csv_stream(filename, samples, output_names, output_types, publish_topic, read_row_function, _thread_log, rmq_client)
+    _read_csv_stream(filename, samples, output_names, output_types, publish_topic, read_row_function, _thread_log, rmq_client, pubish_topic_rmq)
 
     rtde_con.send_pause()
     rtde_con.disconnect()

@@ -18,7 +18,7 @@ from controller_monitor_states import CM_STATES
 
 from rmq.RMQClient import Client
 from config.rmq_config import RMQ_CONFIG
-from config.msg_config import MSG_TYPES
+from config.msg_config import MSG_TYPES_DT_TO_CONTROLLER, MSG_TYPES_CONTROLLER_TO_DT, MSG_TYPES_MONITOR_TO_DT
 from config.task_config import TASK_CONFIG
 from ur3e.ur3e import UR3e
 import json
@@ -37,6 +37,7 @@ class ControllerMonitor:
         )  # get own local copy of task config
         self.dt_timer_finished : bool = False # flag to check if overall task is finished
         self.task_finished : bool = False # flag to check if overall task is finished
+        self.task_validated : bool = False # flag to check if task is validated
 
         self.program_running_name: str = ""
         self.conf_file = "record_configuration.xml"
@@ -56,9 +57,9 @@ class ControllerMonitor:
 
         # RMQ connection
         self.rmq_client_in = Client(host=RMQ_CONFIG.RMQ_SERVER_IP)
-        self.rmq_client_out = Client(host=RMQ_CONFIG.RMQ_SERVER_IP)
+        self.rmq_client_out_monitor = Client(host=RMQ_CONFIG.RMQ_SERVER_IP)
+        self.rmq_client_out_controller = Client(host=RMQ_CONFIG.RMQ_SERVER_IP)
         self.configure_rmq_clients()
-        # self.publish_task_config_to_dt()
 
         # Controller thread
         self.controller_thread = Thread(target=self.controller_worker)
@@ -77,57 +78,32 @@ class ControllerMonitor:
                 overwrite=True,
                 frequency=50,
                 publish_topic=["actual_q"],
-                rmq_client=self.rmq_client_out,
+                rmq_client=self.rmq_client_out_monitor,
+                publish_topic_rmq=MSG_TYPES_MONITOR_TO_DT.MONITOR_DATA,
             )
-        )
-
-        # # Attributes
-        # self.block_number = 0  # current block number being processed
-        # self.STATE = CM_STATES.INITIALIZING  # flag to check if main program is running
-        # self.task_config = (
-        #     TASK_CONFIG.block_config_heart.copy()
-        # )  # get own local copy of task config
-        # self.dt_timer_finished = False
-
-        # Initialize robot registers
-        self.init_robot_registers()
+        )        
 
         # Starts threads
         self.monitor_thread.start()
         self.controller_thread.start()
         self.shutdown_thread.start()
-        sleep(0.5)
+        # sleep(0.5)
         # Display message
-        print("\n [USER] Ready to play program. Press '2' to start, 'c' to exit \n")
-
-    def publish_task_config_to_dt(self) -> None:
-        """Publish the task to the DT"""
-
-        # construct msg with type: task_config and body: task_config
-        msg = f"TASK_CONFIG {self.task_config}"
-
-        self.rmq_client_out.send_message(
-            json.dumps(msg), RMQ_CONFIG.DT_EXCHANGE
-        )
-        print("Task config published to DT")
-    
-    def publish_IK_solution_to_dt (self, IK_sol) -> None:
-        """published IK solution to DT, such that DT can calculate threshold"""
-        self.rmq_client_out.send_message(IK_sol, RMQ_CONFIG.DT_EXCHANGE)
-        print("IK solution published to DT")
+        # 
 
     def recieve_user_input(self) -> None:
         """Blocking call that listens for user input"""
         try:
             k = msvcrt.getwche()
             if k == "c":
-                print("Exiting")
+                print(f"\t [USER INPUT {k}]")
                 self.shutdown_event.set()
             elif k == "2":
+                print(f"\t [USER INPUT {k}]")
                 self.STATE = CM_STATES.NORMAL_OPERATION
             
             elif k == "i" and self.task_finished:
-                # invert task
+                print(f"\t [USER INPUT {k}]")
                 self.invert_task()
             # reset k
             k = "a"
@@ -151,7 +127,9 @@ class ControllerMonitor:
         self.task_finished = False
         self.rtde_connection = RTDEConnect(ROBOT_CONFIG.ROBOT_HOST, self.conf_file)
 
-        self.STATE = CM_STATES.NORMAL_OPERATION
+        self.publish_task_to_DT()
+
+        self.STATE = CM_STATES.INITIALIZING
 
 
     def init_robot_registers(self):
@@ -164,8 +142,8 @@ class ControllerMonitor:
         self.play_program()
         sleep(0.01)
         self.load_program("/move_registers.urp")
-        print("Robot initialization finished")
-        self.STATE = CM_STATES.WAITING_FOR_USER_INPUT
+        print("Robot initialization finished!")
+        
 
     def __initialize_task_registers(self, values) -> None:
         """initialize the task registers"""
@@ -175,11 +153,15 @@ class ControllerMonitor:
     def configure_rmq_clients(self):
         """configures rmq client to receive data from DT"""
         self.rmq_client_in.configure_incoming_channel(
-            self.on_rmq_message_cb, RMQ_CONFIG.DT_EXCHANGE, RMQ_CONFIG.FANOUT, RMQ_CONFIG.MONITOR_QUEUE
+            self.on_rmq_message_cb, RMQ_CONFIG.DT_EXCHANGE, RMQ_CONFIG.FANOUT, RMQ_CONFIG.CONTROLLER_QUEUE
         )
 
-        self.rmq_client_out.configure_outgoing_channel(
+        self.rmq_client_out_monitor.configure_outgoing_channel(
             RMQ_CONFIG.MONITOR_EXCHANGE, RMQ_CONFIG.FANOUT
+        )
+
+        self.rmq_client_out_controller.configure_outgoing_channel(
+            RMQ_CONFIG.CONTROLLER_EXCHANGE, RMQ_CONFIG.FANOUT
         )
 
         self.rmq_client_in.start_consumer_thread()
@@ -200,11 +182,7 @@ class ControllerMonitor:
             data = json.loads(body)
             msg_type, msg_body = data.split(" ", 1)
             self.controller_queue.put((msg_type, msg_body))
-            print("----- DT MESSAGE ----")
-            print(msg_type)
-            # print(msg_body)
-            # print(self.block_number)
-            print("----------------------")
+            print(f'\t [DT] {msg_type}')
         except ValueError:
             print("Invalid message format")
 
@@ -267,6 +245,11 @@ class ControllerMonitor:
         values = list(np.array(values).flatten())
 
         return values
+    
+    def publish_task_to_DT(self) -> None:
+        """Publish task to DT"""
+        msg = f'{MSG_TYPES_CONTROLLER_TO_DT.NEW_TASK} {self.task_config}'
+        self.rmq_client_out_controller.send_message(msg, RMQ_CONFIG.CONTROLLER_EXCHANGE)
 
     def controller_worker(self):
         """worker for the controller thread.
@@ -281,9 +264,33 @@ class ControllerMonitor:
 
             # -- NO MESSAGE --
             except Empty:
-                # Task has begun
-                if self.STATE == CM_STATES.NORMAL_OPERATION:
-                    # self.recieve_user_input()
+                # ---- STATE MACHINE ----
+                if self.STATE == CM_STATES.INITIALIZING:
+                    # Initialize robot registers
+                    self.init_robot_registers()
+
+                    # send task to DT for validation
+                    self.publish_task_to_DT()
+
+                    print("Waiting for DT to validate task")
+                    self.STATE = CM_STATES.WAITING_FOR_TASK_VALIDATION
+
+                elif self.STATE == CM_STATES.WAITING_FOR_TASK_VALIDATION:
+                    # Wait for DT to validate task
+                    if self.task_validated:
+                        print("Task validated by DT.")
+                        print("\n \t [USER] Ready to play program. Press '2' to start, 'c' to exit \n")
+                        register_values = self.__get_register_values()
+                        self.__initialize_task_registers(register_values)
+                        self.STATE = CM_STATES.WAITING_FOR_USER_INPUT
+                    else:
+                        pass
+                        # self.recieve_user_input()
+
+                elif self.STATE == CM_STATES.WAITING_FOR_USER_INPUT:
+                    self.recieve_user_input()
+
+                elif self.STATE == CM_STATES.NORMAL_OPERATION:
                     # Subtask is done, and there is more blocks to move
                     if (not self.robot_connection.program_running()) and (
                         self.block_number < self.task_config[TASK_CONFIG.NO_BLOCKS] 
@@ -295,6 +302,8 @@ class ControllerMonitor:
 
                         # 2) initialize task registers
                         self.__initialize_task_registers(register_values)
+
+                        sleep(1)
 
                         # 3) play the program
                         self.play_program(main_program=True)
@@ -308,35 +317,35 @@ class ControllerMonitor:
                     ):
                         self.__go_to_home()
                         sleep(1)
-                        print("\n [USER] Task is done. Press 'i' to perform inverse task. Press 'c' to exit \n")
+                        print("\n \t [USER] Task is done. Press 'i' to perform inverse task. Press 'c' to exit \n")
                         self.rtde_connection.shutdown()
                         self.STATE = CM_STATES.WAITING_FOR_USER_INPUT
                         self.task_finished = True
 
-                elif self.STATE == CM_STATES.WAITING_FOR_USER_INPUT:
-                    self.recieve_user_input()
-
-                if self.STATE == CM_STATES.WAITING_FOR_DT:
+                if self.STATE == CM_STATES.WAITING_FOR_FAULT_RESOLUTION:
                     pass
 
-            # -- MESSAGE --
+            # -- MESSAGE FROM DT --
             else:
                 # Fault was detected, wait for DT to plan
-                if msg_type == MSG_TYPES.WAIT:
-                    self.STATE = CM_STATES.WAITING_FOR_DT
+                if msg_type == MSG_TYPES_DT_TO_CONTROLLER.WAIT:
+                    self.STATE = CM_STATES.WAITING_FOR_FAULT_RESOLUTION
+                    print("State transition -> WAITING_FOR_FAULT_RESOLUTION")
                     self.stop_program()
 
-                elif msg_type == MSG_TYPES.TASK_VALIDATED:
+                elif msg_type == MSG_TYPES_DT_TO_CONTROLLER.TASK_VALIDATED:
                     self.__reconfigure_task(msg_body, decr=False)
+                    self.task_validated = True
 
                 # A resolution was send
-                elif msg_type == MSG_TYPES.RESOLVED:
+                elif msg_type == MSG_TYPES_DT_TO_CONTROLLER.RESOLVED:
                     new_task = str(msg_body)  # TODO: check if this is necessary
                     self.__reconfigure_task(new_task, decr=True)
                     self.STATE = CM_STATES.NORMAL_OPERATION
+                    print("State transition -> NORMAL_OPERATION")
 
                 # DT could not resolve
-                elif msg_type == MSG_TYPES.COULD_NOT_RESOLVE:
+                elif msg_type == MSG_TYPES_DT_TO_CONTROLLER.COULD_NOT_RESOLVE:
                     print("DT could not resolve")
                     self.robot_connection.popup("DT could not resolve. Task not possible. Exiting")
                     self.shutdown_event.set()

@@ -177,7 +177,7 @@ class RobotConnection:
         self.stop_recording()
 
     def _start_recording(self, config_file, filename, overwrite,
-                        frequency, samples, rtde_port, RtdeConstructor, publish_topic, rmq_client):
+                        frequency, samples, rtde_port, RtdeConstructor, publish_topic, rmq_client, publish_topic_rmq):
         assert self.recording_thread is None, "Already logging."
 
         # check for overwrite
@@ -198,15 +198,16 @@ class RobotConnection:
                                                      samples,
                                                      self.recording_thread_queue,
                                                      publish_topic,
-                                                     rmq_client
+                                                     rmq_client,
+                                                     publish_topic_rmq
                                                  ]
                                                  )
         self.recording_thread.start()
 
     def start_recording(self, config_file='resources/record_configuration.xml', filename='robotdata.csv', overwrite=False,
-                        frequency=500, rtde_port=30004, RtdeConstructor=rtde.RTDE, publish_topic=None, rmq_client=None):
+                        frequency=500, rtde_port=30004, RtdeConstructor=rtde.RTDE, publish_topic=None, rmq_client=None, publish_topic_rmq=None):
         samples=0
-        self._start_recording(config_file, filename, overwrite, frequency, samples, rtde_port, RtdeConstructor, publish_topic, rmq_client)
+        self._start_recording(config_file, filename, overwrite, frequency, samples, rtde_port, RtdeConstructor, publish_topic, rmq_client, publish_topic_rmq)
 
     def stop_recording(self):
         assert self.recording_thread is not None, "Should be recording data."

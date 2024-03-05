@@ -3,13 +3,14 @@ import json
 import threading
 from queue import Queue, Empty
 import time
+import ast
 
 sys.path.append("..")
 from rmq.RMQClient import Client
 from config.rmq_config import RMQ_CONFIG
 from digitalur_states import DT_STATES
 from digitalur_fault_types import FAULT_TYPES
-from config.msg_config import MSG_TYPES, MSG_TOPICS
+from config.msg_config import MSG_TYPES_CONTROLLER_TO_DT, MSG_TYPES_DT_TO_CONTROLLER
 from config.task_config import TASK_CONFIG
 from ur3e.ur3e import UR3e
 from task_validator.TaskValidator import TaskValidator
@@ -21,8 +22,11 @@ class DigitalUR:
     def __init__(self):
         self.state: DT_STATES = DT_STATES.INITIALIZING
         self.rmq_client_in = Client(host=RMQ_CONFIG.RMQ_SERVER_IP)
+        # self.rmq_client_in_monitor = Client(host=RMQ_CONFIG.RMQ_SERVER_IP, name="monitor")
         self.rmq_client_out = Client(host=RMQ_CONFIG.RMQ_SERVER_IP)
-        self.msg_queue = Queue()
+
+        self.controller_msg_queue = Queue()
+        self.monitor_msg_queue = Queue()
         self.state_machine_stop_event = threading.Event()
         self.state_machine_thread = threading.Thread(target=self.state_machine)
 
@@ -37,7 +41,7 @@ class DigitalUR:
         self.last_object_detected = False
 
         self.current_block = -1  # current block number being processed
-        self.task_config = TASK_CONFIG.block_config_close_blocks.copy()
+        # self.task_config = TASK_CONFIG.block_config_close_blocks.copy()
         self.pick_stock_tried = 1
 
         self.task_validator = TaskValidator()
@@ -45,9 +49,15 @@ class DigitalUR:
     def configure_rmq_clients(self):
         """Configures rmq_client_in to receive data from monitor
         and rmq_client_out to send data to controller"""
+
         self.rmq_client_in.configure_incoming_channel(
-            self.on_monitor_message, RMQ_CONFIG.MONITOR_EXCHANGE, RMQ_CONFIG.FANOUT, RMQ_CONFIG.DT_QUEUE
+            self.on_controller_message, RMQ_CONFIG.CONTROLLER_EXCHANGE, RMQ_CONFIG.FANOUT, RMQ_CONFIG.DT_QUEUE_CONTROLLER
         )
+        self.rmq_client_in.configure_incoming_channel(
+            self.on_monitor_message, RMQ_CONFIG.MONITOR_EXCHANGE, RMQ_CONFIG.FANOUT, RMQ_CONFIG.DT_QUEUE_MONITOR, 1
+        )
+
+
 
         self.rmq_client_out.configure_outgoing_channel(
             RMQ_CONFIG.DT_EXCHANGE, RMQ_CONFIG.FANOUT
@@ -59,6 +69,24 @@ class DigitalUR:
         """Start the consumer thread"""
         self.rmq_client_in.start_consumer_thread()
 
+    def on_controller_message(self, ch, method, properties, body) -> None:
+        """Callback function for when a message is received
+        ch: The channel object
+        method: The method object
+        properties: The properties object
+        body: The message body
+        This function is called when a message is received from the controller"""
+
+        try:
+            data = json.loads(body)
+        except ValueError:
+            print("Invalid message received from controller")
+
+        else:
+            # print(f"Message received: {data}")
+            msg_type, msg_data = data.split(" ", 1)
+            self.controller_msg_queue.put((msg_type, msg_data))
+
     def on_monitor_message(self, ch, method, properties, body) -> None:
         """Callback function for when a message is received
         ch: The channel object
@@ -67,64 +95,79 @@ class DigitalUR:
         body: The message body
         This function is called when a message is received from the monitor"""
 
-        # format data as string
-        data = json.loads(body)
-        data_dict = {
-            "timestamp": float(data[0]),
-            "actual_q0": float(data[1]),
-            "actual_q2": float(data[2]),
-            "actual_q3": float(data[3]),
-            "actual_q4": float(data[4]),
-            "actual_q5": float(data[5]),
-            "actual_q6": float(data[6]),
-            "output_bit_register_65": bool(data[7]),  # for start bit
-            "output_bit_register_66": bool(data[8]),  # for object detection
-        }
-        # data_dict = {
-        #     MSG_TOPICS.TIMESTAMP[0]: MSG_TOPICS.TIMESTAMP[1],
-        #     MSG_TOPICS.START_BIT[0]: MSG_TOPICS.START_BIT[1],
-        #     MSG_TOPICS.OBJECT_DETECTED[0]: MSG_TOPICS.OBJECT_DETECTED[1],
-        # }
+        try:
+            data_json = json.loads(body)
+            msg_type, data = data_json.split(" ", 1)
+            data = ast.literal_eval(data)
+            data_dict = {
+                "timestamp": float(data[0]),
+                "actual_q0": float(data[1]),
+                "actual_q2": float(data[2]),
+                "actual_q3": float(data[3]),
+                "actual_q4": float(data[4]),
+                "actual_q5": float(data[5]),
+                "actual_q6": float(data[6]),
+                "output_bit_register_65": bool(data[7]),  # for start bit
+                "output_bit_register_66": bool(data[8]),  # for object detection
+            }
+            self.monitor_msg_queue.put((msg_type, data_dict))
 
-        # put data in the queue
-        self.msg_queue.put(data_dict)
+        except ValueError:
+            pass
+            # print("Invalid message received from monitor")
+
+
+
+    def __get_message(self, msg_queue: Queue, block: bool = False):
+        """Wait for a message"""
+        try:
+            type, data = msg_queue.get(block=block)
+        except Empty:
+            return None, None
+        else:
+            return type, data
 
     def state_machine(self):
         """The state machine for the digital twin"""
         while not self.state_machine_stop_event.is_set():
             if self.state == DT_STATES.INITIALIZING:
                 self.configure_rmq_clients()
+                time.sleep(1)
                 self.start_consuming()
+                self.state = DT_STATES.WAITING_TO_RECEIVE_TASK
+                print("State transition -> WAITING_TO_RECEIVE_TASK")
+            
+            elif self.state == DT_STATES.WAITING_TO_RECEIVE_TASK:
+                msg_type, msg_data = self.__get_message(self.controller_msg_queue)
+                if msg_data:
+                    if msg_type == MSG_TYPES_CONTROLLER_TO_DT.NEW_TASK:
+                        self.task_config = ast.literal_eval(msg_data)
 
-                # validate the task
-                self.validate_task()
+                        # validate the task
+                        validate_msg = self.validate_task()
+                        # send validated task to controller
+                        self.rmq_client_out.send_message(validate_msg, RMQ_CONFIG.DT_EXCHANGE)
+                        # state transition
+                        self.state = DT_STATES.WAITING_FOR_TASK_TO_START
+                        print("State transition -> WAITING_FOR_TASK_TO_START")
 
-
-                self.state = DT_STATES.WAITING_FOR_TASK_TO_START
-                print("State transition -> WAITING_FOR_TASK_TO_START")
-                
             elif self.state == DT_STATES.WAITING_FOR_TASK_TO_START:
-                try:
-                    data = self.msg_queue.get()
-                except Empty:
-                    pass
-                else:
+                msg_type, msg_data = self.__get_message(self.monitor_msg_queue)
+                if msg_data:
                     # check the digital bit 0 of the data
                     # if set go to monitoring state
                     # else pass
-                    if self.check_start_bit(data):
+                    if self.check_start_bit(msg_data):
                         print("State transition -> MONITORING_PT")
                         self.state = DT_STATES.MONITORING_PT
                         # Start timer
                         self.time_of_last_message = time.time()
 
-                    else:
-                        pass
             elif self.state == DT_STATES.MONITORING_PT:
                 self.monitor_pt()
             elif self.state == DT_STATES.FAULT_RESOLUTION:
                 # stop program firstly
-                self.execute_fault_resolution(f"{MSG_TYPES.WAIT} None")
+                self.execute_fault_resolution(f"{MSG_TYPES_DT_TO_CONTROLLER.WAIT} None")
                 fault_msg = self.plan_fault_resolution(TASK_CONFIG.MITIGATION_STRATEGIES.SHIFT_ORIGIN)
                 self.validate_task()
                 self.execute_fault_resolution(fault_msg)
@@ -135,12 +178,11 @@ class DigitalUR:
         """Validate the task using the task validator"""
         valid, self.task_config = self.task_validator.validate_task(self.task_config)
         if valid:
-            msg = f"{MSG_TYPES.TASK_VALIDATED} {self.task_config}"
+            msg = f"{MSG_TYPES_DT_TO_CONTROLLER.TASK_VALIDATED} {self.task_config}"
         
         else:
-            msg = f"{MSG_TYPES.COULD_NOT_RESOLVE} None"
-        self.execute_fault_resolution(msg)
-        print("DT sent new config")
+            msg = f"{MSG_TYPES_DT_TO_CONTROLLER.COULD_NOT_RESOLVE} None"
+        return msg
 
     def plan_fault_resolution(self, mitigation_strategy: str) -> None:
         """Resolve the current fault"""
@@ -158,7 +200,7 @@ class DigitalUR:
                 #     self.task_config.pop(block_no+1)
                 # self.task_config[TASK_CONFIG.NO_BLOCKS] -= self.current_block
                 
-                print(f"Task config after (1): \n {self.task_config}")
+                # print(f"Task config after (1): \n {self.task_config}")
                 # 2) from the current block, change two first rows in its config to the next block
                 for block_no in range(                                                     # Iterate over blocks
                     self.current_block + 1, self.task_config[TASK_CONFIG.NO_BLOCKS]-1        # ... from the next block to the last block
@@ -180,10 +222,10 @@ class DigitalUR:
                 self.task_config.pop(self.task_config[TASK_CONFIG.NO_BLOCKS] - 1)
                 self.task_config[TASK_CONFIG.NO_BLOCKS] -= 1
 
-                print(f"Task config after (2): \n {self.task_config}")
+                # print(f"Task config after (2): \n {self.task_config}")
 
                 # return fault_msg with the new task_config
-                return f"{MSG_TYPES.RESOLVED} {self.task_config}"
+                return f"{MSG_TYPES_DT_TO_CONTROLLER.RESOLVED} {self.task_config}"
             
             elif mitigation_strategy == TASK_CONFIG.MITIGATION_STRATEGIES.TRY_PICK_STOCK:
                 # For block[j] try PICK_STOCK[i++]
@@ -191,7 +233,7 @@ class DigitalUR:
                 self.task_config[self.current_block+1][TASK_CONFIG.TIMING_THRESHOLD] = TASK_CONFIG.PICK_STOCK_COORDINATES[self.pick_stock_tried][TASK_CONFIG.TIMING_THRESHOLD]
                 self.time_of_last_message = time.time() # Reset timer  
                 self.pick_stock_tried += 1
-                return f"{MSG_TYPES.RESOLVED} {self.task_config}"
+                return f"{MSG_TYPES_DT_TO_CONTROLLER.RESOLVED} {self.task_config}"
                 
 
         elif self.current_fault == FAULT_TYPES.UNKOWN_FAULT:
@@ -236,8 +278,9 @@ class DigitalUR:
             # go to waiting for task to start state
             if self.current_block == self.task_config[TASK_CONFIG.NO_BLOCKS]-1:
                 print("Task done")
-                self.state = DT_STATES.WAITING_FOR_TASK_TO_START
-                print("State transition -> WAITING_FOR_TASK_TO_START")
+                self.current_block = -1
+                self.state = DT_STATES.WAITING_TO_RECEIVE_TASK
+                print("State transition -> WAITING_TO_RECEIVE_TASK")
 
             return False, FAULT_TYPES.NO_FAULT                      # No fault present (TODO: Not needed here?)
         
@@ -259,22 +302,16 @@ class DigitalUR:
 
     def monitor_pt(self) -> None:
         """Monitor the PT"""
-        try:
-            monitor_data = self.msg_queue.get(block=False)
-        except Empty:
-            pass
-        else:
-            # check the data for faults
-            # if fault, send wait to controller go to fault resolution state
-            # else pass
+
+        _, monitor_data = self.__get_message(self.monitor_msg_queue)
+
+        if monitor_data:
             fault_present, fault_type = self.analyse_data(monitor_data)
             if fault_present:
                 print(f"Fault present: {fault_type}")
                 self.current_fault = fault_type
                 self.state = DT_STATES.FAULT_RESOLUTION
                 print("State transition -> FAULT_RESOLUTION")
-            else:
-                pass
 
     def shutdown(self):
         """Shutdown the digital twin"""

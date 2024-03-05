@@ -13,12 +13,17 @@ class Client:
     The client is responsible for sending the player's input to the leader using RMQ (pika)
     """
 
-    def __init__(self, host="localhost", port=5672) -> None:
+    def __init__(self, host="localhost", port=5672, name="") -> None:
 
         self.__host = host
         self.__port = port
-        self.channel = self.create_channel()
+        self.channels_configured = 0
+        self.channels = []
+        self.create_channel()
+        self.channel = self.channels[0]
         self.channel_type = ""
+        self.name = name
+        self.consumer_threads = []
 
     def create_channel(self):
         """Create and return a channel object"""
@@ -34,45 +39,59 @@ class Client:
         )
         # The channel object
         channel = connection.channel()
+        self.channels.append(channel)
 
-        return channel
-
-    def configure_incoming_channel(self, on_message_clb, exchange_name, exch_type, queue_name=""):
+    def configure_incoming_channel(self, on_message_clb, exchange_name, exch_type, queue_name="", channel_no = 0):
         """Configure the consumer channel"""
-        if self.channel_type != "":
-            print("Error in RMQ config. Channel already configured")
-        else:
-            self.channel_type = "incoming"
-            self.channel.exchange_declare(
-                exchange=exchange_name, exchange_type=exch_type
-            )  # for incoming messages
+        if self.channels_configured > 0:
+            self.create_channel()
 
-            # Declare the queue (Name is generated uniquely by RMQ)
-            # Incoming message queue
-            result = self.channel.queue_declare(queue=queue_name, exclusive=True, durable=True)
-            incoming_message_queue = result.method.queue
+        channel = self.channels[channel_no] 
+        self.channel_type = "incoming"
+        channel.exchange_declare(
+            exchange=exchange_name, exchange_type=exch_type
+        )  # for incoming messages
 
-            # Bind the queue to the exchange
-            self.channel.queue_bind(
-                exchange=exchange_name, queue=incoming_message_queue
-            )
+        # Declare the queue (Name is generated uniquely by RMQ)
+        # Incoming message queue
+        result = channel.queue_declare(queue=queue_name, exclusive=True, durable=True)
+        incoming_message_queue = result.method.queue
 
-            # Create a consumer for the incoming message queue
-            self.channel.basic_consume(
-                queue=incoming_message_queue,
-                on_message_callback=on_message_clb,
-                auto_ack=True,
-            )
+        # Bind the queue to the exchange
+        channel.queue_bind(
+            exchange=exchange_name, queue=incoming_message_queue
+        )
+
+        # Create a consumer for the incoming message queue
+        channel.basic_consume(
+            queue=incoming_message_queue,
+            on_message_callback=on_message_clb,
+            auto_ack=True,
+        )
+
+        self.channels_configured += 1
 
     def start_consumer_thread(self):
         """Start the consumer thread"""
-        self.RMQ_consumer_thread = threading.Thread(target=self.__start_consuming)
-        self.RMQ_consumer_thread.start()
+        if self.channel_type != "incoming":
+            print("Error in RMQ. Channel is not incoming")
+        
+        else:
+            # create and start threads for all channels
+            for i, channel in enumerate(self.channels):
+                thread = threading.Thread(target=channel.start_consuming)
+                self.consumer_threads.append(thread)
+                thread.start()
+
+
+
+        # self.RMQ_consumer_thread = threading.Thread(target=self.__start_consuming)
+        # self.RMQ_consumer_thread.start()
 
     def configure_outgoing_channel(self, exchange_name, exchange_type):
         """Configure the publisher channel"""
         if self.channel_type != "":
-            print("Error in RMQ config. Channel already configured")
+            print("Error in RMQ outgoing config. Channel already configured")
         else:
             self.channel_type = "outgoing"
             self.channel.exchange_declare(
@@ -83,16 +102,18 @@ class Client:
         """Start consuming messages
         This function runs in a thread"""
         if self.channel_type != "incoming":
-            print("Error in RMQ. Channel is not incoming")
+            print(f"Error in RMQ. Channel is not incoming for channel, name: {self.name}, type: {self.channel_type}")
         else:
-            self.channel.start_consuming()
+            for channel in self.channels:
+                channel.start_consuming()
 
     def stop_consuming(self):
         """Stop consuming messages"""
         if self.channel_type != "incoming":
             print("Error in RMQ. Channel is not incoming")
         else:
-            self.channel.stop_consuming()
+            for channel in self.channels:
+                channel.stop_consuming()
 
     def send_message(self, message, exchange_name, r_key=""):
         """Send message to the rabbitmq server

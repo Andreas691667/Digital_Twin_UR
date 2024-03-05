@@ -1,4 +1,4 @@
-class MSG_TYPES:
+class MSG_TYPES_DT_TO_CONTROLLER:
     """Types of messages to be sent from DT to Controller"""
     MONITOR = "MONITOR"             # Used for monitor messages
     WAIT = "WAIT"                # Used for DT->PT messages before fault have been resolved
@@ -7,7 +7,12 @@ class MSG_TYPES:
     FINISHED_TIMING = "FINISHED_TIMING"
     TASK_VALIDATED = "TASK_VALIDATED"
 
-
+class MSG_TYPES_MONITOR_TO_DT:
+    """Types of messages to be sent from Monitor to DT"""
+    MONITOR_DATA = "MONITOR_DATA"       # Used for monitor messages
+class MSG_TYPES_CONTROLLER_TO_DT:
+    """Types of messages to be sent from Controller to DT"""
+    NEW_TASK = "NEW_TASK"            # Controller initiates a new task
 
 class MSG_TOPICS:
     """Topic conversion between UR and DT and Controller and UR
