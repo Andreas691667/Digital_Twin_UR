@@ -244,16 +244,9 @@ class ControllerMonitor:
         target = self.task_config[self.block_number][TASK_CONFIG.TARGET]
 
         # Calculate joint positions
-        origin_q_start = self.robot_model.compute_joint_positions(origin[TASK_CONFIG.x],
-                                                                  origin[TASK_CONFIG.y])
-        origin_q = self.robot_model.compute_joint_positions(origin[TASK_CONFIG.x],
-                                                            origin[TASK_CONFIG.y],
-                                                            grip_pos=True)
-        target_q_start = self.robot_model.compute_joint_positions(target[TASK_CONFIG.x],
-                                                                  target[TASK_CONFIG.y])
-        target_q = self.robot_model.compute_joint_positions(target[TASK_CONFIG.x],
-                                                            target[TASK_CONFIG.y],
-                                                            grip_pos=True)
+        origin_q_start, origin_q, target_q_start, target_q = self.robot_model.compute_joint_positions_origin_target(
+            origin, target
+        )
 
         # Check if any is nan
         if np.isnan(origin_q_start).any():
