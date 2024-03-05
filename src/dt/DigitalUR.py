@@ -3,6 +3,7 @@ import json
 import threading
 from queue import Queue, Empty
 import time
+import numpy as np
 
 sys.path.append("..")
 from rmq.RMQClient import Client
@@ -27,7 +28,7 @@ class DigitalUR:
         self.state_machine_thread = threading.Thread(target=self.state_machine)
 
         # model of the UR3e robot
-        self.robot = UR3e()
+        self.robot_model = UR3e()
 
         self.current_fault: FAULT_TYPES = None
         self.state_machine_thread.start()
@@ -131,11 +132,69 @@ class DigitalUR:
                 self.state = DT_STATES.WAITING_FOR_TASK_TO_START
                 print("State transition -> WAITING_FOR_TASK_TO_START")
 
+    def __compute_ik_solutions (self, task_config) -> np.ndarray:
+        """Computes the inverse kinematics solutions
+        returns 3D matrix:
+            row: block number
+            column: the four positions for a task
+            depth: solutions for each position
+        """
+        number_of_blocks: int = task_config[TASK_CONFIG.NO_BLOCKS] 
+        solutions: np.ndarray = np.zeros(shape=(number_of_blocks, 4, 6))
+
+        # For every block (4 coordinates) calculate IK (for 4 coordinates)
+        for bn in range(number_of_blocks):
+            origin = task_config[bn][TASK_CONFIG.ORIGIN]
+            target = task_config[bn][TASK_CONFIG.TARGET]
+            origin_q_start, origin_q, target_q_start, target_q = self.robot_model.compute_joint_positions_origin_target(
+                origin, target
+            )
+            
+            # set solutions
+            solutions[bn, 0, :] = origin_q_start
+            solutions[bn, 1, :] = origin_q
+            solutions[bn, 2, :] = target_q_start
+            solutions[bn, 3, :] = target_q
+
+        return solutions
+
+        
+    
+    def __compute_thresholds (self, ik_solutions: np.ndarray):
+        """Computes the thresholds corresponding to block movements
+        see __compute_ik_solutions for input format
+        """
+        # Based on largest distance between joint positions
+        number_of_blocks, _, _ = np.shape(ik_solutions)
+        
+        for block_number in range(number_of_blocks-1):
+            joint_positions_current_block = ik_solutions[block_number, :, :]
+            joint_positions_next_block = ik_solutions[block_number+1, :, :]
+            joint_positions_difference = np.abs(joint_positions_current_block-joint_positions_next_block)
+            leading_axis = np.argmax(joint_positions_difference, axis=1)
+
+            # use leading axis of movement to calculate timing for each subtask in block
+            for subtask in range(4):
+                subtask_leading_axis = leading_axis[subtask]
+                radians_of_leading_axis = joint_positions_difference[subtask_leading_axis]
+                
+                # calculate time for movement based on speed and acceleration
+                
+
+        pass
+
+    
     def validate_task(self):
         """Validate the task using the task validator"""
         valid, self.task_config = self.task_validator.validate_task(self.task_config)
         if valid:
             msg = f"{MSG_TYPES.TASK_VALIDATED} {self.task_config}"
+
+            # If task is valid, then calculate IK and thresholds
+            # 1) Calculate IK
+            ik_solutions = self.__compute_ik_solutions(self.task_config)
+            print(ik_solutions)
+
         
         else:
             msg = f"{MSG_TYPES.COULD_NOT_RESOLVE} None"
