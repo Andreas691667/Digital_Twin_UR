@@ -24,23 +24,18 @@ class TaskValidator:
 
         # get attributes from task
         self.task = task
-        self.no_blocks = self.task[TASK_CONFIG.NO_BLOCKS]
+        self.__create_maps()
 
-        # iterate over blocks to get maps of block positions as matrices
-        self.block_origin_map = np.zeros((3, self.no_blocks))
-        self.block_target_map = np.zeros((3, self.no_blocks))
-        for i in range(self.no_blocks):
-            self.block_origin_map[0, i] = self.task[i][TASK_CONFIG.ORIGIN][TASK_CONFIG.x]
-            self.block_origin_map[1, i] = self.task[i][TASK_CONFIG.ORIGIN][TASK_CONFIG.y]
-            self.block_origin_map[2, i] = self.task[i][TASK_CONFIG.ORIGIN][TASK_CONFIG.ROTATE_WRIST]
-            self.block_target_map[0, i] = self.task[i][TASK_CONFIG.TARGET][TASK_CONFIG.x]
-            self.block_target_map[1, i] = self.task[i][TASK_CONFIG.TARGET][TASK_CONFIG.y]
-            self.block_target_map[2, i] = self.task[i][TASK_CONFIG.TARGET][TASK_CONFIG.ROTATE_WRIST]
-
-        # ---- VALIDATE TASK ----
+        # validate task
         valid = self.__validate_task()
 
         # parse matrices to task again
+        self.__update_task()
+
+        return valid, self.task
+
+    def __update_task(self):
+        """Update task from matrices"""
         for i in range(self.no_blocks):
             self.task[i][TASK_CONFIG.ORIGIN][TASK_CONFIG.x] = int(self.block_origin_map[0, i])
             self.task[i][TASK_CONFIG.ORIGIN][TASK_CONFIG.y] = int(self.block_origin_map[1, i])
@@ -49,12 +44,28 @@ class TaskValidator:
             self.task[i][TASK_CONFIG.TARGET][TASK_CONFIG.y] = int(self.block_target_map[1, i])
             self.task[i][TASK_CONFIG.TARGET][TASK_CONFIG.ROTATE_WRIST] = bool(self.block_target_map[2, i])
 
-        return valid, self.task
+    def __create_maps(self):
+        """Create matrices of block positions from task"""
+        # get number of blocks
+        self.no_blocks = self.task[TASK_CONFIG.NO_BLOCKS]
+
+        # iterate over blocks to get maps of block positions as matrices
+        self.block_origin_map = np.zeros((3, self.no_blocks))
+        self.block_target_map = np.zeros((3, self.no_blocks))
+
+        for i in range(self.no_blocks):
+            self.block_origin_map[0, i] = self.task[i][TASK_CONFIG.ORIGIN][TASK_CONFIG.x]
+            self.block_origin_map[1, i] = self.task[i][TASK_CONFIG.ORIGIN][TASK_CONFIG.y]
+            self.block_origin_map[2, i] = self.task[i][TASK_CONFIG.ORIGIN][TASK_CONFIG.ROTATE_WRIST]
+            self.block_target_map[0, i] = self.task[i][TASK_CONFIG.TARGET][TASK_CONFIG.x]
+            self.block_target_map[1, i] = self.task[i][TASK_CONFIG.TARGET][TASK_CONFIG.y]
+            self.block_target_map[2, i] = self.task[i][TASK_CONFIG.TARGET][TASK_CONFIG.ROTATE_WRIST]
 
     def __validate_task(self):
+        """Validate the task by checking if the gripper can reach the target positions"""
         task_valid = False
         start_time = time()
-# 
+
         # continue until task is valid or time threshold is reached
         while (not task_valid) and (time() - start_time < self.time_threshold):
             # check if grip position is possible for targets
@@ -62,7 +73,10 @@ class TaskValidator:
             # print(self.block_target_map)
             # print(self.block_origin_map)
 
+            # check all blocks
             for i in range(self.no_blocks):
+
+                # check if grip position is possible for targets
                 grip_possible = self.__is_grip_possible(
                     self.block_target_map[:, i], self.block_target_map, 0, i
                 )
@@ -106,13 +120,13 @@ class TaskValidator:
         return grip_possible
 
 # main
-if __name__ == "__main__":
-    task = TASK_CONFIG.block_config_close_blocks
+# if __name__ == "__main__":
+#     task = TASK_CONFIG.block_config_close_blocks
 
-    print(task)
+#     print(task)
 
-    task_validator = TaskValidator()
-    valid, task_new = task_validator.validate_task(task)
+#     task_validator = TaskValidator()
+#     valid, task_new = task_validator.validate_task(task)
 
-    print(f"Task valid: {valid}")
-    print(task_new)
+#     print(f"Task valid: {valid}")
+#     print(task_new)
