@@ -42,6 +42,7 @@ class DigitalUR:
 
         self.current_block = -1  # current block number being processed
         # self.task_config = TASK_CONFIG.block_config_close_blocks.copy()
+        self.task_config = None
         self.pick_stock_tried = 1
 
         self.task_validator = TaskValidator()
@@ -144,15 +145,14 @@ class DigitalUR:
                         self.task_config = ast.literal_eval(msg_data)
 
                         # validate the task
-                        validate_msg = self.validate_task()
+                        valid, validate_msg = self.validate_task()
                         # send validated task to controller
                         self.rmq_client_out.send_message(validate_msg, RMQ_CONFIG.DT_EXCHANGE)
                         # state transition
-                        self.state = DT_STATES.WAITING_FOR_TASK_TO_START
-
-                        self.monitor_msg_queue.queue.clear() # clear the monitor queue
-                        
-                        print("State transition -> WAITING_FOR_TASK_TO_START")
+                        if valid:
+                            self.state = DT_STATES.WAITING_FOR_TASK_TO_START
+                            self.monitor_msg_queue.queue.clear() # clear the monitor queue                
+                            print("State transition -> WAITING_FOR_TASK_TO_START")
 
             elif self.state == DT_STATES.WAITING_FOR_TASK_TO_START:
                 msg_type, msg_data = self.__get_message(self.monitor_msg_queue)
@@ -172,7 +172,9 @@ class DigitalUR:
                 # stop program firstly
                 self.execute_fault_resolution(f"{MSG_TYPES_DT_TO_CONTROLLER.WAIT} None")
                 fault_msg = self.plan_fault_resolution(TASK_CONFIG.MITIGATION_STRATEGIES.SHIFT_ORIGIN)
-                self.validate_task()
+
+                self.validate_task() #TODO: Actually send the new task to the controller
+                
                 self.execute_fault_resolution(fault_msg)
                 self.state = DT_STATES.WAITING_FOR_TASK_TO_START
                 print("State transition -> WAITING_FOR_TASK_TO_START")
@@ -185,7 +187,7 @@ class DigitalUR:
         
         else:
             msg = f"{MSG_TYPES_DT_TO_CONTROLLER.COULD_NOT_RESOLVE} None"
-        return msg
+        return valid, msg
 
     def plan_fault_resolution(self, mitigation_strategy: str) -> None:
         """Resolve the current fault"""
