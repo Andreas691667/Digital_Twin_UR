@@ -11,7 +11,7 @@ from config.robot_config import ROBOT_CONFIG
 from threading import Thread, Event
 from pathlib import Path
 from queue import Queue, Empty
-from time import sleep
+from time import sleep, time
 import msvcrt  # for user input
 
 from controller_monitor_states import CM_STATES
@@ -33,7 +33,7 @@ class ControllerMonitor:
         self.STATE = CM_STATES.INITIALIZING  # flag to check if main program is running
         self.block_number = 0  # current block number being processed
         self.task_config = (
-            TASK_CONFIG.block_config_close_blocks.copy()
+            TASK_CONFIG.DYNAMIC_THRESHOLD_SMALL_TASK.copy()
         )  # get own local copy of task config
         self.dt_timer_finished : bool = False # flag to check if overall task is finished
         self.task_finished : bool = False # flag to check if overall task is finished
@@ -42,7 +42,8 @@ class ControllerMonitor:
         self.conf_file = "record_configuration.xml"
         self.log_file = "robot_output.csv"
         self.log_file_path = Path("test_results") / Path(self.log_file)
-
+        
+        self.task_timer = 0
         # model of the robot
         self.robot_model = UR3e()
 
@@ -97,6 +98,7 @@ class ControllerMonitor:
         self.controller_thread.start()
         self.shutdown_thread.start()
         sleep(0.5)
+        self.__go_to_home()
         # Display message
         print("\n [USER] Ready to play program. Press '2' to start, 'c' to exit \n")
 
@@ -263,6 +265,8 @@ class ControllerMonitor:
             self.shutdown()
 
         # Combine and cast to list
+        values_vstacked = np.vstack((origin_q_start, origin_q, target_q_start, target_q))
+        print(values_vstacked)
         values = np.hstack((origin_q_start, origin_q, target_q_start, target_q))
         values = list(np.array(values).flatten())
 
@@ -284,12 +288,15 @@ class ControllerMonitor:
                 # Task has begun
                 if self.STATE == CM_STATES.NORMAL_OPERATION:
                     # self.recieve_user_input()
-                    # Subtask is done, and there is more blocks to move
+                    # Subtask is done, and there is more blocks to move        
+
                     if (not self.robot_connection.program_running()) and (
                         self.block_number < self.task_config[TASK_CONFIG.NO_BLOCKS] 
                     ):
                         print(f"Ready to take block number: {self.block_number}")
-                        
+                        print(f"Time of last task: {time() - self.task_timer if self.task_timer != 0  else -1}")
+                        self.task_timer = time()
+
                         # 1) get register values, by computing inverse kinematics
                         register_values = self.__get_register_values()
 
@@ -306,6 +313,8 @@ class ControllerMonitor:
                     elif self.block_number >= self.task_config[TASK_CONFIG.NO_BLOCKS] and (
                         not self.robot_connection.program_running()                  
                     ):
+                        print(f"Time of last task: {time() - self.task_timer if self.task_timer != 0  else -1}")
+
                         self.__go_to_home()
                         sleep(1)
                         print("\n [USER] Task is done. Press 'i' to perform inverse task. Press 'c' to exit \n")

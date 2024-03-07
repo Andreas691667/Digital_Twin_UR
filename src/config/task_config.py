@@ -104,7 +104,39 @@ class TASK_CONFIG:
     To access grip percentage, use block_config[block_number][GRIP_PERCENTAGE],
     where block_number is the block number.
     """
-
+    DYNAMIC_THRESHOLD_LONG_TASK = {
+        NO_BLOCKS: 1,
+        0: {
+            ORIGIN: {
+                x: -5,
+                y: 1,
+                ROTATE_WRIST: False,
+            },
+            TARGET: {
+                x: 14,
+                y: -8,
+                ROTATE_WRIST: False,
+            },
+            TIMING_THRESHOLD: 50,
+        },
+    }
+    
+    DYNAMIC_THRESHOLD_SMALL_TASK = {
+        NO_BLOCKS: 1,
+        0: {
+            ORIGIN: {
+                x: 1,
+                y: 3,
+                ROTATE_WRIST: False,
+            },
+            TARGET: {
+                x: 3,
+                y: 3,
+                ROTATE_WRIST: False,
+            },
+            TIMING_THRESHOLD: 50,
+        },
+    }
 
     HOME_POSITION = {
         x : 11,

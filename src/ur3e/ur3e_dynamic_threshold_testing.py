@@ -88,6 +88,7 @@ def compute_thresholds (ik_solutions: np.ndarray, robot_model):
     # Initialize threshold with time it takes to go from home to next block
     home_and_origin = get_home_and_origin(ik_solutions, robot_model)
     thresholds = [get_duration_between_positions(home_and_origin)]
+    print(f"Home -> Origin: {thresholds}")
     
     for block_number in range(number_of_blocks-1):
         joint_positions_current_block = ik_solutions[block_number, :, :]
@@ -98,7 +99,7 @@ def compute_thresholds (ik_solutions: np.ndarray, robot_model):
         before_grip_joint_position = joint_positions_current_block[-2, :]
         first_joint_position_of_next_block = joint_positions_next_block[0, :]
         timing_essential_positions = np.vstack((joint_positions_current_block, before_grip_joint_position, first_joint_position_of_next_block))
-        
+
         # Get durations in between positions
         duration = get_duration_between_positions(timing_essential_positions)
         thresholds.append(duration)
@@ -107,14 +108,21 @@ def compute_thresholds (ik_solutions: np.ndarray, robot_model):
     return thresholds
 
 if __name__ == "__main__":
-    task_config = TASK_CONFIG.block_config_heart
+    task_config = TASK_CONFIG.DYNAMIC_THRESHOLD_SMALL_TASK
     robot_model = UR3e()
 
     sol = compute_ik_solutions(task_config, robot_model)
-    thresholds = compute_thresholds(sol, robot_model)
     
-    print(sol)
-    print(thresholds)
+    # Home, Origins, Targets
+    positions = np.vstack((get_home_and_origin(sol, robot_model), sol[0, 1:, :]))
+    
+    timing = get_duration_between_positions(positions)
+    print(timing)
+    
+    # thresholds = compute_thresholds(sol, robot_model)
+    
+    # # print(sol)
+    # print(thresholds)
     # print(sol)
     # block_number = 0
 
