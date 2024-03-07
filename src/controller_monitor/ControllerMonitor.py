@@ -339,7 +339,7 @@ class ControllerMonitor:
                 # A resolution was send
                 elif msg_type == MSG_TYPES_DT_TO_CONTROLLER.RESOLVED:
                     # new_task = str(msg_body)  # TODO: check if this is necessary
-                    self.__reconfigure_task(new_task, decr=True)
+                    self.__reconfigure_task(msg_body, decr=True)
                     self.STATE = CM_STATES.NORMAL_OPERATION
                     print("State transition -> NORMAL_OPERATION")
 
