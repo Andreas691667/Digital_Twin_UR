@@ -149,6 +149,9 @@ class DigitalUR:
                         self.rmq_client_out.send_message(validate_msg, RMQ_CONFIG.DT_EXCHANGE)
                         # state transition
                         self.state = DT_STATES.WAITING_FOR_TASK_TO_START
+
+                        self.monitor_msg_queue.queue.clear() # clear the monitor queue
+                        
                         print("State transition -> WAITING_FOR_TASK_TO_START")
 
             elif self.state == DT_STATES.WAITING_FOR_TASK_TO_START:
@@ -275,10 +278,12 @@ class DigitalUR:
             print(f"Object grapped in block {self.current_block}")
 
             # If we have grapped the last object, we are done
-            # go to waiting for task to start state
+            # go to waiting to receive task state
             if self.current_block == self.task_config[TASK_CONFIG.NO_BLOCKS]-1:
                 print("Task done")
+                # print(f'Task done for timestamp: {data["timestamp"]}')
                 self.current_block = -1
+                self.monitor_msg_queue.queue.clear()
                 self.state = DT_STATES.WAITING_TO_RECEIVE_TASK
                 print("State transition -> WAITING_TO_RECEIVE_TASK")
 

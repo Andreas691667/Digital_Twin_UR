@@ -78,7 +78,7 @@ class TaskValidator:
 
                 # check if grip position is possible for targets
                 grip_possible = self.__is_grip_possible(
-                    self.block_target_map[:, i], self.block_target_map, 0, i
+                    self.block_target_map[:, i], self.block_target_map, 0, i, TASK_CONFIG.GRIPPER_WIDTH_TARGET
                 )
                 # print(f"Grip possible: {grip_possible}")
 
@@ -89,7 +89,7 @@ class TaskValidator:
 
                 # check if grip position is possible for origins
                 grip_possible = self.__is_grip_possible(
-                    self.block_origin_map[:, i], self.block_origin_map, i+1, self.no_blocks
+                    self.block_origin_map[:, i], self.block_origin_map, i+1, self.no_blocks, TASK_CONFIG.GRIPPER_WIDTH_ORIGIN
                 )
                 # print(f"Grip possible: {grip_possible}")
                 # if not possible, change wrist rotation
@@ -99,7 +99,7 @@ class TaskValidator:
             
         return task_valid
 
-    def __is_grip_possible(self, block_pos, map, start, stop):
+    def __is_grip_possible(self, block_pos, map, start, stop, threshold):
         """Check if a grip position is possible in given coordinate map"""
 
         grip_possible = True
@@ -110,11 +110,12 @@ class TaskValidator:
                 dist = (block_pos - current_block_pos) * TASK_CONFIG.GRID_PARAMETERS[TASK_CONFIG.HOLE_DIST]
 
                 if block_pos[2] and dist[0] == 0:
-                    if np.abs(dist[1]) <= TASK_CONFIG.GRIPPER_WIDTH:
+                    if np.abs(dist[1]/2) <= threshold/2:
                         grip_possible = False
 
                 elif not block_pos[2] and dist[1] == 0:
-                    if np.abs(dist[0]) <= TASK_CONFIG.GRIPPER_WIDTH:
+                    if np.abs(dist[0]/2) <= threshold/2:
+                        # print(f'not possible for block {block} and {block_pos}, dist: {dist}, threshold: {threshold}')
                         grip_possible = False
             
         return grip_possible

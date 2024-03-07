@@ -83,27 +83,25 @@ class ControllerMonitor:
             )
         )        
 
-        # Starts threads
+        # Start threads
         self.monitor_thread.start()
         self.controller_thread.start()
         self.shutdown_thread.start()
-        # sleep(0.5)
-        # Display message
-        # 
 
     def recieve_user_input(self) -> None:
-        """Blocking call that listens for user input"""
+        """Listen for user input"""
         try:
             k = msvcrt.getwche()
             if k == "c":
-                print(f"\t [USER INPUT {k}]")
+                print(f"\t [USER INPUT] {k}")
                 self.shutdown_event.set()
             elif k == "2":
-                print(f"\t [USER INPUT {k}]")
+                print(f"\t [USER INPUT] {k}")
                 self.STATE = CM_STATES.NORMAL_OPERATION
+                print("\t[STATE] NORMAL_OPERATION")
             
             elif k == "i" and self.task_finished:
-                print(f"\t [USER INPUT {k}]")
+                print(f"\t [USER INPUT] {k}")
                 self.invert_task()
             # reset k
             k = "a"
@@ -114,7 +112,7 @@ class ControllerMonitor:
     def invert_task(self):
         """Invert the task"""
         # invert task
-        # set block number to 1
+        # set block number to 0
         # set task_finished to False
         # set state to NORMAL_OPERATION
         # initialize task registers
@@ -125,10 +123,8 @@ class ControllerMonitor:
 
         self.block_number = 0
         self.task_finished = False
+        # restart rtde connection
         self.rtde_connection = RTDEConnect(ROBOT_CONFIG.ROBOT_HOST, self.conf_file)
-
-        self.publish_task_to_DT()
-
         self.STATE = CM_STATES.INITIALIZING
 
 
@@ -196,15 +192,16 @@ class ControllerMonitor:
         """Load program"""
         succ = self.robot_connection.load_program(program_name)
         self.program_running_name = program_name
-        print(f"Program '{program_name}' loaded: {succ}")
+        # print(f"Program '{program_name}' loaded: {succ}")
 
     def play_program(self, main_program=False) -> None:
         """Start loaded program"""
         program_started = self.robot_connection.play_program()
-        if program_started:
-            print(f"Program started: {program_started}")
-        else:
-            pass
+        # if program_started:
+        #     pass
+        #     # print(f"Program started: {program_started}")
+        # else:
+        #     pass
 
         if main_program:
             sleep(1)
@@ -278,10 +275,9 @@ class ControllerMonitor:
                 elif self.STATE == CM_STATES.WAITING_FOR_TASK_VALIDATION:
                     # Wait for DT to validate task
                     if self.task_validated:
-                        print("Task validated by DT.")
                         print("\n \t [USER] Ready to play program. Press '2' to start, 'c' to exit \n")
-                        register_values = self.__get_register_values()
-                        self.__initialize_task_registers(register_values)
+                        # register_values = self.__get_register_values()
+                        # self.__initialize_task_registers(register_values)
                         self.STATE = CM_STATES.WAITING_FOR_USER_INPUT
                     else:
                         pass
@@ -293,17 +289,18 @@ class ControllerMonitor:
                 elif self.STATE == CM_STATES.NORMAL_OPERATION:
                     # Subtask is done, and there is more blocks to move
                     if (not self.robot_connection.program_running()) and (
-                        self.block_number < self.task_config[TASK_CONFIG.NO_BLOCKS] 
+                        self.block_number < self.task_config[TASK_CONFIG.NO_BLOCKS]
                     ):
-                        print(f"Ready to take block number: {self.block_number}")
+                        print(f"Ready to take block number: {self.block_number} out of {self.task_config[TASK_CONFIG.NO_BLOCKS]-1} \n")
                         
                         # 1) get register values, by computing inverse kinematics
                         register_values = self.__get_register_values()
+                        # print(f"Register values: {register_values}")
 
                         # 2) initialize task registers
                         self.__initialize_task_registers(register_values)
 
-                        sleep(1)
+                        sleep(.5)
 
                         # 3) play the program
                         self.play_program(main_program=True)
@@ -312,12 +309,14 @@ class ControllerMonitor:
                         self.block_number += 1
 
                     # All blocks are done
-                    elif self.block_number >= self.task_config[TASK_CONFIG.NO_BLOCKS] and (
-                        not self.robot_connection.program_running()                  
+                    elif self.block_number == self.task_config[TASK_CONFIG.NO_BLOCKS] and (
+                        not self.robot_connection.program_running()
                     ):
                         self.__go_to_home()
                         sleep(1)
-                        print("\n \t [USER] Task is done. Press 'i' to perform inverse task. Press 'c' to exit \n")
+                        print("Task done")
+                        self.init_robot_registers()
+                        print("\n \t [USER] Press 'i' to perform inverse task. Press 'c' to exit \n")
                         self.rtde_connection.shutdown()
                         self.STATE = CM_STATES.WAITING_FOR_USER_INPUT
                         self.task_finished = True
@@ -339,7 +338,7 @@ class ControllerMonitor:
 
                 # A resolution was send
                 elif msg_type == MSG_TYPES_DT_TO_CONTROLLER.RESOLVED:
-                    new_task = str(msg_body)  # TODO: check if this is necessary
+                    # new_task = str(msg_body)  # TODO: check if this is necessary
                     self.__reconfigure_task(new_task, decr=True)
                     self.STATE = CM_STATES.NORMAL_OPERATION
                     print("State transition -> NORMAL_OPERATION")

@@ -46,7 +46,8 @@ class TASK_CONFIG:
 
 
     # width of gripper
-    GRIPPER_WIDTH = 0.06 # in meters
+    GRIPPER_WIDTH_TARGET = 0.06 # in meters
+    GRIPPER_WIDTH_ORIGIN = 0.1 # in meters
 
     # max block width
     BLOCK_WIDTH = 0.035 # in meters
@@ -87,7 +88,7 @@ class TASK_CONFIG:
                 x: -3,
                 y: 3
             },
-            TIMING_THRESHOLD: 10,
+            TIMING_THRESHOLD: 20,
         },
     }
 
@@ -362,7 +363,7 @@ class TASK_CONFIG:
                 y: -4,
                 ROTATE_WRIST: False,
             },
-            TIMING_THRESHOLD: 10,
+            TIMING_THRESHOLD: 20,
         },
         1: {
             ORIGIN: {
@@ -375,7 +376,7 @@ class TASK_CONFIG:
                 y: -5,
                 ROTATE_WRIST: False,
             },
-            TIMING_THRESHOLD: 10, #works
+            TIMING_THRESHOLD: 20, #works
         },
         2: {
             ORIGIN: {
@@ -388,7 +389,7 @@ class TASK_CONFIG:
                 y: -6,
                 ROTATE_WRIST: False,
             },
-            TIMING_THRESHOLD: 12, #works
+            TIMING_THRESHOLD: 20, #works
         },
         3: {
             ORIGIN: {
@@ -401,7 +402,7 @@ class TASK_CONFIG:
                 y: -7,
                 ROTATE_WRIST: False,
             },
-            TIMING_THRESHOLD: 10, #works
+            TIMING_THRESHOLD: 20, #works
         },
         4: {
             ORIGIN: {
@@ -414,7 +415,7 @@ class TASK_CONFIG:
                 y: -8.5,
                 ROTATE_WRIST: False,
             },
-            TIMING_THRESHOLD: 10, # works
+            TIMING_THRESHOLD: 20, # works
         },
         5: {
             ORIGIN: {
@@ -427,7 +428,7 @@ class TASK_CONFIG:
                 y: -9,
                 ROTATE_WRIST: False,
             },
-            TIMING_THRESHOLD: 12,
+            TIMING_THRESHOLD: 20,
         },
         6: {
             ORIGIN: {
@@ -440,7 +441,7 @@ class TASK_CONFIG:
                 y: -8,
                 ROTATE_WRIST: False,
             },
-            TIMING_THRESHOLD: 12,
+            TIMING_THRESHOLD: 20,
         },
         7: {
             ORIGIN: {
@@ -453,7 +454,7 @@ class TASK_CONFIG:
                 y: -7,
                 ROTATE_WRIST: False,
             },
-            TIMING_THRESHOLD: 12,
+            TIMING_THRESHOLD: 20,
         },
         8: {
             ORIGIN: {
@@ -466,7 +467,7 @@ class TASK_CONFIG:
                 y: -8,
                 ROTATE_WRIST: False,
             },
-            TIMING_THRESHOLD: 10,
+            TIMING_THRESHOLD: 20,
         },
         9: {
             ORIGIN: {
@@ -479,7 +480,7 @@ class TASK_CONFIG:
                 y: -9,
                 ROTATE_WRIST: False,
             },
-            TIMING_THRESHOLD: 12,
+            TIMING_THRESHOLD: 20,
         },
         10: {
             ORIGIN: {
@@ -492,7 +493,7 @@ class TASK_CONFIG:
                 y: -8.5,
                 ROTATE_WRIST: False,
             },
-            TIMING_THRESHOLD: 12,
+            TIMING_THRESHOLD: 20,
         },
         11: {
             ORIGIN: {
@@ -505,7 +506,7 @@ class TASK_CONFIG:
                 y: -7,
                 ROTATE_WRIST: False,
             },
-            TIMING_THRESHOLD: 12,
+            TIMING_THRESHOLD: 20,
         },
         
         12: {
@@ -519,7 +520,7 @@ class TASK_CONFIG:
                 y: -6,
                 ROTATE_WRIST: False,
             },
-            TIMING_THRESHOLD: 12,
+            TIMING_THRESHOLD: 20,
         },        
         13: {
             ORIGIN: {
@@ -532,6 +533,6 @@ class TASK_CONFIG:
                 y: -5,
                 ROTATE_WRIST: False,
             },
-            TIMING_THRESHOLD: 12,
+            TIMING_THRESHOLD: 20,
         },
     }
