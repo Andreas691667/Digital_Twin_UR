@@ -33,7 +33,7 @@ class ControllerMonitor:
         self.STATE = CM_STATES.INITIALIZING  # flag to check if main program is running
         self.block_number = 0  # current block number being processed
         self.task_config = (
-            TASK_CONFIG.DYNAMIC_THRESHOLD_SMALL_TASK.copy()
+            TASK_CONFIG.DYNAMIC_THRESHOLD_TWO_BLOCKS.copy()
         )  # get own local copy of task config
         self.dt_timer_finished : bool = False # flag to check if overall task is finished
         self.task_finished : bool = False # flag to check if overall task is finished

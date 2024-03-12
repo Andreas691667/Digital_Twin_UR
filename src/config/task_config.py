@@ -138,6 +138,37 @@ class TASK_CONFIG:
         },
     }
 
+    DYNAMIC_THRESHOLD_TWO_BLOCKS = {
+        NO_BLOCKS: 2,
+        0: {
+            ORIGIN: {
+                x: 0,
+                y: 0,
+                ROTATE_WRIST: False,
+            },
+            TARGET: {
+                x: 13,
+                y: -5,
+                ROTATE_WRIST: False,
+            },
+            TIMING_THRESHOLD: 50,
+        },
+        
+        1: {
+            ORIGIN: {
+                x: 0,
+                y: 2,
+                ROTATE_WRIST: False,
+            },
+            TARGET: {
+                x: 12,
+                y: -5,
+                ROTATE_WRIST: False,
+            },
+            TIMING_THRESHOLD: 50,
+        },
+    }
+
     HOME_POSITION = {
         x : 11,
         y : 2

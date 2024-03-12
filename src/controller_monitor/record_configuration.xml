@@ -4,6 +4,7 @@
 	<recipe key="out">
 		<field name="timestamp" type="DOUBLE"/>
 		<field name="actual_q" type="VECTOR6D"/>
+		<field name="actual_qd" type="VECTOR6D"/>
 		<field name="output_bit_register_65" type="BOOL"/> <!-- Start bit-->
 		<field name="output_bit_register_66" type="BOOL"/> <!-- Object detection bit-->
 	</recipe>

@@ -38,7 +38,7 @@ class DigitalUR:
         self.last_object_detected = False
 
         self.current_block = -1  # current block number being processed
-        self.task_config = TASK_CONFIG.block_config_close_blocks.copy()
+        self.task_config = TASK_CONFIG.DYNAMIC_THRESHOLD_TWO_BLOCKS.copy()
         self.pick_stock_tried = 1
 
         self.task_validator = TaskValidator()
