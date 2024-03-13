@@ -6,3 +6,4 @@ class CM_STATES:
     NORMAL_OPERATION = 3 # Performing task
     WAITING_FOR_FAULT_RESOLUTION = 4 # Waiting for resolution
     MANUEL_INTERVENTION = 5 # Waiting for manuel intervention
+    SHUTTING_DOWN = 6 # Shutting down

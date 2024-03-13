@@ -94,7 +94,8 @@ class ControllerMonitor:
             k = msvcrt.getwche()
             if k == "c":
                 print(f"\t [USER INPUT] {k}")
-                self.shutdown_event.set()
+                self.STATE = CM_STATES.SHUTTING_DOWN
+                print("\t [STATE] SHUTTING_DOWN")
             elif k == "2":
                 print(f"\t [USER INPUT] {k}")
                 self.STATE = CM_STATES.NORMAL_OPERATION
@@ -107,7 +108,8 @@ class ControllerMonitor:
             k = "a"
         except KeyboardInterrupt:
             print("Exiting")
-            self.shutdown_event.set()
+            self.STATE = CM_STATES.SHUTTING_DOWN
+            print("\t [STATE] SHUTTING_DOWN")
 
     def invert_task(self):
         """Invert the task"""
@@ -321,33 +323,42 @@ class ControllerMonitor:
                         self.STATE = CM_STATES.WAITING_FOR_USER_INPUT
                         self.task_finished = True
 
-                if self.STATE == CM_STATES.WAITING_FOR_FAULT_RESOLUTION:
+                elif self.STATE == CM_STATES.WAITING_FOR_FAULT_RESOLUTION:
                     pass
+
+                elif self.STATE == CM_STATES.SHUTTING_DOWN:
+                    self.shutdown_event.set()
 
             # -- MESSAGE FROM DT --
             else:
                 # Fault was detected, wait for DT to plan
                 if msg_type == MSG_TYPES_DT_TO_CONTROLLER.WAIT:
                     self.STATE = CM_STATES.WAITING_FOR_FAULT_RESOLUTION
-                    print("State transition -> WAITING_FOR_FAULT_RESOLUTION")
+                    print("\t [STATE] WAITING_FOR_FAULT_RESOLUTION")
                     self.stop_program()
 
                 elif msg_type == MSG_TYPES_DT_TO_CONTROLLER.TASK_VALIDATED:
                     self.__reconfigure_task(msg_body, decr=False)
                     self.task_validated = True
 
+                elif msg_type == MSG_TYPES_DT_TO_CONTROLLER.TASK_NOT_VALIDATED:
+                    self.robot_connection.popup("Task not validated. Exiting")
+                    self.STATE = CM_STATES.SHUTTING_DOWN
+                    print("\t [STATE] SHUTTING_DOWN")
+
                 # A resolution was send
                 elif msg_type == MSG_TYPES_DT_TO_CONTROLLER.RESOLVED:
                     # new_task = str(msg_body)  # TODO: check if this is necessary
                     self.__reconfigure_task(msg_body, decr=True)
                     self.STATE = CM_STATES.NORMAL_OPERATION
-                    print("State transition -> NORMAL_OPERATION")
+                    print("\t [STATE] NORMAL_OPERATION")
 
                 # DT could not resolve
                 elif msg_type == MSG_TYPES_DT_TO_CONTROLLER.COULD_NOT_RESOLVE:
                     print("DT could not resolve")
                     self.robot_connection.popup("DT could not resolve. Task not possible. Exiting")
-                    self.shutdown_event.set()
+                    self.STATE = CM_STATES.SHUTTING_DOWN
+                    print("\t [STATE] SHUTTING_DOWN")
 
     def __go_to_home(self):
         """Go to home position"""

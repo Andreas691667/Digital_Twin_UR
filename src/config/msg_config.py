@@ -6,6 +6,7 @@ class MSG_TYPES_DT_TO_CONTROLLER:
     COULD_NOT_RESOLVE = "COULD_NOT_RESOLVE"   # Used to send message where fault could not be resolved
     FINISHED_TIMING = "FINISHED_TIMING"
     TASK_VALIDATED = "TASK_VALIDATED"
+    TASK_NOT_VALIDATED = "TASK_NOT_VALIDATED"
 
 class MSG_TYPES_MONITOR_TO_DT:
     """Types of messages to be sent from Monitor to DT"""

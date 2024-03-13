@@ -186,7 +186,7 @@ class DigitalUR:
             msg = f"{MSG_TYPES_DT_TO_CONTROLLER.TASK_VALIDATED} {self.task_config}"
         
         else:
-            msg = f"{MSG_TYPES_DT_TO_CONTROLLER.COULD_NOT_RESOLVE} None"
+            msg = f"{MSG_TYPES_DT_TO_CONTROLLER.TASK_NOT_VALIDATED} None"
         return valid, msg
 
     def plan_fault_resolution(self, mitigation_strategy: str) -> None:
