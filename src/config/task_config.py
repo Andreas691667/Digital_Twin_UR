@@ -10,10 +10,10 @@ class TASK_CONFIG:
     WAYPOINTS = "waypoints"
     GRIP_PERCENTAGE = "grip_percentage"
     TIMING_THRESHOLD = "timing_threshold"
-    NO_BLOCKS = "no_blocks"  # number of blocks in the task
+    NO_BLOCKS = "NO_BLOCKS"  # number of blocks in the task
 
-    ORIGIN = "origin"
-    TARGET = "target"
+    ORIGIN = "ORIGIN"
+    TARGET = "TARGET"
     x = "x"
     y = "y"
 

@@ -22,19 +22,23 @@ from config.msg_config import MSG_TYPES_DT_TO_CONTROLLER, MSG_TYPES_CONTROLLER_T
 from config.task_config import TASK_CONFIG
 from ur3e.ur3e import UR3e
 import json
+import yaml
 
 
 class ControllerMonitor:
     """Class responsible for all robot interaction"""
 
-    def __init__(self) -> None:
+    def __init__(self, task_name) -> None:
 
         # Attributes
         self.STATE = CM_STATES.INITIALIZING  # flag to check if main program is running
         self.block_number = 0  # current block number being processed
-        self.task_config = (
-            TASK_CONFIG.block_config_close_blocks.copy()
-        )  # get own local copy of task config
+        # self.task_config = (
+        #     TASK_CONFIG.block_config_close_blocks.copy()
+        # )  # get own local copy of task config
+
+        self.load_task(task_name)
+
         self.dt_timer_finished : bool = False # flag to check if overall task is finished
         self.task_finished : bool = False # flag to check if overall task is finished
         self.task_validated : bool = False # flag to check if task is validated
@@ -87,6 +91,15 @@ class ControllerMonitor:
         self.monitor_thread.start()
         self.controller_thread.start()
         self.shutdown_thread.start()
+
+    def load_task(self, task_name):
+        """Load task from yaml file"""
+        try:
+            with open(f"../config/tasks/{task_name}.yaml", "r") as file:
+                self.task_config = yaml.safe_load(file)
+        except FileNotFoundError:
+            print(f"Task {task_name} not found")
+            self.shutdown()
 
     def recieve_user_input(self) -> None:
         """Listen for user input"""

@@ -39,10 +39,12 @@ class TaskValidator:
         for i in range(self.no_blocks):
             self.task[i][TASK_CONFIG.ORIGIN][TASK_CONFIG.x] = int(self.block_origin_map[0, i])
             self.task[i][TASK_CONFIG.ORIGIN][TASK_CONFIG.y] = int(self.block_origin_map[1, i])
-            self.task[i][TASK_CONFIG.ORIGIN][TASK_CONFIG.ROTATE_WRIST] = bool(self.block_origin_map[2, i])
+            self.task[i][TASK_CONFIG.ORIGIN].update({TASK_CONFIG.ROTATE_WRIST: bool(self.block_origin_map[2, i])})
+            # self.task[i][TASK_CONFIG.ORIGIN][TASK_CONFIG.ROTATE_WRIST] = bool(self.block_origin_map[2, i])
             self.task[i][TASK_CONFIG.TARGET][TASK_CONFIG.x] = int(self.block_target_map[0, i])
             self.task[i][TASK_CONFIG.TARGET][TASK_CONFIG.y] = int(self.block_target_map[1, i])
-            self.task[i][TASK_CONFIG.TARGET][TASK_CONFIG.ROTATE_WRIST] = bool(self.block_target_map[2, i])
+            self.task[i][TASK_CONFIG.TARGET].update({TASK_CONFIG.ROTATE_WRIST: bool(self.block_target_map[2, i])})
+            # self.task[i][TASK_CONFIG.TARGET][TASK_CONFIG.ROTATE_WRIST] = bool(self.block_target_map[2, i])
 
     def __create_maps(self):
         """Create matrices of block positions from task"""
@@ -56,10 +58,12 @@ class TaskValidator:
         for i in range(self.no_blocks):
             self.block_origin_map[0, i] = self.task[i][TASK_CONFIG.ORIGIN][TASK_CONFIG.x]
             self.block_origin_map[1, i] = self.task[i][TASK_CONFIG.ORIGIN][TASK_CONFIG.y]
-            self.block_origin_map[2, i] = self.task[i][TASK_CONFIG.ORIGIN][TASK_CONFIG.ROTATE_WRIST]
+            self.block_origin_map[2, i] = False
+            # self.block_origin_map[2, i] = self.task[i][TASK_CONFIG.ORIGIN][TASK_CONFIG.ROTATE_WRIST]
             self.block_target_map[0, i] = self.task[i][TASK_CONFIG.TARGET][TASK_CONFIG.x]
             self.block_target_map[1, i] = self.task[i][TASK_CONFIG.TARGET][TASK_CONFIG.y]
-            self.block_target_map[2, i] = self.task[i][TASK_CONFIG.TARGET][TASK_CONFIG.ROTATE_WRIST]
+            self.block_target_map[2, i] = False
+            # self.block_target_map[2, i] = self.task[i][TASK_CONFIG.TARGET][TASK_CONFIG.ROTATE_WRIST]
 
     def __validate_task(self):
         """Validate the task by checking if the gripper can reach the target positions"""
