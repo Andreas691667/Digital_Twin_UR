@@ -1,5 +1,5 @@
 # from urinterface.robot_connection import RobotConnection
-from sys import path
+from sys import path, exit
 import numpy as np
 import ast
 
@@ -28,7 +28,7 @@ import yaml
 class ControllerMonitor:
     """Class responsible for all robot interaction"""
 
-    def __init__(self, task_name) -> None:
+    def __init__(self, task_name, go_to_home=False) -> None:
 
         # Attributes
         self.STATE = CM_STATES.INITIALIZING  # flag to check if main program is running
@@ -36,8 +36,6 @@ class ControllerMonitor:
         # self.task_config = (
         #     TASK_CONFIG.block_config_close_blocks.copy()
         # )  # get own local copy of task config
-
-        self.load_task(task_name)
 
         self.dt_timer_finished : bool = False # flag to check if overall task is finished
         self.task_finished : bool = False # flag to check if overall task is finished
@@ -54,6 +52,10 @@ class ControllerMonitor:
         # Robot connection
         # Used for monitoring and dashboard service, e.g. load and play program
         self.robot_connection = RobotConnection(ROBOT_CONFIG.ROBOT_HOST)
+
+        if go_to_home:
+            self.__go_to_home()
+            exit(0)
 
         # RTDE
         # Used for writing to the robot controller directly
@@ -85,7 +87,10 @@ class ControllerMonitor:
                 rmq_client=self.rmq_client_out_monitor,
                 publish_topic_rmq=MSG_TYPES_MONITOR_TO_DT.MONITOR_DATA,
             )
-        )        
+        ) 
+
+        # load task
+        self.load_task(task_name)
 
         # Start threads
         self.monitor_thread.start()
@@ -405,3 +410,4 @@ class ControllerMonitor:
             self.rtde_connection.shutdown()
 
         print("Shutdown complete")
+        exit(0)

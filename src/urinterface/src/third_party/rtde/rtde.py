@@ -32,7 +32,7 @@ if sys.version_info[0] < 3:
 else:
   from third_party.rtde import serialize
 
-DEFAULT_TIMEOUT = 1.0
+DEFAULT_TIMEOUT = 100 # ALTERED
 
 LOGNAME = 'rtde'
 _log = logging.getLogger(LOGNAME)

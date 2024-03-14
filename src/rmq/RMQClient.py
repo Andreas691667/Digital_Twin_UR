@@ -31,7 +31,8 @@ class Client:
         connection = pika.BlockingConnection(
             pika.ConnectionParameters(
                 host=self.__host,
-                port=self.__port
+                port=self.__port,
+                heartbeat=0 # Disable heartbeat to avoid connection reset
                 # credentials=pika.PlainCredentials(
                 #     RMQ_CREDENTIALS.RMQ_USERNAME, RMQ_CREDENTIALS.RMQ_PASSWORD
                 # ),
