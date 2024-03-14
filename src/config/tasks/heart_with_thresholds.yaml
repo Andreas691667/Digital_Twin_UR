@@ -1,0 +1,113 @@
+NO_BLOCKS: 14
+0:
+  ORIGIN:
+    x: 0
+    y: 0
+  TARGET:
+    x: 13
+    y: -4
+  TIMING_THRESHOLD: 20
+1:
+  ORIGIN:
+    x: 1
+    y: 0
+  TARGET:
+    x: 12
+    y: -5
+  TIMING_THRESHOLD: 20
+2:
+  ORIGIN:
+    x: 2
+    y: 0
+  TARGET:
+    x: 11
+    y: -6
+  TIMING_THRESHOLD: 20
+3:
+  ORIGIN:
+    x: 3
+    y: 0
+  TARGET:
+    x: 10
+    y: -7
+  TIMING_THRESHOLD: 20
+4:
+  ORIGIN:
+    x: 4
+    y: 0
+  TARGET:
+    x: 10
+    y: -8.5
+  TIMING_THRESHOLD: 20
+5:
+  ORIGIN:
+    x: 5
+    y: 0
+  TARGET:
+    x: 11
+    y: -9
+  TIMING_THRESHOLD: 20
+6:
+  ORIGIN:
+    x: 6
+    y: 0
+  TARGET:
+    x: 12
+    y: -8
+  TIMING_THRESHOLD: 20
+7:
+  ORIGIN:
+    x: 7
+    y: 0
+  TARGET:
+    x: 13
+    y: -7
+  TIMING_THRESHOLD: 20
+8:
+  ORIGIN:
+    x: 8
+    y: 0
+  TARGET:
+    x: 14
+    y: -8
+  TIMING_THRESHOLD: 20
+9:
+  ORIGIN:
+    x: 9
+    y: 0
+  TARGET:
+    x: 15
+    y: -9
+  TIMING_THRESHOLD: 20
+10:
+  ORIGIN:
+    x: 10
+    y: 0
+  TARGET:
+    x: 16
+    y: -8.5
+  TIMING_THRESHOLD: 20
+11:
+  ORIGIN:
+    x: 11
+    y: 0
+  TARGET:
+    x: 16
+    y: -7
+  TIMING_THRESHOLD: 20
+12:
+  ORIGIN:
+    x: 12
+    y: 0
+  TARGET:
+    x: 15
+    y: -6
+  TIMING_THRESHOLD: 20
+13:
+  ORIGIN:
+    x: 13
+    y: 0
+  TARGET:
+    x: 14
+    y: -5
+  TIMING_THRESHOLD: 20
