@@ -1,0 +1,106 @@
+NO_BLOCKS: 15
+0:
+  ORIGIN:
+    x: 0
+    y: 0
+  TARGET:
+    x: 0
+    y: 0
+1:
+  ORIGIN:
+    x: 1
+    y: 0
+  TARGET:
+    x: 2
+    y: 0
+2:
+  ORIGIN:
+    x: 2
+    y: 0
+  TARGET:
+    x: 4
+    y: 0
+3:
+  ORIGIN:
+    x: 3
+    y: 0
+  TARGET:
+    x: 6
+    y: 0
+4:
+  ORIGIN:
+    x: 4
+    y: 0
+  TARGET:
+    x: 8
+    y: 0
+5:
+  ORIGIN:
+    x: 5
+    y: 0
+  TARGET:
+    x: 10
+    y: 0
+6:
+  ORIGIN:
+    x: 6
+    y: 0
+  TARGET:
+    x: 0
+    y: 6
+7:
+  ORIGIN:
+    x: 0
+    y: 2
+  TARGET:
+    x: 2
+    y: 6
+8:
+  ORIGIN:
+    x: 1
+    y: 2
+  TARGET:
+    x: 4
+    y: 6
+9:
+  ORIGIN:
+    x: 2
+    y: 2
+  TARGET:
+    x: 6
+    y: 6
+10:
+  ORIGIN:
+    x: 3
+    y: 2
+  TARGET:
+    x: 8
+    y: 6
+11:
+  ORIGIN:
+    x: 4
+    y: 2
+  TARGET:
+    x: 10
+    y: 6
+12:
+  ORIGIN:
+    x: 5
+    y: 2
+  TARGET:
+    x: 0
+    y: 12
+13:
+  ORIGIN:
+    x: 6
+    y: 2
+  TARGET:
+    x: 2
+    y: 12
+14:
+  ORIGIN:
+    x: 7
+    y: 2
+  TARGET:
+    x: 4
+    y: 12
