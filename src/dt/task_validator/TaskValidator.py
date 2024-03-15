@@ -2,13 +2,18 @@ import sys
 
 sys.path.append("../..")
 from config.task_config import TASK_CONFIG
+import rectangle_packer.RectanglePacker as rp
 import numpy as np
-from time import sleep, time
+from time import time
 
 class TaskValidator:
     """Class to validate a task a specified in TASK_CONFIG"""
 
     def __init__(self) -> None:
+        self.rectangle_packer = rp.RectanglePacker(
+            TASK_CONFIG.PLACE_WIDTH, TASK_CONFIG.PLACE_HEIGHT
+        )
+
         self.block_origin_map = None
         self.block_target_map = None
         self.no_blocks = None
@@ -90,6 +95,7 @@ class TaskValidator:
                 if not grip_possible:
                     task_valid = False
                     self.block_target_map[2, i] = 1 - self.block_target_map[2, i]
+                    break
 
                 # check if grip position is possible for origins
                 grip_possible = self.__is_grip_possible(
@@ -100,6 +106,7 @@ class TaskValidator:
                 if not grip_possible:
                     task_valid = False
                     self.block_origin_map[2, i] = 1 - self.block_origin_map[2, i]
+                    break
             
         return task_valid
 
@@ -125,13 +132,18 @@ class TaskValidator:
         return grip_possible
 
 # main
-# if __name__ == "__main__":
-#     task = TASK_CONFIG.block_config_close_blocks
+if __name__ == "__main__":
+    import yaml
+    import json
+    # task = TASK_CONFIG.block_config_close_blocks
 
-#     print(task)
+    with open("../../config/tasks/close_blocks.yaml", "r") as file:
+        task = yaml.safe_load(file)
 
-#     task_validator = TaskValidator()
-#     valid, task_new = task_validator.validate_task(task)
+    print(task)
 
-#     print(f"Task valid: {valid}")
-#     print(task_new)
+    task_validator = TaskValidator()
+    valid, task_new = task_validator.validate_task(task)
+
+    print(f"Task valid: {valid}")
+    print(json.dumps(task_new, indent=4))

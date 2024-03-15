@@ -4,6 +4,7 @@
 	<recipe key="out">
 		<field name="timestamp" type="DOUBLE"/>
 		<field name="actual_q" type="VECTOR6D"/>
+		<field name="safety_status" type="INT32"/>		   <!---Safety status, 1: Normal, 3: Protective stop, 7: Emergency stop-->
 		<field name="output_bit_register_65" type="BOOL"/> <!-- Start bit-->
 		<field name="output_bit_register_66" type="BOOL"/> <!-- Object detection bit-->
 	</recipe>
