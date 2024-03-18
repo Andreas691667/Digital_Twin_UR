@@ -205,8 +205,7 @@ class DigitalUR:
                 # for block_no in range(self.current_block):
                 #     self.task_config.pop(block_no+1)
                 # self.task_config[TASK_CONFIG.NO_BLOCKS] -= self.current_block
-                
-                # print(f"Task config after (1): \n {self.task_config}")
+
                 # 2) from the current block, change two first rows in its config to the next block
                 for block_no in range(                                                     # Iterate over blocks
                     self.current_block + 1, self.task_config[TASK_CONFIG.NO_BLOCKS]-1        # ... from the next block to the last block
@@ -228,8 +227,6 @@ class DigitalUR:
                 self.task_config.pop(self.task_config[TASK_CONFIG.NO_BLOCKS] - 1)
                 self.task_config[TASK_CONFIG.NO_BLOCKS] -= 1
 
-                # print(f"Task config after (2): \n {self.task_config}")
-
                 # return fault_msg with the new task_config
                 return f"{MSG_TYPES_DT_TO_CONTROLLER.RESOLVED}"
             
@@ -244,8 +241,6 @@ class DigitalUR:
 
         elif self.current_fault == FAULT_TYPES.UNKOWN_FAULT:
             pass
-
-        
 
     def execute_fault_resolution(self, fault_msg) -> None:
         """Execute the fault resolution: send message to controller
