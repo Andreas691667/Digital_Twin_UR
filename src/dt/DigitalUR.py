@@ -172,11 +172,14 @@ class DigitalUR:
             elif self.state == DT_STATES.FAULT_RESOLUTION:
                 # stop program firstly
                 self.execute_fault_resolution(f"{MSG_TYPES_DT_TO_CONTROLLER.WAIT} None")
-                msg_type = self.plan_fault_resolution(TASK_CONFIG.MITIGATION_STRATEGIES.SHIFT_ORIGIN)
+                # resolve the fault and update the task_config
+                msg_type = self.plan_fault_resolution(TASK_CONFIG.MITIGATION_STRATEGIES.TRY_PICK_STOCK)
 
-                self.validate_task() #TODO: Actually send the new task to the controller
+                # validate the task
+                self.validate_task()
                 fault_msg = f"{msg_type} {self.task_config}"
                 
+                # send the fault message to the controller
                 self.execute_fault_resolution(fault_msg)
                 self.state = DT_STATES.WAITING_FOR_TASK_TO_START
                 print("State transition -> WAITING_FOR_TASK_TO_START")
