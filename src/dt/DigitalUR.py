@@ -171,9 +171,10 @@ class DigitalUR:
             elif self.state == DT_STATES.FAULT_RESOLUTION:
                 # stop program firstly
                 self.execute_fault_resolution(f"{MSG_TYPES_DT_TO_CONTROLLER.WAIT} None")
-                fault_msg = self.plan_fault_resolution(TASK_CONFIG.MITIGATION_STRATEGIES.SHIFT_ORIGIN)
+                msg_type = self.plan_fault_resolution(TASK_CONFIG.MITIGATION_STRATEGIES.SHIFT_ORIGIN)
 
                 self.validate_task() #TODO: Actually send the new task to the controller
+                fault_msg = f"{msg_type} {self.task_config}"
                 
                 self.execute_fault_resolution(fault_msg)
                 self.state = DT_STATES.WAITING_FOR_TASK_TO_START
@@ -230,15 +231,15 @@ class DigitalUR:
                 # print(f"Task config after (2): \n {self.task_config}")
 
                 # return fault_msg with the new task_config
-                return f"{MSG_TYPES_DT_TO_CONTROLLER.RESOLVED} {self.task_config}"
+                return f"{MSG_TYPES_DT_TO_CONTROLLER.RESOLVED}"
             
             elif mitigation_strategy == TASK_CONFIG.MITIGATION_STRATEGIES.TRY_PICK_STOCK:
                 # For block[j] try PICK_STOCK[i++]
-                self.task_config[self.current_block+1][TASK_CONFIG.ORIGIN] = TASK_CONFIG.PICK_STOCK_COORDINATES[self.pick_stock_tried][TASK_CONFIG.ORIGIN]
-                self.task_config[self.current_block+1][TASK_CONFIG.TIMING_THRESHOLD] = TASK_CONFIG.PICK_STOCK_COORDINATES[self.pick_stock_tried][TASK_CONFIG.TIMING_THRESHOLD]
+                self.task_config[self.current_block+1][TASK_CONFIG.ORIGIN][TASK_CONFIG.x] = TASK_CONFIG.PICK_STOCK_COORDINATES[self.pick_stock_tried][TASK_CONFIG.ORIGIN][TASK_CONFIG.x]
+                self.task_config[self.current_block+1][TASK_CONFIG.ORIGIN][TASK_CONFIG.y] = TASK_CONFIG.PICK_STOCK_COORDINATES[self.pick_stock_tried][TASK_CONFIG.ORIGIN][TASK_CONFIG.y]                
                 self.time_of_last_message = time.time() # Reset timer  
                 self.pick_stock_tried += 1
-                return f"{MSG_TYPES_DT_TO_CONTROLLER.RESOLVED} {self.task_config}"
+                return f"{MSG_TYPES_DT_TO_CONTROLLER.RESOLVED}"
                 
 
         elif self.current_fault == FAULT_TYPES.UNKOWN_FAULT:
@@ -248,7 +249,9 @@ class DigitalUR:
 
     def execute_fault_resolution(self, fault_msg) -> None:
         """Execute the fault resolution: send message to controller
-        fault_msg: The fault message to send to the controller"""
+        fault_msg: The fault message to send to the controller
+        "msg_type, task_config"
+        """
         self.rmq_client_out.send_message(fault_msg, RMQ_CONFIG.DT_EXCHANGE)
 
     

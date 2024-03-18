@@ -2,6 +2,7 @@ import sys
 
 sys.path.append("../..")
 from config.task_config import TASK_CONFIG
+from dt.task_validator.TimingThresholdEstimator import TimingThresholdEstimator
 import numpy as np
 from time import sleep, time
 
@@ -14,7 +15,9 @@ class TaskValidator:
         self.no_blocks = None
         self.task = None
 
-        self.time_threshold = 2 # should handle new task in 2 second
+        self.validating_threshold = 2 # should handle new task in 2 second
+        self.timing_threshold_estimator = TimingThresholdEstimator()
+        self.estimated_thresholds = []
 
     def validate_task(self, task: dict):
         """Validate the task
@@ -29,10 +32,20 @@ class TaskValidator:
         # validate task
         valid = self.__validate_task()
 
-        # parse matrices to task again
-        self.__update_task()
+        if valid: 
+            # parse matrices to task again
+            self.__update_task()
+            self.__compute_thresholds()
+            self.__update_task()
+
+        print(self.task)
 
         return valid, self.task
+
+    def __compute_thresholds(self):
+        """Computes thresholds"""
+        self.estimated_thresholds, _, _ = self.timing_threshold_estimator.compute_thresholds(self.task.copy())
+
 
     def __update_task(self):
         """Update task from matrices"""
@@ -45,6 +58,11 @@ class TaskValidator:
             self.task[i][TASK_CONFIG.TARGET][TASK_CONFIG.y] = int(self.block_target_map[1, i])
             self.task[i][TASK_CONFIG.TARGET].update({TASK_CONFIG.ROTATE_WRIST: bool(self.block_target_map[2, i])})
             # self.task[i][TASK_CONFIG.TARGET][TASK_CONFIG.ROTATE_WRIST] = bool(self.block_target_map[2, i])
+            # Update thresholds
+            # print(len(self.estimated_thresholds))
+            # print(i)
+            if (len(self.estimated_thresholds) != 0):
+                self.task[i].update({TASK_CONFIG.TIMING_THRESHOLD: self.estimated_thresholds[i]})
 
     def __create_maps(self):
         """Create matrices of block positions from task"""
@@ -71,7 +89,7 @@ class TaskValidator:
         start_time = time()
 
         # continue until task is valid or time threshold is reached
-        while (not task_valid) and (time() - start_time < self.time_threshold):
+        while (not task_valid) and (time() - start_time < self.validating_threshold):
             # check if grip position is possible for targets
             task_valid = True
             # print(self.block_target_map)
