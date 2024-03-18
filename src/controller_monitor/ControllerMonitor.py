@@ -40,7 +40,7 @@ class ControllerMonitor:
         self.dt_timer_finished : bool = False # flag to check if overall task is finished
         self.task_finished : bool = False # flag to check if overall task is finished
         self.task_validated : bool = False # flag to check if task is validated
-
+        self.task_config = None
         self.program_running_name: str = ""
         self.conf_file = "record_configuration.xml"
         self.log_file = "robot_output.csv"

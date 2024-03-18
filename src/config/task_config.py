@@ -45,6 +45,10 @@ class TASK_CONFIG:
         Y_BASE_MIN: 0.28071,
     }
 
+    # place size (in grid points)
+    PLACE_WIDTH = 5
+    PLACE_HEIGHT = 10
+
     GRID_COORDINATES = {
         GRIP_Z: 0.3,
         BEFORE_GRIP_Z: 1.55
