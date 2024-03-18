@@ -3,7 +3,7 @@ import sys
 sys.path.append("../..")
 from config.task_config import TASK_CONFIG
 from dt.task_validator.TimingThresholdEstimator import TimingThresholdEstimator
-import rectangle_packer.RectanglePacker as rp
+# import rectangle_packer.RectanglePacker as rp
 import numpy as np
 from time import time
 
@@ -11,9 +11,9 @@ class TaskValidator:
     """Class to validate a task a specified in TASK_CONFIG"""
 
     def __init__(self) -> None:
-        self.rectangle_packer = rp.RectanglePacker(
-            TASK_CONFIG.PLACE_WIDTH, TASK_CONFIG.PLACE_HEIGHT
-        )
+        # self.rectangle_packer = rp.RectanglePacker(
+        #     TASK_CONFIG.PLACE_WIDTH, TASK_CONFIG.PLACE_HEIGHT
+        # )
 
         self.block_origin_map = None
         self.block_target_map = None
@@ -42,9 +42,7 @@ class TaskValidator:
             self.__update_task()
             self.__compute_thresholds()
             self.__update_task()
-
-        print(self.task)
-
+            
         return valid, self.task
 
     def __compute_thresholds(self):
