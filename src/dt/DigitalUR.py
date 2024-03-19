@@ -6,6 +6,7 @@ import time
 import ast
 
 sys.path.append("..")
+import cli_arguments
 from rmq.RMQClient import Client # pylint: disable=import-error
 from config.rmq_config import RMQ_CONFIG
 from digitalur_states import DT_STATES
@@ -19,7 +20,7 @@ from task_validator.TaskValidator import TaskValidator
 class DigitalUR:
     """Class for the digital twin of the UR3e Robot"""
 
-    def __init__(self):
+    def __init__(self, mitigation_strategy: str):
         self.state: DT_STATES = DT_STATES.INITIALIZING
         self.rmq_client_in = Client(host=RMQ_CONFIG.RMQ_SERVER_IP)
         # self.rmq_client_in_monitor = Client(host=RMQ_CONFIG.RMQ_SERVER_IP, name="monitor")
@@ -32,7 +33,8 @@ class DigitalUR:
 
         # model of the UR3e robot
         self.robot = UR3e()
-
+        self.mitigation_strategy = None
+        self.__set_mitigation_strategy(mitigation_strategy)
         self.current_fault: FAULT_TYPES = None
         self.state_machine_thread.start()
 
@@ -41,11 +43,17 @@ class DigitalUR:
         self.last_object_detected = False
 
         self.current_block = -1  # current block number being processed
-        # self.task_config = TASK_CONFIG.block_config_close_blocks.copy()
         self.task_config = None
         self.pick_stock_tried = 1
 
         self.task_validator = TaskValidator()
+
+    def __set_mitigation_strategy(self, mitigation_strategy: str) -> None:
+        """Set the mitigation strategy"""
+        if mitigation_strategy == cli_arguments.SHIFT:
+            self.mitigation_strategy = TASK_CONFIG.MITIGATION_STRATEGIES.SHIFT_ORIGIN
+        elif mitigation_strategy == cli_arguments.STOCK:
+            self.mitigation_strategy = TASK_CONFIG.MITIGATION_STRATEGIES.TRY_PICK_STOCK
 
     def configure_rmq_clients(self):
         """Configures rmq_client_in to receive data from monitor
@@ -173,7 +181,7 @@ class DigitalUR:
                 # stop program firstly
                 self.execute_fault_resolution(f"{MSG_TYPES_DT_TO_CONTROLLER.WAIT} None")
                 # resolve the fault and update the task_config
-                msg_type = self.plan_fault_resolution(TASK_CONFIG.MITIGATION_STRATEGIES.TRY_PICK_STOCK)
+                msg_type = self.plan_fault_resolution()
 
                 # validate the task
                 self.validate_task()
@@ -194,7 +202,7 @@ class DigitalUR:
             msg = f"{MSG_TYPES_DT_TO_CONTROLLER.TASK_NOT_VALIDATED} None"
         return valid, msg
 
-    def plan_fault_resolution(self, mitigation_strategy: str) -> None:
+    def plan_fault_resolution(self) -> None:
         """Resolve the current fault"""
         # resolve the fault here based on current fault and mitigation stragety
         # if fault resolved send new data to controller
@@ -203,7 +211,7 @@ class DigitalUR:
 
         
         if self.current_fault == FAULT_TYPES.MISSING_OBJECT:
-            if mitigation_strategy == TASK_CONFIG.MITIGATION_STRATEGIES.SHIFT_ORIGIN:
+            if self.mitigation_strategy == TASK_CONFIG.MITIGATION_STRATEGIES.SHIFT_ORIGIN:
                 # print(f"Task config before (1): \n {self.task_config}")
                 # # 1) remove the blocks that have already been moved
                 
@@ -231,7 +239,7 @@ class DigitalUR:
                 # return fault_msg with the new task_config
                 return f"{MSG_TYPES_DT_TO_CONTROLLER.RESOLVED}"
             
-            elif mitigation_strategy == TASK_CONFIG.MITIGATION_STRATEGIES.TRY_PICK_STOCK:
+            elif self.mitigation_strategy == TASK_CONFIG.MITIGATION_STRATEGIES.TRY_PICK_STOCK:
                 # For block[j] try PICK_STOCK[i++]
                 self.task_config[self.current_block+1][TASK_CONFIG.ORIGIN][TASK_CONFIG.x] = TASK_CONFIG.PICK_STOCK_COORDINATES[self.pick_stock_tried][TASK_CONFIG.ORIGIN][TASK_CONFIG.x]
                 self.task_config[self.current_block+1][TASK_CONFIG.ORIGIN][TASK_CONFIG.y] = TASK_CONFIG.PICK_STOCK_COORDINATES[self.pick_stock_tried][TASK_CONFIG.ORIGIN][TASK_CONFIG.y]                
