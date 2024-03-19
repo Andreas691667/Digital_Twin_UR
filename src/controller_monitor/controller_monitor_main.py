@@ -12,14 +12,3 @@ if __name__ == "__main__":
     home = args.home
 
     cm = ControllerMonitor(task_name, home)
-
-    while True:
-        try:
-            k = msvcrt.getwche()
-            if k == "c":
-                break
-            k = "a"
-        except KeyboardInterrupt:
-            break
-
-    cm.shutdown_event.set()
