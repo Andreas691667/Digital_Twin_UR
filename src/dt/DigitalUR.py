@@ -169,13 +169,15 @@ class DigitalUR:
             elif self.state == DT_STATES.MONITORING_PT:
                 self.monitor_pt()
             elif self.state == DT_STATES.FAULT_RESOLUTION:
-                # stop program firstly
+                # Stop program firstly
                 self.execute_fault_resolution(f"{MSG_TYPES_DT_TO_CONTROLLER.WAIT} None")
                 msg_type = self.plan_fault_resolution(TASK_CONFIG.MITIGATION_STRATEGIES.SHIFT_ORIGIN)
 
-                self.validate_task() #TODO: Actually send the new task to the controller
+                # Validate task
+                self.validate_task()
                 fault_msg = f"{msg_type} {self.task_config}"
                 
+                # Execute fault resolution
                 self.execute_fault_resolution(fault_msg)
                 self.state = DT_STATES.WAITING_FOR_TASK_TO_START
                 print("State transition -> WAITING_FOR_TASK_TO_START")
@@ -199,15 +201,10 @@ class DigitalUR:
 
         
         if self.current_fault == FAULT_TYPES.MISSING_OBJECT:
+
             if mitigation_strategy == TASK_CONFIG.MITIGATION_STRATEGIES.SHIFT_ORIGIN:
-                # print(f"Task config before (1): \n {self.task_config}")
-                # # 1) remove the blocks that have already been moved
-                # for block_no in range(self.current_block):
-                #     self.task_config.pop(block_no+1)
-                # self.task_config[TASK_CONFIG.NO_BLOCKS] -= self.current_block
-                
-                # print(f"Task config after (1): \n {self.task_config}")
-                # 2) from the current block, change two first rows in its config to the next block
+    
+                # From the current block, change two first rows in its config to the next block
                 for block_no in range(                                                     # Iterate over blocks
                     self.current_block + 1, self.task_config[TASK_CONFIG.NO_BLOCKS]-1        # ... from the next block to the last block
                 ):
@@ -228,18 +225,20 @@ class DigitalUR:
                 self.task_config.pop(self.task_config[TASK_CONFIG.NO_BLOCKS] - 1)
                 self.task_config[TASK_CONFIG.NO_BLOCKS] -= 1
 
-                # print(f"Task config after (2): \n {self.task_config}")
-
+                # Reset timer 
+                self.time_of_last_message = time.time() 
+                
                 # return fault_msg with the new task_config
                 return f"{MSG_TYPES_DT_TO_CONTROLLER.RESOLVED}"
             
             elif mitigation_strategy == TASK_CONFIG.MITIGATION_STRATEGIES.TRY_PICK_STOCK:
-                # For block[j] try PICK_STOCK[i++]
+                # For block[j] try STOCK[i++]
                 self.task_config[self.current_block+1][TASK_CONFIG.ORIGIN][TASK_CONFIG.x] = TASK_CONFIG.PICK_STOCK_COORDINATES[self.pick_stock_tried][TASK_CONFIG.ORIGIN][TASK_CONFIG.x]
                 self.task_config[self.current_block+1][TASK_CONFIG.ORIGIN][TASK_CONFIG.y] = TASK_CONFIG.PICK_STOCK_COORDINATES[self.pick_stock_tried][TASK_CONFIG.ORIGIN][TASK_CONFIG.y]                
-                self.time_of_last_message = time.time() # Reset timer  
                 self.pick_stock_tried += 1
+                self.time_of_last_message = time.time() # Reset timer 
                 return f"{MSG_TYPES_DT_TO_CONTROLLER.RESOLVED}"
+             
                 
 
         elif self.current_fault == FAULT_TYPES.UNKOWN_FAULT:
