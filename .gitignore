@@ -9,3 +9,4 @@
 # rtde/UR_RTDE_CLIENT_LIBRARY/rtde/__pycache__/
 __pycache__/
 src/controller_monitor/test_results/robot_output.csv
+*.pyc

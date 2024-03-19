@@ -123,10 +123,40 @@ class UR3e(rtb.DHRobot):
         return q
 
 
-# if __name__ == "__main__":
-#     ur = UR3e()
-#     q = ur.compute_joint_positions(-3,5, grip_pos=True)
-#     q = ur.check_joint_validity(q)
-#     print(q)
-#     # print in degrees
-#     print(np.rad2deg(q))
+if __name__ == "__main__":    
+    ur = UR3e()
+    # import swift
+    # env = swift.Swift()
+    # env.launch()
+    robot = rtb.models.UR3()
+    # robot.plot(q=robot.qr, block=True, backend="pyplot")
+    # print(robot)
+    # env.add(robot)
+    # env.hold()
+    # # robot.plot(robot.qr, block=True, backend="pyplot")
+
+
+    q_home = ur.compute_joint_positions_xy(11, 2)
+    q_t = ur.compute_joint_positions_xy(-3,5, grip_pos=True)
+
+    traj = rtb.jtraj(q_home, q_t, t=100, qd0=np.zeros(6), qd1=np.ones(6)*80)
+    print(traj.sd)
+    ur.plot(traj.q, block=True, backend="pyplot", vellipse=True)
+
+    # robot.jointdynamics(q_home, q_t, 50).plot(block=True)
+
+    # # q = ur.check_joint_validity(q)
+    # # print(q)
+    # # # print in degrees
+    # # print(np.rad2deg(q))
+
+    # # ur.plot(q, block=True)
+
+    # traj = rtb.tools.trajectory.jtraj(q_home, q_t, 50)
+    # # traj.plot(block=True) 
+
+    # # print(traj.q)
+    # ur.plot(traj.q, dt=100, block=True)
+
+    # # tg = ur.nofriction().fdyn(5, [0,0,0,0,0,0], dt=0.05)
+    # # rtb.tools.trajectory.qplot(tg.q, tg.t)
