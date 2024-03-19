@@ -189,6 +189,10 @@ class DigitalUR:
                 # resolve the fault and update the task_config
                 msg_type = self.plan_fault_resolution()
 
+                # tell task_validator what object is missing
+                if self.current_fault == FAULT_TYPES.MISSING_OBJECT:
+                    self.task_validator.set_missing_block(self.current_block+1)
+
                 # Validate task
                 self.validate_task()
                 fault_msg = f"{msg_type} {self.task_config}"
@@ -200,7 +204,7 @@ class DigitalUR:
 
     def validate_task(self):
         """Validate the task using the task validator"""
-        valid, self.task_config = self.task_validator.validate_task(self.task_config)
+        valid, self.task_config = self.task_validator.validate_task(self.task_config.copy())
         if valid:
             msg = f"{MSG_TYPES_DT_TO_CONTROLLER.TASK_VALIDATED} {self.task_config}"
         
