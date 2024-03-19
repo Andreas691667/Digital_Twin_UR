@@ -245,8 +245,6 @@ class DigitalUR:
             
             elif self.mitigation_strategy == TASK_CONFIG.MITIGATION_STRATEGIES.TRY_PICK_STOCK:
                 # For block[j] try PICK_STOCK[i++]
-            elif mitigation_strategy == TASK_CONFIG.MITIGATION_STRATEGIES.TRY_PICK_STOCK:
-                # For block[j] try STOCK[i++]
                 self.task_config[self.current_block+1][TASK_CONFIG.ORIGIN][TASK_CONFIG.x] = TASK_CONFIG.PICK_STOCK_COORDINATES[self.pick_stock_tried][TASK_CONFIG.ORIGIN][TASK_CONFIG.x]
                 self.task_config[self.current_block+1][TASK_CONFIG.ORIGIN][TASK_CONFIG.y] = TASK_CONFIG.PICK_STOCK_COORDINATES[self.pick_stock_tried][TASK_CONFIG.ORIGIN][TASK_CONFIG.y]                
                 self.pick_stock_tried += 1
