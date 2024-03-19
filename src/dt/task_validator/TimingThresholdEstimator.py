@@ -8,6 +8,7 @@ from config.task_config import TASK_CONFIG
 class TimingThresholdEstimator:
     def __init__(self) -> None:
         self.robot_model = UR3e()
+        self.is_in_home_position = True
 
     def __compute_ik_solutions (self, task_config) -> np.ndarray:
         """Computes the inverse kinematics solutions
@@ -38,13 +39,13 @@ class TimingThresholdEstimator:
     def __get_distances_of_leading_axis(self, joint_positions: np.ndarray) -> np.ndarray:
         """
         Get sliding windows differences
-        If input is NxM, then output is (N-1)xM
+        If input is NxM, then output is (N-1)xM and the leading axis of N-1 x 1
         """
         # sliding window differences
         joint_positions_differences = np.abs(joint_positions[:-1, :] - joint_positions[1:, :])
         leading_axis = np.argmax(joint_positions_differences, axis=1)
         differences_leading_axis = joint_positions_differences[np.arange(len(joint_positions_differences)), leading_axis]
-        return differences_leading_axis
+        return differences_leading_axis, leading_axis
 
     def __get_durations_of_leading_axis(self, distances_leading_axis: np.ndarray) -> np.ndarray:
         """
@@ -98,7 +99,7 @@ class TimingThresholdEstimator:
         Outputs the combined duration between each joint position and the individual durations
         """
         # Get the distances of the leading axis
-        distances_of_leading_axis = self.__get_distances_of_leading_axis(joint_positions)
+        distances_of_leading_axis, leading_axis = self.__get_distances_of_leading_axis(joint_positions)
         
         # Get the durations of movements
         all_durations, des = self.__get_durations_of_leading_axis(distances_of_leading_axis) 
@@ -116,7 +117,7 @@ class TimingThresholdEstimator:
         # Sum the durations
         combined_duration = np.sum(all_durations)
 
-        return combined_duration, all_durations, des
+        return combined_duration, all_durations, des, leading_axis
 
     def __get_home_ik_sol(self):
         """Compute IK solution for home position"""
@@ -136,6 +137,7 @@ class TimingThresholdEstimator:
         thresholds = []
         all_durations = []
         all_durations_des = []
+        all_leading_axis = []
     
         
         # Calculate thresholds for blocks, if there is more than one block to move
@@ -145,10 +147,13 @@ class TimingThresholdEstimator:
             timing_essential_positions = []
             
             # First block (or last if there are only one)
-            if block_number == 0:
+            if block_number == 0 and self.is_in_home_position:
                 home_sol = self.__get_home_ik_sol()
                 origin_positions = ik_solutions[block_number, :2, :]
                 timing_essential_positions = np.vstack((home_sol, origin_positions))
+                
+                # set home position to false
+                self.is_in_home_position = False
             
             # Middle block or last block
             else:
@@ -161,12 +166,14 @@ class TimingThresholdEstimator:
             # Get durations in between positions
             # combined_duration: total time between timing_essential_positions
             # durations: durations between all moves
-            combined_duration, durations, des = self.__get_duration_between_positions(timing_essential_positions, block_number)
+            combined_duration, durations, des, leading_axis = self.__get_duration_between_positions(timing_essential_positions, block_number)
             thresholds.append(combined_duration)
             all_durations.extend(durations)
             all_durations_des.extend(des)
-            
-            
+            all_leading_axis.extend(leading_axis)
+        
+        
+        print(f"Leading axis of movements: {all_leading_axis}")    
         return thresholds, all_durations, all_durations_des
 
 if __name__ == "__main__":
@@ -176,7 +183,7 @@ if __name__ == "__main__":
     thresholds, all_durations, des = timing_threshold_estimator.compute_thresholds(task_config)
     print(all_durations)
     print(des)
-    # print(thresholds)
+    print(thresholds)
     # print(all_durations)
 
     

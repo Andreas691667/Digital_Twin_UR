@@ -42,7 +42,7 @@ class TaskValidator:
             self.__update_task()
             self.__compute_thresholds()
             self.__update_task()
-            
+            print(self.task)
         return valid, self.task
 
     def __compute_thresholds(self):

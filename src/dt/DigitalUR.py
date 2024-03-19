@@ -116,9 +116,15 @@ class DigitalUR:
                 "actual_q4": float(data[4]),
                 "actual_q5": float(data[5]),
                 "actual_q6": float(data[6]),
-                "safety_status": int(data[7]),
-                "output_bit_register_65": bool(data[8]),  # for start bit
-                "output_bit_register_66": bool(data[9]),  # for object detection
+                "actual_qd0": float(data[7]),
+                "actual_qd2": float(data[8]),
+                "actual_qd3": float(data[9]),
+                "actual_qd4": float(data[10]),
+                "actual_qd5": float(data[11]),
+                "actual_qd6": float(data[12]),
+                "safety_status": int(data[13]),
+                "output_bit_register_65": bool(data[14]),  # for start bit
+                "output_bit_register_66": bool(data[15]),  # for object detection
             }
             self.monitor_msg_queue.put((msg_type, data_dict))
 
