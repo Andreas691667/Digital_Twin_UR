@@ -123,7 +123,7 @@ class TimingThresholdEstimator:
         # Sum the durations
         combined_duration = np.sum(all_durations)
 
-        return combined_duration, all_durations, des, leading_axis
+        return combined_duration, (all_durations, des, leading_axis, distances_of_leading_axis)
 
     def __get_home_ik_sol(self):
         """Compute IK solution for home position"""
@@ -161,9 +161,8 @@ class TimingThresholdEstimator:
                     timing_essential_positions = np.vstack((old_origin_grip_pos, current_origins))
                 if mitigation_strategy == TASK_CONFIG.MITIGATION_STRATEGIES.TRY_PICK_STOCK:
                     old_origin_grip_pos = self.last_ik_solutions[block_number, 1, :]
-                    current_origin_before_grip = ik_solutions[block_number, 0, :]
-                    current_grip_pos = ik_solutions[block_number, 1, :]
-                    timing_essential_positions = np.vstack((old_origin_grip_pos, current_origin_before_grip, current_grip_pos, current_origin_before_grip))
+                    current_origins = ik_solutions[block_number, :2, :]
+                    timing_essential_positions = np.vstack((old_origin_grip_pos, current_origins))
             
             # First block (or last if there are only one)
             elif block_number == 0 and self.is_in_home_position:
@@ -185,14 +184,13 @@ class TimingThresholdEstimator:
             # Get durations in between positions
             # combined_duration: total time between timing_essential_positions
             # durations: durations between all moves
-            combined_duration, durations, des, leading_axis = self.__get_duration_between_positions(timing_essential_positions, block_number)
+            combined_duration, log_info = self.__get_duration_between_positions(timing_essential_positions, block_number)
+            durations, des, leading_axis, dists_leading_axis = log_info
             thresholds.append(combined_duration)
             all_durations.extend(durations)
             all_durations_des.extend(des)
             all_leading_axis.extend(leading_axis)
         
-        
-        print(f"Leading axis of movements: {all_leading_axis}")    
         return thresholds, all_durations, all_durations_des
         
 
