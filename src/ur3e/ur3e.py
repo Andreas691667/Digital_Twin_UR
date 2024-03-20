@@ -123,40 +123,70 @@ class UR3e(rtb.DHRobot):
         return q
 
 
-if __name__ == "__main__":    
+    def set_motion_time(self, motion_time):
+        """Set the estimated motion time for the robot arm
+        Args:
+            motion_time (float): The estimated motion time in seconds"""
+        self.motion_time = motion_time
+
+    def estimate_motion_time(self, start, target) -> float:
+        """Estimate the motion time for the robot arm
+        Args:
+            start (list): The start grid position
+            target (list): The target grid position
+            Returns:
+                float: The estimated motion time"""
+        x_start, y_start, z_start = start[TASK_CONFIG.x], start[TASK_CONFIG.y], start[TASK_CONFIG.z]
+        x_target, y_target, z_target = target[TASK_CONFIG.x], target[TASK_CONFIG.y], target[TASK_CONFIG.z]
+
+        # if the x and y are the same, the motion time is 0.2
+        if x_start == x_target and y_start == y_target:
+            return 0.2
+
+    def set_n_steps_motion(self, dt=0.05):
+        """Set the number of steps for the motion
+        Args:
+            dt (float): The time step in seconds"""
+        
+        self.n_steps_motion = int(self.motion_time / dt)
+    
+    def plot_trajectory(self):
+        """Plot the trajectory of the robot arm"""
+        self.traj.plot(block=True)
+        self.plot(self.traj.q, block=True)
+
+    def compute_trajectory(self, start, target):
+        """Compute the trajectory of the robot arm
+        Args:
+            start (list): The start joint positions
+            target (list): The target joint positions"""
+        self.traj = rtb.jtraj(start, target, t=self.n_steps_motion)
+
+if __name__ == "__main__":
     ur = UR3e()
-    # import swift
-    # env = swift.Swift()
-    # env.launch()
-    robot = rtb.models.UR3()
-    # robot.plot(q=robot.qr, block=True, backend="pyplot")
-    # print(robot)
-    # env.add(robot)
-    # env.hold()
-    # # robot.plot(robot.qr, block=True, backend="pyplot")
+
+    grip_pos = False
+    GRIP_Z = TASK_CONFIG.GRID_COORDINATES[TASK_CONFIG.GRIP_Z]
+    BEFORE_GRIP_Z = TASK_CONFIG.GRID_COORDINATES[TASK_CONFIG.BEFORE_GRIP_Z]
+    z_g = GRIP_Z if grip_pos else BEFORE_GRIP_Z
+
+    x, y, z = ur.compute_base_coordinates(0, 0, z_g)
+    print(x, y, z)
 
 
-    q_home = ur.compute_joint_positions_xy(11, 2)
-    q_t = ur.compute_joint_positions_xy(-3,5, grip_pos=True)
 
-    traj = rtb.jtraj(q_home, q_t, t=100, qd0=np.zeros(6), qd1=np.ones(6)*80)
-    print(traj.sd)
-    ur.plot(traj.q, block=True, backend="pyplot", vellipse=True)
 
-    # robot.jointdynamics(q_home, q_t, 50).plot(block=True)
 
-    # # q = ur.check_joint_validity(q)
-    # # print(q)
-    # # # print in degrees
-    # # print(np.rad2deg(q))
 
-    # # ur.plot(q, block=True)
 
-    # traj = rtb.tools.trajectory.jtraj(q_home, q_t, 50)
-    # # traj.plot(block=True) 
 
-    # # print(traj.q)
-    # ur.plot(traj.q, dt=100, block=True)
 
-    # # tg = ur.nofriction().fdyn(5, [0,0,0,0,0,0], dt=0.05)
-    # # rtb.tools.trajectory.qplot(tg.q, tg.t)
+    # q_home = ur.compute_joint_positions_xy(0, 0)
+    # q_t = ur.compute_joint_positions_xy(12, -5, grip_pos=True)
+
+    # ur.set_motion_time(1)
+    # ur.set_n_steps_motion()
+
+    # ur.compute_trajectory(q_home, q_t)
+
+    # ur.plot_trajectory()    
