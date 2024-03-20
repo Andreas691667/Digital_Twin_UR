@@ -255,11 +255,14 @@ class DigitalUR:
             
             elif self.mitigation_strategy == TASK_CONFIG.MITIGATION_STRATEGIES.TRY_PICK_STOCK:
                 # For block[j] try PICK_STOCK[i++]
-                self.task_config[self.current_block+1][TASK_CONFIG.ORIGIN][TASK_CONFIG.x] = TASK_CONFIG.PICK_STOCK_COORDINATES[self.pick_stock_tried][TASK_CONFIG.ORIGIN][TASK_CONFIG.x]
-                self.task_config[self.current_block+1][TASK_CONFIG.ORIGIN][TASK_CONFIG.y] = TASK_CONFIG.PICK_STOCK_COORDINATES[self.pick_stock_tried][TASK_CONFIG.ORIGIN][TASK_CONFIG.y]                
-                self.pick_stock_tried += 1
-                self.time_of_last_message = time.time() # Reset timer 
-                return f"{MSG_TYPES_DT_TO_CONTROLLER.RESOLVED}"
+                if self.pick_stock_tried < len(TASK_CONFIG.PICK_STOCK_COORDINATES):
+                    self.task_config[self.current_block+1][TASK_CONFIG.ORIGIN][TASK_CONFIG.x] = TASK_CONFIG.PICK_STOCK_COORDINATES[self.pick_stock_tried][TASK_CONFIG.ORIGIN][TASK_CONFIG.x]
+                    self.task_config[self.current_block+1][TASK_CONFIG.ORIGIN][TASK_CONFIG.y] = TASK_CONFIG.PICK_STOCK_COORDINATES[self.pick_stock_tried][TASK_CONFIG.ORIGIN][TASK_CONFIG.y]                
+                    self.pick_stock_tried += 1
+                    self.time_of_last_message = time.time() # Reset timer 
+                    return f"{MSG_TYPES_DT_TO_CONTROLLER.RESOLVED}"
+                else:
+                    return f"{MSG_TYPES_DT_TO_CONTROLLER.COULD_NOT_RESOLVE}"
              
                 
 
