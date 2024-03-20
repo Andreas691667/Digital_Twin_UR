@@ -12,6 +12,7 @@ class TimingThresholdEstimator:
         self.robot_model = UR3e()
         self.is_in_home_position = True
         self.last_ik_solutions = None
+        self.log_info = {}
 
     def __compute_ik_solutions (self, task_config) -> np.ndarray:
         """Computes the inverse kinematics solutions
@@ -104,6 +105,8 @@ class TimingThresholdEstimator:
         Input is joins_positions of NxM, where N are the number of positions and M are DOF
         Outputs the combined duration between each joint position and the individual durations
         """
+        log_info = {}
+        
         # Get the distances of the leading axis
         distances_of_leading_axis, leading_axis = self.__get_distances_of_leading_axis(joint_positions)
         
@@ -184,15 +187,36 @@ class TimingThresholdEstimator:
             # Get durations in between positions
             # combined_duration: total time between timing_essential_positions
             # durations: durations between all moves
-            combined_duration, log_info = self.__get_duration_between_positions(timing_essential_positions, block_number)
-            durations, des, leading_axis, dists_leading_axis = log_info
+            combined_duration, log_info_block = self.__get_duration_between_positions(timing_essential_positions, block_number)
+            durations, des, leading_axis, dists_leading_axis = log_info_block
             thresholds.append(combined_duration)
             all_durations.extend(durations)
             all_durations_des.extend(des)
             all_leading_axis.extend(leading_axis)
         
+        # Write loginfo to yaml file
+        pass
+        print(f"All durations des \n {all_durations_des}")
+
+        # Return
         return thresholds, all_durations, all_durations_des
-        
+    
+    def __add_to_log(self, threshold: float, dur: list[float], dur_des: list[str], lead_ax: list[int], lead_ax_dist: list[float]) -> None:
+        """Add computations to log"""
+        for threshold_index, threshold in enumerate(thresholds):
+            self.log_info.update({threshold_index: {"threshold": threshold}})
+            movements = {}
+            for movement_index, _ in enumerate(dur):
+
+                movements.update({movement_index: {
+                    "type": dur_des[movement_index],
+                    "duration": dur[movement_index],
+                    "leading_axis": 2
+                }})
+
+    def seperate_movements(dur, dur_des):
+        # If starts 
+        pass
 
 import yaml
 import json
