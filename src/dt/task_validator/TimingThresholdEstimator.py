@@ -161,9 +161,8 @@ class TimingThresholdEstimator:
                     timing_essential_positions = np.vstack((old_origin_grip_pos, current_origins))
                 if mitigation_strategy == TASK_CONFIG.MITIGATION_STRATEGIES.TRY_PICK_STOCK:
                     old_origin_grip_pos = self.last_ik_solutions[block_number, 1, :]
-                    current_origin_before_grip = ik_solutions[block_number, 0, :]
-                    current_grip_pos = ik_solutions[block_number, 1, :]
-                    timing_essential_positions = np.vstack((old_origin_grip_pos, current_origin_before_grip, current_grip_pos, current_origin_before_grip))
+                    current_origins = ik_solutions[block_number, :2, :]
+                    timing_essential_positions = np.vstack((old_origin_grip_pos, current_origins))
             
             # First block (or last if there are only one)
             elif block_number == 0 and self.is_in_home_position:
