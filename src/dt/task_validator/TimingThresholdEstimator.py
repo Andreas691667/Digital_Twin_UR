@@ -198,11 +198,10 @@ class TimingThresholdEstimator:
 import yaml
 import json
 if __name__ == "__main__":
-    print("here?")
     task_config = {}
-    task_name = "case1_close_blocks"
+    task_name = "2_blocks"
     try:
-        with open(f"/config/tasks/{task_name}.yaml", "r") as file:
+        with open(f"../../config/tasks/{task_name}.yaml", "r") as file:
             task_config = yaml.safe_load(file)
             print(task_config)
     except FileNotFoundError:
@@ -212,7 +211,7 @@ if __name__ == "__main__":
     thresholds, all_durations, des = timing_threshold_estimator.compute_thresholds(task_config)
     print(all_durations)
     print(des)
-    print(thresholds)
+    # print(thresholds)
     # print(all_durations)
 
     
