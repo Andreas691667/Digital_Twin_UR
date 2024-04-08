@@ -1,5 +1,6 @@
 from ControllerMonitor import ControllerMonitor
 import argparse
+import msvcrt
 
 if __name__ == "__main__":
 
@@ -11,4 +12,3 @@ if __name__ == "__main__":
     home = args.home
 
     cm = ControllerMonitor(task_name, home)
-

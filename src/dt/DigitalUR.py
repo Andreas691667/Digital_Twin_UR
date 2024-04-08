@@ -6,6 +6,7 @@ import time
 import ast
 
 sys.path.append("..")
+import cli_arguments
 from rmq.RMQClient import Client # pylint: disable=import-error
 from config.rmq_config import RMQ_CONFIG
 from digitalur_states import DT_STATES
@@ -19,7 +20,7 @@ from task_validator.TaskValidator import TaskValidator
 class DigitalUR:
     """Class for the digital twin of the UR3e Robot"""
 
-    def __init__(self):
+    def __init__(self, mitigation_strategy: str):
         self.state: DT_STATES = DT_STATES.INITIALIZING
         self.rmq_client_in = Client(host=RMQ_CONFIG.RMQ_SERVER_IP)
         # self.rmq_client_in_monitor = Client(host=RMQ_CONFIG.RMQ_SERVER_IP, name="monitor")
@@ -32,7 +33,8 @@ class DigitalUR:
 
         # model of the UR3e robot
         self.robot = UR3e()
-
+        self.mitigation_strategy = None
+        self.__set_mitigation_strategy(mitigation_strategy)
         self.current_fault: FAULT_TYPES = None
         self.state_machine_thread.start()
 
@@ -41,11 +43,17 @@ class DigitalUR:
         self.last_object_detected = False
 
         self.current_block = -1  # current block number being processed
-        # self.task_config = TASK_CONFIG.block_config_close_blocks.copy()
         self.task_config = None
         self.pick_stock_tried = 1
 
         self.task_validator = TaskValidator()
+
+    def __set_mitigation_strategy(self, mitigation_strategy: str) -> None:
+        """Set the mitigation strategy"""
+        if mitigation_strategy == cli_arguments.SHIFT:
+            self.mitigation_strategy = TASK_CONFIG.MITIGATION_STRATEGIES.SHIFT_ORIGIN
+        elif mitigation_strategy == cli_arguments.STOCK:
+            self.mitigation_strategy = TASK_CONFIG.MITIGATION_STRATEGIES.TRY_PICK_STOCK
 
     def configure_rmq_clients(self):
         """Configures rmq_client_in to receive data from monitor
@@ -108,9 +116,15 @@ class DigitalUR:
                 "actual_q4": float(data[4]),
                 "actual_q5": float(data[5]),
                 "actual_q6": float(data[6]),
-                "safety_status": int(data[7]),
-                "output_bit_register_65": bool(data[8]),  # for start bit
-                "output_bit_register_66": bool(data[9]),  # for object detection
+                "actual_qd0": float(data[7]),
+                "actual_qd2": float(data[8]),
+                "actual_qd3": float(data[9]),
+                "actual_qd4": float(data[10]),
+                "actual_qd5": float(data[11]),
+                "actual_qd6": float(data[12]),
+                "safety_status": int(data[13]),
+                "output_bit_register_65": bool(data[14]),  # for start bit
+                "output_bit_register_66": bool(data[15]),  # for object detection
             }
             self.monitor_msg_queue.put((msg_type, data_dict))
 
@@ -170,20 +184,27 @@ class DigitalUR:
             elif self.state == DT_STATES.NORMAL_OPERATION:
                 self.monitor_pt()
             elif self.state == DT_STATES.FAULT_RESOLUTION:
-                # stop program firstly
+                # Stop program firstly
                 self.execute_fault_resolution(f"{MSG_TYPES_DT_TO_CONTROLLER.WAIT} None")
-                msg_type = self.plan_fault_resolution(TASK_CONFIG.MITIGATION_STRATEGIES.SHIFT_ORIGIN)
+                # resolve the fault and update the task_config
+                msg_type = self.plan_fault_resolution()
 
-                self.validate_task() #TODO: Actually send the new task to the controller
+                # tell task_validator what object is missing
+                if self.current_fault == FAULT_TYPES.MISSING_OBJECT:
+                    self.task_validator.set_missing_block(self.current_block+1)
+
+                # Validate task
+                self.validate_task()
                 fault_msg = f"{msg_type} {self.task_config}"
                 
+                # Execute fault resolution
                 self.execute_fault_resolution(fault_msg)
                 self.state = DT_STATES.WAITING_FOR_TASK_TO_START
                 print("State transition -> WAITING_FOR_TASK_TO_START")
 
     def validate_task(self):
         """Validate the task using the task validator"""
-        valid, self.task_config = self.task_validator.validate_task(self.task_config)
+        valid, self.task_config = self.task_validator.validate_task(self.task_config.copy())
         if valid:
             msg = f"{MSG_TYPES_DT_TO_CONTROLLER.TASK_VALIDATED} {self.task_config}"
         
@@ -191,7 +212,7 @@ class DigitalUR:
             msg = f"{MSG_TYPES_DT_TO_CONTROLLER.TASK_NOT_VALIDATED} None"
         return valid, msg
 
-    def plan_fault_resolution(self, mitigation_strategy: str) -> None:
+    def plan_fault_resolution(self) -> None:
         """Resolve the current fault"""
         # resolve the fault here based on current fault and mitigation stragety
         # if fault resolved send new data to controller
@@ -200,7 +221,7 @@ class DigitalUR:
 
         
         if self.current_fault == FAULT_TYPES.MISSING_OBJECT:
-            if mitigation_strategy == TASK_CONFIG.MITIGATION_STRATEGIES.SHIFT_ORIGIN:
+            if self.mitigation_strategy == TASK_CONFIG.MITIGATION_STRATEGIES.SHIFT_ORIGIN:
                 # print(f"Task config before (1): \n {self.task_config}")
                 # # 1) remove the blocks that have already been moved
                 
@@ -225,17 +246,28 @@ class DigitalUR:
                 self.task_config.pop(self.task_config[TASK_CONFIG.NO_BLOCKS] - 1)
                 self.task_config[TASK_CONFIG.NO_BLOCKS] -= 1
 
+                # Reset timer 
+                self.time_of_last_message = time.time() 
+                
+
                 # return fault_msg with the new task_config
                 return f"{MSG_TYPES_DT_TO_CONTROLLER.RESOLVED}"
             
-            elif mitigation_strategy == TASK_CONFIG.MITIGATION_STRATEGIES.TRY_PICK_STOCK:
+            elif self.mitigation_strategy == TASK_CONFIG.MITIGATION_STRATEGIES.TRY_PICK_STOCK:
                 # For block[j] try PICK_STOCK[i++]
-                self.task_config[self.current_block+1][TASK_CONFIG.ORIGIN][TASK_CONFIG.x] = TASK_CONFIG.PICK_STOCK_COORDINATES[self.pick_stock_tried][TASK_CONFIG.ORIGIN][TASK_CONFIG.x]
-                self.task_config[self.current_block+1][TASK_CONFIG.ORIGIN][TASK_CONFIG.y] = TASK_CONFIG.PICK_STOCK_COORDINATES[self.pick_stock_tried][TASK_CONFIG.ORIGIN][TASK_CONFIG.y]                
-                self.time_of_last_message = time.time() # Reset timer  
-                self.pick_stock_tried += 1
-                return f"{MSG_TYPES_DT_TO_CONTROLLER.RESOLVED}"
+                if self.pick_stock_tried < len(TASK_CONFIG.PICK_STOCK_COORDINATES):
+                    self.task_config[self.current_block+1][TASK_CONFIG.ORIGIN][TASK_CONFIG.x] = TASK_CONFIG.PICK_STOCK_COORDINATES[self.pick_stock_tried][TASK_CONFIG.ORIGIN][TASK_CONFIG.x]
+                    self.task_config[self.current_block+1][TASK_CONFIG.ORIGIN][TASK_CONFIG.y] = TASK_CONFIG.PICK_STOCK_COORDINATES[self.pick_stock_tried][TASK_CONFIG.ORIGIN][TASK_CONFIG.y]                
+                    self.pick_stock_tried += 1
+                    self.time_of_last_message = time.time() # Reset timer 
+                    return f"{MSG_TYPES_DT_TO_CONTROLLER.RESOLVED}"
+                else:
+                    return f"{MSG_TYPES_DT_TO_CONTROLLER.COULD_NOT_RESOLVE}"
+             
                 
+
+        elif self.current_fault == FAULT_TYPES.PROTECTIVE_STOP:
+            pass
 
         elif self.current_fault == FAULT_TYPES.PROTECTIVE_STOP:
             pass

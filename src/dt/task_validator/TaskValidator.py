@@ -3,7 +3,7 @@ import sys
 sys.path.append("../..")
 from config.task_config import TASK_CONFIG
 from dt.task_validator.TimingThresholdEstimator import TimingThresholdEstimator
-import rectangle_packer.RectanglePacker as rp
+# import rectangle_packer.RectanglePacker as rp
 import numpy as np
 from time import time
 
@@ -11,9 +11,9 @@ class TaskValidator:
     """Class to validate a task a specified in TASK_CONFIG"""
 
     def __init__(self) -> None:
-        self.rectangle_packer = rp.RectanglePacker(
-            TASK_CONFIG.PLACE_WIDTH, TASK_CONFIG.PLACE_HEIGHT
-        )
+        # self.rectangle_packer = rp.RectanglePacker(
+        #     TASK_CONFIG.PLACE_WIDTH, TASK_CONFIG.PLACE_HEIGHT
+        # )
 
         self.block_origin_map = None
         self.block_target_map = None
@@ -23,7 +23,12 @@ class TaskValidator:
         self.validating_threshold = 2 # should handle new task in 2 second
         self.timing_threshold_estimator = TimingThresholdEstimator()
         self.estimated_thresholds = []
+        
+        self.missing_block = None
 
+    def set_missing_block(self, missing_block: int) -> None:
+        self.missing_block = missing_block
+    
     def validate_task(self, task: dict):
         """Validate the task
         params: task: <dict> - The task to validate
@@ -41,19 +46,19 @@ class TaskValidator:
             # parse matrices to task again
             self.__update_task()
             self.__compute_thresholds()
+            print(f"Print here? {self.estimated_thresholds}")
             self.__update_task()
-
-        print(self.task)
-
+            print(self.task)
         return valid, self.task
 
     def __compute_thresholds(self):
         """Computes thresholds"""
-        self.estimated_thresholds, _, _ = self.timing_threshold_estimator.compute_thresholds(self.task.copy())
+        self.estimated_thresholds, _, _ = self.timing_threshold_estimator.compute_thresholds(self.task.copy(), missing_block=self.missing_block)
 
 
     def __update_task(self):
         """Update task from matrices"""
+        print(self.no_blocks)
         for i in range(self.no_blocks):
             self.task[i][TASK_CONFIG.ORIGIN][TASK_CONFIG.x] = int(self.block_origin_map[0, i])
             self.task[i][TASK_CONFIG.ORIGIN][TASK_CONFIG.y] = int(self.block_origin_map[1, i])

@@ -239,7 +239,7 @@ class ControllerMonitor:
         target = self.task_config[self.block_number][TASK_CONFIG.TARGET]
 
         # Calculate joint positions
-        print(f"task config is: {self.task_config}")
+        # print(f"task config is: {self.task_config}")
         origin_q_start, origin_q, target_q_start, target_q = self.robot_model.compute_joint_positions_origin_target(
             origin, target
         )
