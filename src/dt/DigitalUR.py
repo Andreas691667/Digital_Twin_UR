@@ -48,6 +48,11 @@ class DigitalUR:
 
         self.task_validator = TaskValidator()
 
+        # ----- MODEL-BASED FAULT DETECTION -----
+        self.step_no = 0         # simulation step number
+        self.expected_traj = []
+        self.epsilon = 0.02      # allowed error for each joint [rad]
+
     def __set_mitigation_strategy(self, mitigation_strategy: str) -> None:
         """Set the mitigation strategy"""
         if mitigation_strategy == cli_arguments.SHIFT:
