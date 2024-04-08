@@ -16,6 +16,7 @@ class UR3e(rtb.DHRobot):
     """Model of the Universal Robotics UR3e robot arm"""
 
     def __init__(self):
+        self.traj=[]
         link1 = rtb.RevoluteMDH(d=0.15185, a=0, alpha=0, qlim=[-3.82, -1])
         # qlim=[2.39, 5.06]
         # [-4.36, -1.13]
@@ -152,7 +153,7 @@ class UR3e(rtb.DHRobot):
     
     def plot_trajectory(self):
         """Plot the trajectory of the robot arm"""
-        self.traj.plot(block=True)
+        # self.traj.plot(block=True)
         self.plot(self.traj.q, block=True)
 
     def compute_trajectory(self, start, target):
@@ -161,32 +162,175 @@ class UR3e(rtb.DHRobot):
             start (list): The start joint positions
             target (list): The target joint positions"""
         self.traj = rtb.jtraj(start, target, t=self.n_steps_motion)
+        # self.plot_trajectory()
 
 if __name__ == "__main__":
+    import yaml
+
+    # load task
+    with open(f"../config/tasks/2_blocks.yaml", "r") as file:
+        task_config = yaml.safe_load(file)
+
     ur = UR3e()
+    final_traj = []
+    final_time = []
 
-    grip_pos = False
-    GRIP_Z = TASK_CONFIG.GRID_COORDINATES[TASK_CONFIG.GRIP_Z]
-    BEFORE_GRIP_Z = TASK_CONFIG.GRID_COORDINATES[TASK_CONFIG.BEFORE_GRIP_Z]
-    z_g = GRIP_Z if grip_pos else BEFORE_GRIP_Z
+    origin0 = task_config[0][TASK_CONFIG.ORIGIN]
+    target0 = task_config[0][TASK_CONFIG.TARGET]
+    origin1 = task_config[1][TASK_CONFIG.ORIGIN]
+    target1 = task_config[1][TASK_CONFIG.TARGET]
+    home = TASK_CONFIG.HOME_POSITION
+    HOME = ur.compute_joint_positions_xy(home[TASK_CONFIG.x], home[TASK_CONFIG.y])
+    BGP0, GP0, BTP0, TP0 = ur.compute_joint_positions_origin_target(origin0, target0)
+    BGP1, GP1, BTP1, TP1 = ur.compute_joint_positions_origin_target(origin1, target1)
 
-    x, y, z = ur.compute_base_coordinates(0, 0, z_g)
-    print(x, y, z)
+    # continue HOME position corresponding to 3s
+    ur.set_motion_time(3)
+    ur.set_n_steps_motion()
+    time_vector = np.linspace(0, ur.motion_time, ur.n_steps_motion)
+    final_time=np.append(final_time, time_vector, axis=0)
+    final_traj=np.append(final_traj, np.tile(HOME, ur.n_steps_motion), axis=0)
+
+    ur.set_motion_time(1.5)
+    ur.set_n_steps_motion()
+
+    ur.compute_trajectory(HOME, BGP0)
+    final_traj=np.append(final_traj, ur.traj.q)
+    final_time=np.append(final_time, np.linspace(final_time[-1]+0.05, ur.motion_time+final_time[-1], ur.n_steps_motion), axis=0)
+
+    ur.set_motion_time(1.15)
+    ur.set_n_steps_motion()
+    
+    ur.compute_trajectory(BGP0, GP0)
+    final_traj=np.append(final_traj, ur.traj.q)
+    final_time=np.append(final_time, np.linspace(final_time[-1]+0.05, ur.motion_time+final_time[-1], ur.n_steps_motion), axis=0)
+
+    # continue last position corresponding to 0.7s  
+    ur.set_motion_time(0.7)
+    ur.set_n_steps_motion()
+    time_vector = np.linspace(final_time[-1]+0.05, ur.motion_time+final_time[-1], ur.n_steps_motion)
+    final_time=np.append(final_time, time_vector, axis=0)
+    final_traj=np.append(final_traj, np.tile(ur.traj.q[-1], ur.n_steps_motion), axis=0)
+
+    ur.set_motion_time(1.15)
+    ur.set_n_steps_motion()
+
+    ur.compute_trajectory(GP0, BGP0)
+    final_traj=np.append(final_traj, ur.traj.q)
+    final_time=np.append(final_time, np.linspace(final_time[-1]+0.05, ur.motion_time+final_time[-1], ur.n_steps_motion), axis=0)
+
+    ur.set_motion_time(2.2)
+    ur.set_n_steps_motion()
+
+    ur.compute_trajectory(BGP0, BTP0)
+    final_traj=np.append(final_traj, ur.traj.q)
+    final_time=np.append(final_time, np.linspace(final_time[-1]+0.05, ur.motion_time+final_time[-1], ur.n_steps_motion), axis=0)
+
+    ur.set_motion_time(0.8)
+    ur.set_n_steps_motion()
+
+    ur.compute_trajectory(BTP0, TP0)
+    final_traj=np.append(final_traj, ur.traj.q)
+    final_time=np.append(final_time, np.linspace(final_time[-1]+0.05, ur.motion_time+final_time[-1], ur.n_steps_motion), axis=0)
+
+    # continue last position corresponding to 0.3s (partly release)
+    ur.set_motion_time(0.3)
+    ur.set_n_steps_motion()
+    time_vector = np.linspace(final_time[-1]+0.05, ur.motion_time+final_time[-1], ur.n_steps_motion)
+    final_time=np.append(final_time, time_vector, axis=0)
+    final_traj=np.append(final_traj, np.tile(ur.traj.q[-1], ur.n_steps_motion), axis=0)
+
+    ur.set_motion_time(0.8)
+    ur.set_n_steps_motion()
+
+    ur.compute_trajectory(TP0, BTP0)
+    final_traj=np.append(final_traj, ur.traj.q)
+    final_time=np.append(final_time, np.linspace(final_time[-1]+0.05, ur.motion_time+final_time[-1], ur.n_steps_motion), axis=0)
+
+    # continue last position corresponding to 1.1s (release)
+    ur.set_motion_time(1.1)
+    ur.set_n_steps_motion()
+    time_vector = np.linspace(final_time[-1]+0.05, ur.motion_time+final_time[-1], ur.n_steps_motion)
+    final_time=np.append(final_time, time_vector, axis=0)
+    final_traj=np.append(final_traj, np.tile(ur.traj.q[-1], ur.n_steps_motion), axis=0)
+
+    ur.set_motion_time(2.2)
+    ur.set_n_steps_motion()
+
+    ur.compute_trajectory(BTP0, BGP1)
+    final_traj=np.append(final_traj, ur.traj.q)
+    final_time=np.append(final_time, np.linspace(final_time[-1]+0.05, ur.motion_time+final_time[-1], ur.n_steps_motion), axis=0)
+
+    ur.set_motion_time(1.15)
+    ur.set_n_steps_motion()
+
+    ur.compute_trajectory(BGP1, GP1)
+    final_traj=np.append(final_traj, ur.traj.q)
+    final_time=np.append(final_time, np.linspace(final_time[-1]+0.05, ur.motion_time+final_time[-1], ur.n_steps_motion), axis=0)
+    
+    # continue last position corresponding to 0.7s
+    ur.set_motion_time(0.7)
+    ur.set_n_steps_motion()
+    time_vector = np.linspace(final_time[-1]+0.05, ur.motion_time+final_time[-1], ur.n_steps_motion)
+    final_time=np.append(final_time, time_vector, axis=0)
+    final_traj=np.append(final_traj, np.tile(ur.traj.q[-1], ur.n_steps_motion), axis=0)
+
+    ur.set_motion_time(1.15)
+    ur.set_n_steps_motion()
+
+    ur.compute_trajectory(GP1, BGP1)
+    final_traj=np.append(final_traj, ur.traj.q)
+    final_time=np.append(final_time, np.linspace(final_time[-1]+0.05, ur.motion_time+final_time[-1], ur.n_steps_motion), axis=0)
+    
+    ur.set_motion_time(2.2)
+    ur.set_n_steps_motion()
+
+    ur.compute_trajectory(BGP1, BTP1)
+    final_traj=np.append(final_traj, ur.traj.q)
+    final_time=np.append(final_time, np.linspace(final_time[-1]+0.05, ur.motion_time+final_time[-1], ur.n_steps_motion), axis=0)
+    
+    ur.set_motion_time(0.8)
+    ur.set_n_steps_motion()
+
+    ur.compute_trajectory(BTP1, TP1)
+    final_traj=np.append(final_traj, ur.traj.q)
+    final_time=np.append(final_time, np.linspace(final_time[-1]+0.05, ur.motion_time+final_time[-1], ur.n_steps_motion), axis=0)
+
+    # continue last position corresponding to 0.3s (partly release)
+    ur.set_motion_time(0.3)
+    ur.set_n_steps_motion()
+    time_vector = np.linspace(final_time[-1]+0.05, ur.motion_time+final_time[-1], ur.n_steps_motion)
+    final_time=np.append(final_time, time_vector, axis=0)
+    final_traj=np.append(final_traj, np.tile(ur.traj.q[-1], ur.n_steps_motion), axis=0)
+
+    ur.set_motion_time(0.8)
+    ur.set_n_steps_motion()
+
+    ur.compute_trajectory(TP1, BTP1)
+    final_traj=np.append(final_traj, ur.traj.q)
+    final_time=np.append(final_time, np.linspace(final_time[-1]+0.05, ur.motion_time+final_time[-1], ur.n_steps_motion), axis=0)
+
+    # continue last position corresponding to 1.1s (release)
+    ur.set_motion_time(1.1)
+    ur.set_n_steps_motion()
+    time_vector = np.linspace(final_time[-1]+0.05, ur.motion_time+final_time[-1], ur.n_steps_motion)
+    final_time=np.append(final_time, time_vector, axis=0)
+    final_traj=np.append(final_traj, np.tile(ur.traj.q[-1], ur.n_steps_motion), axis=0)
+
+    ur.set_motion_time(1.2)
+    ur.set_n_steps_motion()
+
+    ur.compute_trajectory(BTP1, HOME)
+    final_traj=np.append(final_traj, ur.traj.q)
+    final_time=np.append(final_time, np.linspace(final_time[-1]+0.05, ur.motion_time+final_time[-1], ur.n_steps_motion), axis=0)
 
 
+    # for each block of 6 values in final_traj, split into new row
+    final_traj = final_traj.reshape(-1, 6)
 
-
-
-
-
-
-
-    # q_home = ur.compute_joint_positions_xy(0, 0)
-    # q_t = ur.compute_joint_positions_xy(12, -5, grip_pos=True)
-
-    # ur.set_motion_time(1)
-    # ur.set_n_steps_motion()
-
-    # ur.compute_trajectory(q_home, q_t)
-
-    # ur.plot_trajectory()    
+    # save trajectory to csv file
+    import pandas as pd
+    df = pd.DataFrame(final_traj, columns=['actual_q_0','actual_q_1','actual_q_2','actual_q_3','actual_q_4','actual_q_5'])
+    # add time column
+    df['timestamp'] = final_time
+    df.to_csv("trajectory.csv", sep=' ', index=False)
