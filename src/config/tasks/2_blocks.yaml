@@ -1,0 +1,19 @@
+NO_BLOCKS: 2
+0:
+  ORIGIN:
+    x: 0
+    y: 0
+    ROTATE_WRIST: False
+  TARGET:
+    x: 13
+    y: -5
+    ROTATE_WRIST: False
+1:
+  ORIGIN:
+    x: 0
+    y: 2
+    ROTATE_WRIST: False
+  TARGET:
+    x: 12
+    y: -5
+    ROTATE_WRIST: False
