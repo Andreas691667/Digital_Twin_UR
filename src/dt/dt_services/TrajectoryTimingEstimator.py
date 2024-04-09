@@ -7,9 +7,9 @@ from config.task_config import TASK_CONFIG
 from dt.digitalur_fault_types import FAULT_TYPES
 from config.task_config import TASK_CONFIG
 
-class TimingThresholdEstimator:
-    def __init__(self) -> None:
-        self.robot_model = UR3e()
+class TimingIntervalEstimator:
+    def __init__(self, model) -> None:
+        self.robot_model = model
         self.is_in_home_position = True
         self.last_ik_solutions = None
 
@@ -83,18 +83,18 @@ class TimingThresholdEstimator:
                 # Calculate time to reach half-distance
                 # d = 1/2 * a * t^2 => t = sqrt{2d/a}
                 duration_half_distance = np.sqrt((2*(distance/2))/JOINT_ACCELERATION_RAD)
-                all_durations.extend([duration_half_distance, duration_half_distance])
-                all_durations_des.extend(["ACC", "DEC"])
+                all_durations.extend([duration_half_distance + duration_half_distance])
+                all_durations_des.extend(["MOVE"])
             
             # Reaches max speed
             else: 
                 duration_of_constant_speed = ((distance-ACCELERATION_DIST*2) / JOINT_SPEED_MAX_RAD)
-                all_durations.extend([ACCELERATION_TIME, duration_of_constant_speed, ACCELERATION_TIME])
-                all_durations_des.extend(["ACC", "CONSTANT", "DEC"])
+                all_durations.extend([ACCELERATION_TIME + duration_of_constant_speed + ACCELERATION_TIME])
+                all_durations_des.extend(["MOVE"])
 
         # Calculate combined time
         all_durations.append(GRAP_TIME)
-        all_durations_des.append("GRAP")
+        all_durations_des.append("DELAY")
         # combined_time_estimation_task = np.sum(all_durations)
         return all_durations, all_durations_des
 
@@ -113,10 +113,8 @@ class TimingThresholdEstimator:
         # Add delay
         if block_number != 0:
             all_durations.insert(-1, 0.3)
-            des.append("HALF RELEASE")
-            all_durations.append(0.5)
-            des.append("FULL RELEASE")
-            all_durations.append(0.5)
+            des.append("DELAY")
+            all_durations.append(0.5 + 0.5) # FULL RELEASE and Delay
             des.append("DELAY")
             
 
@@ -193,7 +191,12 @@ class TimingThresholdEstimator:
         
         print(f"Leading axis of movements: {all_leading_axis}")    
         return thresholds, all_durations, all_durations_des
-        
+
+def get_trajectory_timing_estimates (task_ik_tensor):
+    """returns the timing estimates"""
+    # 
+    pass
+
 
 import yaml
 import json

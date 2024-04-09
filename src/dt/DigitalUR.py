@@ -7,14 +7,20 @@ import ast
 
 sys.path.append("..")
 import cli_arguments
-from rmq.RMQClient import Client # pylint: disable=import-error
-from config.rmq_config import RMQ_CONFIG
+from rmq.RMQClient import Client
+
 from digitalur_states import DT_STATES
 from digitalur_fault_types import FAULT_TYPES
+
+from config.rmq_config import RMQ_CONFIG
 from config.msg_config import MSG_TYPES_CONTROLLER_TO_DT, MSG_TYPES_DT_TO_CONTROLLER
 from config.task_config import TASK_CONFIG
+
 from ur3e.ur3e import UR3e
-from task_validator.TaskValidator import TaskValidator
+
+from dt_services.TaskValidator import TaskValidator
+from dt_services.TaskTrajectoryEstimator import TaskTrajectoryEstimator
+from dt_services.TimingThresholdEstimator import TimingThresholdEstimator
 
 
 class DigitalUR:
@@ -31,8 +37,14 @@ class DigitalUR:
         self.state_machine_stop_event = threading.Event()
         self.state_machine_thread = threading.Thread(target=self.state_machine)
 
-        # model of the UR3e robot
-        self.robot = UR3e()
+        # kinematic model of the UR3e robot
+        self.robot_model = UR3e()
+
+        # dt services
+        self.task_validator = TaskValidator()
+        self.timing_estimator = TimingThresholdEstimator(self.robot_model)
+        self.trajectory_estimator = TaskTrajectoryEstimator(self.robot_model)
+
         self.mitigation_strategy = None
         self.__set_mitigation_strategy(mitigation_strategy)
         self.current_fault: FAULT_TYPES = None
@@ -46,7 +58,7 @@ class DigitalUR:
         self.task_config = None
         self.pick_stock_tried = 1
 
-        self.task_validator = TaskValidator()
+        
 
         # ----- MODEL-BASED FAULT DETECTION -----
         self.step_no = 0         # simulation step number

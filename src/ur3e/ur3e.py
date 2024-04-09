@@ -38,6 +38,34 @@ class UR3e(rtb.DHRobot):
 
         super().__init__([link1, link2, link3, link4, link5, link6], name="UR3e")
 
+    def compute_ik_task_tensor (self, task: dict) -> np.ndarray:
+        """Computes the inverse kinematics solutions
+            returns 3D tensor:
+                row: block number
+                column: the four positions for a task
+                depth: solutions for each position
+        """
+        number_of_blocks: int = task[TASK_CONFIG.NO_BLOCKS] 
+        solutions: np.ndarray = np.zeros(shape=(number_of_blocks, 4, 6))
+        
+        # For every block (4 coordinates) calculate IK (for 4 coordinates)
+        for bn in range(number_of_blocks):
+            origin = task[bn][TASK_CONFIG.ORIGIN]
+            target = task[bn][TASK_CONFIG.TARGET]
+            origin_q_start, origin_q, target_q_start, target_q = self.compute_joint_positions_origin_target(
+                origin, target
+            )
+            
+            # set solutions
+            solutions[bn, 0, :] = origin_q_start
+            solutions[bn, 1, :] = origin_q
+            solutions[bn, 2, :] = target_q_start
+            solutions[bn, 3, :] = target_q
+        
+        # set last solutions
+        return solutions
+    
+    
     def __compute_base_coordinates(self, x_g, y_g, z_g, rx=0, ry=0, rz=0):
         """Compute the x, y, z position of the flexcell based on the hole number"""
         # Calculate base values
@@ -150,6 +178,7 @@ class UR3e(rtb.DHRobot):
             dt (float): The time step in seconds"""
         
         self.n_steps_motion = int(self.motion_time / dt)
+        return self.n_steps_motion
     
     def plot_trajectory(self):
         """Plot the trajectory of the robot arm"""
@@ -162,6 +191,7 @@ class UR3e(rtb.DHRobot):
             start (list): The start joint positions
             target (list): The target joint positions"""
         self.traj = rtb.jtraj(start, target, t=self.n_steps_motion)
+        return self.traj
         # self.plot_trajectory()
 
 if __name__ == "__main__":
