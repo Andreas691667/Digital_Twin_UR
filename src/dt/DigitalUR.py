@@ -14,7 +14,7 @@ from digitalur_fault_types import FAULT_TYPES
 
 from config.rmq_config import RMQ_CONFIG
 from config.msg_config import MSG_TYPES_CONTROLLER_TO_DT, MSG_TYPES_DT_TO_CONTROLLER
-from config.task_config import TASK_CONFIG
+from config.grid_config import GRID_CONFIG
 
 from ur3e.ur3e import UR3e
 
@@ -56,9 +56,7 @@ class DigitalUR:
 
         self.current_block = -1  # current block number being processed
         self.task_config = None
-        self.pick_stock_tried = 1
-
-        
+        self.pick_stock_tried = 1        
 
         # ----- MODEL-BASED FAULT DETECTION -----
         self.step_no = 0         # simulation step number
@@ -68,9 +66,9 @@ class DigitalUR:
     def __set_mitigation_strategy(self, mitigation_strategy: str) -> None:
         """Set the mitigation strategy"""
         if mitigation_strategy == cli_arguments.SHIFT:
-            self.mitigation_strategy = TASK_CONFIG.MITIGATION_STRATEGIES.SHIFT_ORIGIN
+            self.mitigation_strategy = GRID_CONFIG.MITIGATION_STRATEGIES.SHIFT_ORIGIN
         elif mitigation_strategy == cli_arguments.STOCK:
-            self.mitigation_strategy = TASK_CONFIG.MITIGATION_STRATEGIES.TRY_PICK_STOCK
+            self.mitigation_strategy = GRID_CONFIG.MITIGATION_STRATEGIES.TRY_PICK_STOCK
 
     def configure_rmq_clients(self):
         """Configures rmq_client_in to receive data from monitor
@@ -82,8 +80,6 @@ class DigitalUR:
         self.rmq_client_in.configure_incoming_channel(
             self.on_monitor_message, RMQ_CONFIG.MONITOR_EXCHANGE, RMQ_CONFIG.FANOUT, RMQ_CONFIG.DT_QUEUE_MONITOR, 1
         )
-
-
 
         self.rmq_client_out.configure_outgoing_channel(
             RMQ_CONFIG.DT_EXCHANGE, RMQ_CONFIG.FANOUT
@@ -148,8 +144,6 @@ class DigitalUR:
         except ValueError:
             pass
             # print("Invalid message received from monitor")
-
-
 
     def __get_message(self, msg_queue: Queue, block: bool = False):
         """Wait for a message"""
@@ -238,30 +232,30 @@ class DigitalUR:
 
         
         if self.current_fault == FAULT_TYPES.MISSING_OBJECT:
-            if self.mitigation_strategy == TASK_CONFIG.MITIGATION_STRATEGIES.SHIFT_ORIGIN:
+            if self.mitigation_strategy == GRID_CONFIG.MITIGATION_STRATEGIES.SHIFT_ORIGIN:
                 # print(f"Task config before (1): \n {self.task_config}")
                 # # 1) remove the blocks that have already been moved
                 
                 # 2) from the current block, change two first rows in its config to the next block
                 for block_no in range(                                                     # Iterate over blocks
-                    self.current_block + 1, self.task_config[TASK_CONFIG.NO_BLOCKS]-1        # ... from the next block to the last block
+                    self.current_block + 1, self.task_config[GRID_CONFIG.NO_BLOCKS]-1        # ... from the next block to the last block
                 ):
 
-                    self.task_config[block_no][TASK_CONFIG.ORIGIN][TASK_CONFIG.x]   = (                      # Change the x-coordinate to the next block's x-coordinate
-                        self.task_config[block_no + 1][TASK_CONFIG.ORIGIN][TASK_CONFIG.x]
+                    self.task_config[block_no][GRID_CONFIG.ORIGIN][GRID_CONFIG.x]   = (                      # Change the x-coordinate to the next block's x-coordinate
+                        self.task_config[block_no + 1][GRID_CONFIG.ORIGIN][GRID_CONFIG.x]
                     )
-                    self.task_config[block_no][TASK_CONFIG.ORIGIN][TASK_CONFIG.y]   = (                      # Change the y-coordinate to the next block's y-coordinate
-                        self.task_config[block_no + 1][TASK_CONFIG.ORIGIN][TASK_CONFIG.y]
+                    self.task_config[block_no][GRID_CONFIG.ORIGIN][GRID_CONFIG.y]   = (                      # Change the y-coordinate to the next block's y-coordinate
+                        self.task_config[block_no + 1][GRID_CONFIG.ORIGIN][GRID_CONFIG.y]
                     )
 
                     # Change the timing threshold to the next block's threshold
-                    self.task_config[block_no][TASK_CONFIG.TIMING_THRESHOLD] = (          
-                        self.task_config[block_no + 1][TASK_CONFIG.TIMING_THRESHOLD]
+                    self.task_config[block_no][GRID_CONFIG.TIMING_THRESHOLD] = (          
+                        self.task_config[block_no + 1][GRID_CONFIG.TIMING_THRESHOLD]
                     )
 
                 # remove the last block and decrement the number of blocks
-                self.task_config.pop(self.task_config[TASK_CONFIG.NO_BLOCKS] - 1)
-                self.task_config[TASK_CONFIG.NO_BLOCKS] -= 1
+                self.task_config.pop(self.task_config[GRID_CONFIG.NO_BLOCKS] - 1)
+                self.task_config[GRID_CONFIG.NO_BLOCKS] -= 1
 
                 # Reset timer 
                 self.time_of_last_message = time.time() 
@@ -270,11 +264,11 @@ class DigitalUR:
                 # return fault_msg with the new task_config
                 return f"{MSG_TYPES_DT_TO_CONTROLLER.RESOLVED}"
             
-            elif self.mitigation_strategy == TASK_CONFIG.MITIGATION_STRATEGIES.TRY_PICK_STOCK:
+            elif self.mitigation_strategy == GRID_CONFIG.MITIGATION_STRATEGIES.TRY_PICK_STOCK:
                 # For block[j] try PICK_STOCK[i++]
-                if self.pick_stock_tried < len(TASK_CONFIG.PICK_STOCK_COORDINATES):
-                    self.task_config[self.current_block+1][TASK_CONFIG.ORIGIN][TASK_CONFIG.x] = TASK_CONFIG.PICK_STOCK_COORDINATES[self.pick_stock_tried][TASK_CONFIG.ORIGIN][TASK_CONFIG.x]
-                    self.task_config[self.current_block+1][TASK_CONFIG.ORIGIN][TASK_CONFIG.y] = TASK_CONFIG.PICK_STOCK_COORDINATES[self.pick_stock_tried][TASK_CONFIG.ORIGIN][TASK_CONFIG.y]                
+                if self.pick_stock_tried < len(GRID_CONFIG.PICK_STOCK_COORDINATES):
+                    self.task_config[self.current_block+1][GRID_CONFIG.ORIGIN][GRID_CONFIG.x] = GRID_CONFIG.PICK_STOCK_COORDINATES[self.pick_stock_tried][GRID_CONFIG.ORIGIN][GRID_CONFIG.x]
+                    self.task_config[self.current_block+1][GRID_CONFIG.ORIGIN][GRID_CONFIG.y] = GRID_CONFIG.PICK_STOCK_COORDINATES[self.pick_stock_tried][GRID_CONFIG.ORIGIN][GRID_CONFIG.y]                
                     self.pick_stock_tried += 1
                     self.time_of_last_message = time.time() # Reset timer 
                     return f"{MSG_TYPES_DT_TO_CONTROLLER.RESOLVED}"
@@ -336,7 +330,7 @@ class DigitalUR:
 
                 # If we have grapped the last object, we are done
                 # go to waiting to receive task state
-                if self.current_block == self.task_config[TASK_CONFIG.NO_BLOCKS]-1:
+                if self.current_block == self.task_config[GRID_CONFIG.NO_BLOCKS]-1:
                     print("Task done")
                     # print(f'Task done for timestamp: {data["timestamp"]}')
                     self.current_block = -1
@@ -349,9 +343,9 @@ class DigitalUR:
             # If we have not grapped an object, we check for timing constraints
             # it is only when the timer have expired that we report a missing object
             else:
-                if (self.current_block+1 < self.task_config[TASK_CONFIG.NO_BLOCKS]) and (      # If there are more blocks to move
+                if (self.current_block+1 < self.task_config[GRID_CONFIG.NO_BLOCKS]) and (      # If there are more blocks to move
                     time.time() - self.time_of_last_message                                   # ... time passed since last object was grapped
-                    > self.task_config[self.current_block+1][TASK_CONFIG.TIMING_THRESHOLD]  # ... the time has expired for next block's threshold
+                    > self.task_config[self.current_block+1][GRID_CONFIG.TIMING_THRESHOLD]  # ... the time has expired for next block's threshold
                 ):
                     print(f"Missing object {self.current_block + 1}")
                     return True, FAULT_TYPES.MISSING_OBJECT                                   # ... a fault present (i.e. missing object)

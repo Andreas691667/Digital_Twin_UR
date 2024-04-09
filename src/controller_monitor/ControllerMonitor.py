@@ -19,7 +19,7 @@ from controller_monitor_states import CM_STATES
 from rmq.RMQClient import Client
 from config.rmq_config import RMQ_CONFIG
 from config.msg_config import MSG_TYPES_DT_TO_CONTROLLER, MSG_TYPES_CONTROLLER_TO_DT, MSG_TYPES_MONITOR_TO_DT
-from config.task_config import TASK_CONFIG
+from config.grid_config import GRID_CONFIG
 from ur3e.ur3e import UR3e
 import json
 import yaml
@@ -34,7 +34,7 @@ class ControllerMonitor:
         self.STATE = CM_STATES.INITIALIZING  # flag to check if main program is running
         self.block_number = 0  # current block number being processed
         # self.task_config = (
-        #     TASK_CONFIG.block_config_close_blocks.copy()
+        #     GRID_CONFIG.block_config_close_blocks.copy()
         # )  # get own local copy of task config
 
         self.dt_timer_finished : bool = False # flag to check if overall task is finished
@@ -137,9 +137,9 @@ class ControllerMonitor:
         # set state to NORMAL_OPERATION
         # initialize task registers
 
-        for i in range(self.task_config[TASK_CONFIG.NO_BLOCKS]):
-            self.task_config[i][TASK_CONFIG.ORIGIN], self.task_config[i][TASK_CONFIG.TARGET] = (
-            self.task_config[i][TASK_CONFIG.TARGET], self.task_config[i][TASK_CONFIG.ORIGIN])
+        for i in range(self.task_config[GRID_CONFIG.NO_BLOCKS]):
+            self.task_config[i][GRID_CONFIG.ORIGIN], self.task_config[i][GRID_CONFIG.TARGET] = (
+            self.task_config[i][GRID_CONFIG.TARGET], self.task_config[i][GRID_CONFIG.ORIGIN])
 
         self.block_number = 0
         self.task_finished = False
@@ -235,8 +235,8 @@ class ControllerMonitor:
     def __get_register_values (self) -> list:
         """Gets the register values corresponding to the block to move"""
         # Get Origin and Target of current block
-        origin = self.task_config[self.block_number][TASK_CONFIG.ORIGIN]
-        target = self.task_config[self.block_number][TASK_CONFIG.TARGET]
+        origin = self.task_config[self.block_number][GRID_CONFIG.ORIGIN]
+        target = self.task_config[self.block_number][GRID_CONFIG.TARGET]
 
         # Calculate joint positions
         # print(f"task config is: {self.task_config}")
@@ -310,9 +310,9 @@ class ControllerMonitor:
                 elif self.STATE == CM_STATES.NORMAL_OPERATION:
                     # Subtask is done, and there is more blocks to move
                     if (not self.robot_connection.program_running()) and (
-                        self.block_number < self.task_config[TASK_CONFIG.NO_BLOCKS]
+                        self.block_number < self.task_config[GRID_CONFIG.NO_BLOCKS]
                     ):
-                        print(f"Ready to take block number: {self.block_number} out of {self.task_config[TASK_CONFIG.NO_BLOCKS]-1} \n")
+                        print(f"Ready to take block number: {self.block_number} out of {self.task_config[GRID_CONFIG.NO_BLOCKS]-1} \n")
                         
                         # 1) get register values, by computing inverse kinematics
                         register_values = self.__get_register_values()
@@ -330,7 +330,7 @@ class ControllerMonitor:
                         self.block_number += 1
 
                     # All blocks are done
-                    elif self.block_number == self.task_config[TASK_CONFIG.NO_BLOCKS] and (
+                    elif self.block_number == self.task_config[GRID_CONFIG.NO_BLOCKS] and (
                         not self.robot_connection.program_running()
                     ):
                         self.__go_to_home()
@@ -381,8 +381,8 @@ class ControllerMonitor:
 
     def __go_to_home(self):
         """Go to home position"""
-        home_q = self.robot_model.compute_joint_positions_xy(TASK_CONFIG.HOME_POSITION[TASK_CONFIG.x],
-                                                          TASK_CONFIG.HOME_POSITION[TASK_CONFIG.y])
+        home_q = self.robot_model.compute_joint_positions_xy(GRID_CONFIG.HOME_POSITION[GRID_CONFIG.x],
+                                                          GRID_CONFIG.HOME_POSITION[GRID_CONFIG.y])
         self.robot_connection.movej(home_q)
 
     def __reconfigure_task(self, new_task: str, decr:bool) -> None:

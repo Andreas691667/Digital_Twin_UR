@@ -3,9 +3,8 @@ path.append("../..")
 
 from ur3e.ur3e import UR3e
 import numpy as np
-from config.task_config import TASK_CONFIG
+from config.grid_config import GRID_CONFIG
 from dt.digitalur_fault_types import FAULT_TYPES
-from config.task_config import TASK_CONFIG
 
 class TimingThresholdEstimator:
     def __init__(self, model) -> None:
@@ -20,13 +19,13 @@ class TimingThresholdEstimator:
                 column: the four positions for a task
                 depth: solutions for each position
         """
-        number_of_blocks: int = task_config[TASK_CONFIG.NO_BLOCKS] 
+        number_of_blocks: int = task_config[GRID_CONFIG.NO_BLOCKS] 
         solutions: np.ndarray = np.zeros(shape=(number_of_blocks, 4, 6))
         
         # For every block (4 coordinates) calculate IK (for 4 coordinates)
         for bn in range(number_of_blocks):
-            origin = task_config[bn][TASK_CONFIG.ORIGIN]
-            target = task_config[bn][TASK_CONFIG.TARGET]
+            origin = task_config[bn][GRID_CONFIG.ORIGIN]
+            target = task_config[bn][GRID_CONFIG.TARGET]
             origin_q_start, origin_q, target_q_start, target_q = self.robot_model.compute_joint_positions_origin_target(
                 origin, target
             )
@@ -127,12 +126,12 @@ class TimingThresholdEstimator:
 
     def __get_home_ik_sol(self):
         """Compute IK solution for home position"""
-        HOME_X = TASK_CONFIG.HOME_POSITION[TASK_CONFIG.x]
-        HOME_Y = TASK_CONFIG.HOME_POSITION[TASK_CONFIG.y]
+        HOME_X = GRID_CONFIG.HOME_POSITION[GRID_CONFIG.x]
+        HOME_Y = GRID_CONFIG.HOME_POSITION[GRID_CONFIG.y]
         home_sol = self.robot_model.compute_joint_positions_xy(HOME_X, HOME_Y)
         return home_sol
 
-    def compute_thresholds (self, task_config, mitigation_strategy = TASK_CONFIG.MITIGATION_STRATEGIES.SHIFT_ORIGIN,  missing_block = -1):
+    def compute_thresholds (self, task_config, mitigation_strategy = GRID_CONFIG.MITIGATION_STRATEGIES.SHIFT_ORIGIN,  missing_block = -1):
         """Computes the thresholds corresponding to block movements
         see __compute_ik_solutions for input format
         """
@@ -154,12 +153,12 @@ class TimingThresholdEstimator:
             
             #missing block
             if block_number == missing_block:
-                if mitigation_strategy == TASK_CONFIG.MITIGATION_STRATEGIES.SHIFT_ORIGIN:
+                if mitigation_strategy == GRID_CONFIG.MITIGATION_STRATEGIES.SHIFT_ORIGIN:
                     # Set threshold[block_number/missing_block] = <time from last origin to new origin>
                     old_origin_grip_pos = self.last_ik_solutions[block_number, 1, :]
                     current_origins = ik_solutions[block_number, :2, :]
                     timing_essential_positions = np.vstack((old_origin_grip_pos, current_origins))
-                if mitigation_strategy == TASK_CONFIG.MITIGATION_STRATEGIES.TRY_PICK_STOCK:
+                if mitigation_strategy == GRID_CONFIG.MITIGATION_STRATEGIES.TRY_PICK_STOCK:
                     old_origin_grip_pos = self.last_ik_solutions[block_number, 1, :]
                     current_origins = ik_solutions[block_number, :2, :]
                     timing_essential_positions = np.vstack((old_origin_grip_pos, current_origins))

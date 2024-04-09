@@ -10,7 +10,7 @@
 import sys
 sys.path.append("..")
 
-from config.task_config import TASK_CONFIG
+from config.grid_config import TASK_CONFIG
 import csv
 
 

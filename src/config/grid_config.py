@@ -1,4 +1,4 @@
-class TASK_CONFIG:
+class GRID_CONFIG:
     # ----- NOT USED -----
     # TARGET_POSE = "TARGET_POSE"
     # JOINT_POSITIONS = "JOINT_POSITIONS"

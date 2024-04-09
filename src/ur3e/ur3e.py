@@ -8,7 +8,7 @@ from numpy import pi
 from sys import path
 
 path.append("..")
-from config.task_config import TASK_CONFIG
+from config.grid_config import GRID_CONFIG
 
 
 # Changed named to UR3e
@@ -28,10 +28,10 @@ class UR3e(rtb.DHRobot):
         link6 = rtb.RevoluteMDH(d=0.0921, a=0, alpha=-pi / 2)
 
         # Get parameters from config
-        self.X_BASE_MIN = TASK_CONFIG.GRID_PARAMETERS[TASK_CONFIG.X_BASE_MIN]
-        self.Y_BASE_MIN = TASK_CONFIG.GRID_PARAMETERS[TASK_CONFIG.Y_BASE_MIN]
-        self.Z_BASE_MIN = TASK_CONFIG.GRID_PARAMETERS[TASK_CONFIG.Z_BASE_MIN]
-        self.HOLE_DIST = TASK_CONFIG.GRID_PARAMETERS[TASK_CONFIG.HOLE_DIST]
+        self.X_BASE_MIN = GRID_CONFIG.GRID_PARAMETERS[GRID_CONFIG.X_BASE_MIN]
+        self.Y_BASE_MIN = GRID_CONFIG.GRID_PARAMETERS[GRID_CONFIG.Y_BASE_MIN]
+        self.Z_BASE_MIN = GRID_CONFIG.GRID_PARAMETERS[GRID_CONFIG.Z_BASE_MIN]
+        self.HOLE_DIST = GRID_CONFIG.GRID_PARAMETERS[GRID_CONFIG.HOLE_DIST]
 
         # IK params
         self.q0_ = [-2.64, -1.27, -1.76, -2.06, -1.57, 2.1]
@@ -45,13 +45,13 @@ class UR3e(rtb.DHRobot):
                 column: the four positions for a task
                 depth: solutions for each position
         """
-        number_of_blocks: int = task[TASK_CONFIG.NO_BLOCKS] 
+        number_of_blocks: int = task[GRID_CONFIG.NO_BLOCKS] 
         solutions: np.ndarray = np.zeros(shape=(number_of_blocks, 4, 6))
         
         # For every block (4 coordinates) calculate IK (for 4 coordinates)
         for bn in range(number_of_blocks):
-            origin = task[bn][TASK_CONFIG.ORIGIN]
-            target = task[bn][TASK_CONFIG.TARGET]
+            origin = task[bn][GRID_CONFIG.ORIGIN]
+            target = task[bn][GRID_CONFIG.TARGET]
             origin_q_start, origin_q, target_q_start, target_q = self.compute_joint_positions_origin_target(
                 origin, target
             )
@@ -108,8 +108,8 @@ class UR3e(rtb.DHRobot):
 
     def compute_joint_positions_xy(self, x_g, y_g, grip_pos: bool = False):
         """Compute the joint positions for the UR3e robot arm given x and y of the grid"""
-        GRIP_Z = TASK_CONFIG.GRID_COORDINATES[TASK_CONFIG.GRIP_Z]
-        BEFORE_GRIP_Z = TASK_CONFIG.GRID_COORDINATES[TASK_CONFIG.BEFORE_GRIP_Z]
+        GRIP_Z = GRID_CONFIG.GRID_COORDINATES[GRID_CONFIG.GRIP_Z]
+        BEFORE_GRIP_Z = GRID_CONFIG.GRID_COORDINATES[GRID_CONFIG.BEFORE_GRIP_Z]
         z_g = GRIP_Z if grip_pos else BEFORE_GRIP_Z
         x, y, z = self.__compute_base_coordinates(x_g, y_g, z_g)
         q = self.__compute_ik_num(x, y, z, rounded=False)
@@ -119,22 +119,22 @@ class UR3e(rtb.DHRobot):
     def compute_joint_positions_origin_target(self, origin, target):
         """Compute the joint positions for the UR3e robot arm given origin and target"""
         origin_q_start = self.compute_joint_positions_xy(
-            origin[TASK_CONFIG.x], origin[TASK_CONFIG.y]
+            origin[GRID_CONFIG.x], origin[GRID_CONFIG.y]
         )
         origin_q = self.compute_joint_positions_xy(
-            origin[TASK_CONFIG.x], origin[TASK_CONFIG.y], grip_pos=True
+            origin[GRID_CONFIG.x], origin[GRID_CONFIG.y], grip_pos=True
         )
         target_q_start = self.compute_joint_positions_xy(
-            target[TASK_CONFIG.x], target[TASK_CONFIG.y]
+            target[GRID_CONFIG.x], target[GRID_CONFIG.y]
         )
         target_q = self.compute_joint_positions_xy(
-            target[TASK_CONFIG.x], target[TASK_CONFIG.y], grip_pos=True
+            target[GRID_CONFIG.x], target[GRID_CONFIG.y], grip_pos=True
         )
 
-        if origin[TASK_CONFIG.ROTATE_WRIST]:
+        if origin[GRID_CONFIG.ROTATE_WRIST]:
             origin_q_start[-1] -= pi/2
             origin_q[-1] -= pi/2
-        if target[TASK_CONFIG.ROTATE_WRIST]:
+        if target[GRID_CONFIG.ROTATE_WRIST]:
             target_q_start[-1] -= pi/2
             target_q[-1] -= pi/2
 
@@ -165,8 +165,8 @@ class UR3e(rtb.DHRobot):
             target (list): The target grid position
             Returns:
                 float: The estimated motion time"""
-        x_start, y_start, z_start = start[TASK_CONFIG.x], start[TASK_CONFIG.y], start[TASK_CONFIG.z]
-        x_target, y_target, z_target = target[TASK_CONFIG.x], target[TASK_CONFIG.y], target[TASK_CONFIG.z]
+        x_start, y_start, z_start = start[GRID_CONFIG.x], start[GRID_CONFIG.y], start[GRID_CONFIG.z]
+        x_target, y_target, z_target = target[GRID_CONFIG.x], target[GRID_CONFIG.y], target[GRID_CONFIG.z]
 
         # if the x and y are the same, the motion time is 0.2
         if x_start == x_target and y_start == y_target:
@@ -205,12 +205,12 @@ if __name__ == "__main__":
     final_traj = []
     final_time = []
 
-    origin0 = task_config[0][TASK_CONFIG.ORIGIN]
-    target0 = task_config[0][TASK_CONFIG.TARGET]
-    origin1 = task_config[1][TASK_CONFIG.ORIGIN]
-    target1 = task_config[1][TASK_CONFIG.TARGET]
-    home = TASK_CONFIG.HOME_POSITION
-    HOME = ur.compute_joint_positions_xy(home[TASK_CONFIG.x], home[TASK_CONFIG.y])
+    origin0 = task_config[0][GRID_CONFIG.ORIGIN]
+    target0 = task_config[0][GRID_CONFIG.TARGET]
+    origin1 = task_config[1][GRID_CONFIG.ORIGIN]
+    target1 = task_config[1][GRID_CONFIG.TARGET]
+    home = GRID_CONFIG.HOME_POSITION
+    HOME = ur.compute_joint_positions_xy(home[GRID_CONFIG.x], home[GRID_CONFIG.y])
     BGP0, GP0, BTP0, TP0 = ur.compute_joint_positions_origin_target(origin0, target0)
     BGP1, GP1, BTP1, TP1 = ur.compute_joint_positions_origin_target(origin1, target1)
 
