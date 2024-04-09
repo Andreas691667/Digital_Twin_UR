@@ -19,9 +19,16 @@ class TaskTrajectoryEstimator:
         returns:
             Estimated trajectory."""
 
+        # get first start in task_with_timings that is not None
+        start = None
+        for elem in task_with_timings:
+            if (elem[0:6] != [None] * 6).all():
+                start = elem[0:6]
+                break
+
         final_trajectory = []
         final_time = [0]
-        last_traj = []
+        last_traj_q = [start]
 
         for elem in task_with_timings:
             # Get the start, target and motion time
@@ -46,12 +53,12 @@ class TaskTrajectoryEstimator:
                     final_time[-1] + 0.05, motion_time + final_time[-1], n_steps
                 )
                 final_time = np.append(final_time, time_vector, axis=0)
-                last_traj = traj
+                last_traj_q = traj_q
 
             # If there is a delay
             elif start is None and target is None:
                 final_trajectory = np.append(
-                    final_trajectory, np.tile(last_traj.q[-1], n_steps), axis=0
+                    final_trajectory, np.tile(last_traj_q[-1], n_steps), axis=0
                 )
                 time_vector = np.linspace(
                     final_time[-1] + 0.05, motion_time + final_time[-1], n_steps
@@ -112,28 +119,26 @@ if __name__ == "__main__":
 
     # Create a task with timings
     task_with_timings = [
-        # np.concatenate((v_none,v_none, [3])),
+        np.concatenate((v_none,v_none, [3])),
         np.concatenate((HOME, BGP0, [1.5])),
-        np.concatenate((BGP0, GP0, [1.5])),
+        np.concatenate((BGP0, GP0, [1.15])),
         np.concatenate((v_none,v_none, [0.7])),
-        np.concatenate((GP0, BGP0, [1.5])),
-        np.concatenate((BGP0, BTP0, [1.5])),
-        np.concatenate((BTP0, TP0, [1.5])),
+        np.concatenate((GP0, BGP0, [1.15])),
+        np.concatenate((BGP0, BTP0, [2.2])),
+        np.concatenate((BTP0, TP0, [0.8])),
         np.concatenate((v_none,v_none, [0.3])),
-        np.concatenate((TP0, BTP0, [1.5])),
+        np.concatenate((TP0, BTP0, [0.8])),
         np.concatenate((v_none,v_none, [1.1])),
-        np.concatenate((BTP0, BGP1, [1.5])),
-        np.concatenate((BGP1, GP1, [1.5])),
-        np.concatenate((v_none,v_none, [1.1])),
-        np.concatenate((GP1, BGP1, [1.5])),
-        np.concatenate((BGP1, BTP1, [1.5])),
-        np.concatenate((BTP1, TP1, [1.5])),
+        np.concatenate((BTP0, BGP1, [2.2])),
+        np.concatenate((BGP1, GP1, [1.15])),
+        np.concatenate((v_none,v_none, [0.7])),
+        np.concatenate((GP1, BGP1, [1.15])),
+        np.concatenate((BGP1, BTP1, [2.2])),
+        np.concatenate((BTP1, TP1, [0.8])),
         np.concatenate((v_none,v_none, [0.3])),
-        np.concatenate((TP1, BTP1, [1.5])),
+        np.concatenate((TP1, BTP1, [0.8])),
         np.concatenate((v_none,v_none, [1.1])),
-        np.concatenate((TP1, HOME, [1.5])),
+        np.concatenate((TP1, HOME, [1.2])),
     ]
 
-    traj, time = task_estimator.estimate_trajectory(task_with_timings, True)
-
-    print((traj))
+    traj, time = task_estimator.estimate_trajectory(task_with_timings, True, file_name="trajectory_dt_2_blocks")

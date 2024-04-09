@@ -57,7 +57,7 @@ def read_ts(r:pd.DataFrame):
 
 if __name__ == "__main__":
    
-    r_dt = pd.read_csv("test_results/04_09_2024_14_49_44.csv", delimiter=' ')
+    r_dt = pd.read_csv("test_results/trajectory_dt_2_blocks.csv", delimiter=' ')
     r_pt = pd.read_csv("test_results/robot_output_two_blocks.csv", delimiter=' ')
 
     timestamp_floats_dt = read_ts(r_dt)
