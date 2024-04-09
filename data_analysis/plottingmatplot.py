@@ -62,27 +62,13 @@ if __name__ == "__main__":
 
     timestamp_floats_dt = read_ts(r_dt)
     q0_floats_dt, q1_floats_dt, q2_floats_dt, q3_floats_dt, q4_floats_dt, q5_floats_dt = read_qs(r_dt)
-    # qd0_floats_dt, qd1_floats_dt, qd2_floats_dt, qd3_floats_dt, qd4_floats_dt, qd5_floats_dt = read_qds(r_dt)
+    qd0_floats_dt, qd1_floats_dt, qd2_floats_dt, qd3_floats_dt, qd4_floats_dt, qd5_floats_dt = read_qds(r_dt)
 
     timestamp_floats_pt = read_ts(r_pt)
     q0_floats_pt, q1_floats_pt, q2_floats_pt, q3_floats_pt, q4_floats_pt, q5_floats_pt = read_qs(r_pt)
+    qd0_floats_pt, qd1_floats_pt, qd2_floats_pt, qd3_floats_pt, qd4_floats_pt, qd5_floats_pt = read_qds(r_pt)
     
-    # timestamp_floats = r.timestamp.astype(float)
-    # timestamp_floats = [x - timestamp_floats[0] for x in timestamp_floats]
-    # q0_floats = convert_ndarray_from_radians_to_degrees(r.actual_q_0.astype(float))
-    # q1_floats = convert_ndarray_from_radians_to_degrees(r.actual_q_1.astype(float))
-    # q2_floats = convert_ndarray_from_radians_to_degrees(r.actual_q_2.astype(float))
-    # q3_floats = convert_ndarray_from_radians_to_degrees(r.actual_q_3.astype(float))
-    # q4_floats = convert_ndarray_from_radians_to_degrees(r.actual_q_4.astype(float))
-    # q5_floats = convert_ndarray_from_radians_to_degrees(r.actual_q_5.astype(float))
-    # qd0_floats = convert_ndarray_from_radians_to_degrees(r.actual_qd_0.astype(float))
-    # qd1_floats = convert_ndarray_from_radians_to_degrees(r.actual_qd_1.astype(float))
-    # qd2_floats = convert_ndarray_from_radians_to_degrees(r.actual_qd_2.astype(float))
-    # qd3_floats = convert_ndarray_from_radians_to_degrees(r.actual_qd_3.astype(float))
-    # qd4_floats = convert_ndarray_from_radians_to_degrees(r.actual_qd_4.astype(float))
-    # qd5_floats = convert_ndarray_from_radians_to_degrees(r.actual_qd_5.astype(float))
-
-    # # plot
+    # # plot positions
     fig, (ax1, ax2) = plt.subplots(2, 1, sharex=True)
     ax1.plot(timestamp_floats_dt, q0_floats_dt, label="q0")
     ax1.plot(timestamp_floats_dt, q1_floats_dt, label="q1")
@@ -104,9 +90,40 @@ if __name__ == "__main__":
     ax2.plot(timestamp_floats_pt, q5_floats_pt, label="q5")
     cursor = Cursor(ax2, useblit=True, color='red', linewidth=2)
 
-
     ax2.set_xlabel("Time [s]")
     ax2.set_ylabel("Joint Position [rad]")
+    ax2.set_title("PT")
+
+    # increase granularity of x-axis
+    ax2.set_xticks(np.arange(0, 25, 1))
+
+    fig.legend()
+    plt.show()
+
+    # # plot velocities
+    fig, (ax1, ax2) = plt.subplots(2, 1, sharex=True)
+    ax1.plot(timestamp_floats_dt, qd0_floats_dt, label="q0")
+    ax1.plot(timestamp_floats_dt, qd1_floats_dt, label="q1")
+    ax1.plot(timestamp_floats_dt, qd2_floats_dt, label="q2")
+    ax1.plot(timestamp_floats_dt, qd3_floats_dt, label="q3")
+    ax1.plot(timestamp_floats_dt, qd4_floats_dt, label="q4")
+    ax1.plot(timestamp_floats_dt, qd5_floats_dt, label="q5")
+    cursor = Cursor(ax1, useblit=True, color='red', linewidth=2)
+    
+    ax1.set_xlabel("Time [s]")
+    ax1.set_ylabel("Joint Velocity [rad/s]")
+    ax1.set_title("DT")
+    
+    ax2.plot(timestamp_floats_pt, qd0_floats_pt, label="q0")
+    ax2.plot(timestamp_floats_pt, qd1_floats_pt, label="q1")
+    ax2.plot(timestamp_floats_pt, qd2_floats_pt, label="q2")
+    ax2.plot(timestamp_floats_pt, qd3_floats_pt, label="q3")
+    ax2.plot(timestamp_floats_pt, qd4_floats_pt, label="q4")
+    ax2.plot(timestamp_floats_pt, qd5_floats_pt, label="q5")
+    cursor = Cursor(ax2, useblit=True, color='red', linewidth=2)
+
+    ax2.set_xlabel("Time [s]")
+    ax2.set_ylabel("Joint Velocoty [rad/s]")
     ax2.set_title("PT")
 
     # increase granularity of x-axis
