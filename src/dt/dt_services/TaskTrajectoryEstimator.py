@@ -1,6 +1,7 @@
 
 import numpy as np
 import pandas as pd
+import datetime
 
 class TaskTrajectoryEstimator:
     """Class to estimate the trajectory of a task."""
@@ -44,7 +45,7 @@ class TaskTrajectoryEstimator:
 
             # If there is a delay
             elif start is None and target is None:
-                final_trajectory = np.append(final_trajectory, np.tile(last_traj[-1], n_steps), axis=0)
+                final_trajectory = np.append(final_trajectory, np.tile(last_traj.q[-1], n_steps), axis=0)
                 time_vector = np.linspace(final_time[-1]+0.05, motion_time+final_time[-1], n_steps)
                 final_time = np.append(final_time, time_vector, axis=0)
 
@@ -55,11 +56,12 @@ class TaskTrajectoryEstimator:
         if save_to_file:  
             df = pd.DataFrame(final_trajectory, columns=['actual_q_0','actual_q_1','actual_q_2','actual_q_3','actual_q_4','actual_q_5'])
             # add time column
+            final_time = np.delete(final_time, 0)
             df['timestamp'] = final_time
-            df.to_csv("trajectory_dt.csv", sep=' ', index=False)
+            file_name = file_name if file_name is not None else datetime.datetime.now().strftime("%m_%d_%Y_%H_%M_%S")
+            df.to_csv(f"../dt_trajectories/{file_name}.csv", sep=' ', index=False)
 
         return final_trajectory, final_time
-    
 
 # Example of usage
 # main
@@ -89,6 +91,6 @@ if __name__ == "__main__":
     print((np.shape(task_with_timings)))
 
     # print(task_with_timings)
-    traj, time = task_estimator.estimate_trajectory(task_with_timings)
+    traj, time = task_estimator.estimate_trajectory(task_with_timings, True)
 
     print((traj))
