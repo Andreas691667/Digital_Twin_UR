@@ -333,4 +333,4 @@ if __name__ == "__main__":
     df = pd.DataFrame(final_traj, columns=['actual_q_0','actual_q_1','actual_q_2','actual_q_3','actual_q_4','actual_q_5'])
     # add time column
     df['timestamp'] = final_time
-    df.to_csv("trajectory.csv", sep=' ', index=False)
+    df.to_csv("trajectory_dt.csv", sep=' ', index=False)
