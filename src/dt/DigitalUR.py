@@ -159,7 +159,7 @@ class DigitalUR:
         while not self.state_machine_stop_event.is_set():
             if self.state == DT_STATES.INITIALIZING:
                 self.configure_rmq_clients()
-                time.sleep(1)
+                time.sleep(.5)
                 self.start_consuming()
                 self.state = DT_STATES.WAITING_TO_RECEIVE_TASK
                 print("State transition -> WAITING_TO_RECEIVE_TASK")
@@ -229,7 +229,6 @@ class DigitalUR:
         # if fault resolved send new data to controller
         # if fault unresovled send could not resolve fault message to controller
         # in both cases go to waiting for task to start state
-
         
         if self.current_fault == FAULT_TYPES.MISSING_OBJECT:
             if self.mitigation_strategy == GRID_CONFIG.MITIGATION_STRATEGIES.SHIFT_ORIGIN:
@@ -273,12 +272,7 @@ class DigitalUR:
                     self.time_of_last_message = time.time() # Reset timer 
                     return f"{MSG_TYPES_DT_TO_CONTROLLER.RESOLVED}"
                 else:
-                    return f"{MSG_TYPES_DT_TO_CONTROLLER.COULD_NOT_RESOLVE}"
-             
-                
-
-        elif self.current_fault == FAULT_TYPES.PROTECTIVE_STOP:
-            pass
+                    return f"{MSG_TYPES_DT_TO_CONTROLLER.COULD_NOT_RESOLVE}"           
 
         elif self.current_fault == FAULT_TYPES.PROTECTIVE_STOP:
             pass
@@ -293,7 +287,6 @@ class DigitalUR:
         """
         self.rmq_client_out.send_message(fault_msg, RMQ_CONFIG.DT_EXCHANGE)
 
-    
     # TODO: add proper return type
     def analyse_data(self, data):
         """Check for faults in the data"""

@@ -2,7 +2,7 @@ import sys
 
 sys.path.append("../..")
 from config.grid_config import GRID_CONFIG
-from dt.task_validator.TimingThresholdEstimator import TimingThresholdEstimator
+from dt_services.TimingThresholdEstimator import TimingThresholdEstimator
 # import rectangle_packer.RectanglePacker as rp
 import numpy as np
 from time import time
