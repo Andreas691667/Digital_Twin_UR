@@ -69,7 +69,7 @@ if __name__ == "__main__":
     qd0_floats_pt, qd1_floats_pt, qd2_floats_pt, qd3_floats_pt, qd4_floats_pt, qd5_floats_pt = read_qds(r_pt)
     
     # # plot positions
-    fig, (ax1, ax2) = plt.subplots(2, 1, sharex=True)
+    fig, (ax1, ax2) = plt.subplots(2, 1, sharex=True, sharey=True)
     ax1.plot(timestamp_floats_dt, q0_floats_dt, label="q0")
     ax1.plot(timestamp_floats_dt, q1_floats_dt, label="q1")
     ax1.plot(timestamp_floats_dt, q2_floats_dt, label="q2")
@@ -98,10 +98,10 @@ if __name__ == "__main__":
     ax2.set_xticks(np.arange(0, 25, 1))
 
     fig.legend()
-    plt.show()
+    # plt.show()
 
     # # plot velocities
-    fig, (ax1, ax2) = plt.subplots(2, 1, sharex=True)
+    fig, (ax1, ax2) = plt.subplots(2, 1, sharex=True, sharey=True)
     ax1.plot(timestamp_floats_dt, qd0_floats_dt, label="q0")
     ax1.plot(timestamp_floats_dt, qd1_floats_dt, label="q1")
     ax1.plot(timestamp_floats_dt, qd2_floats_dt, label="q2")
