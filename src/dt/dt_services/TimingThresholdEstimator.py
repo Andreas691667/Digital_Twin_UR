@@ -194,23 +194,23 @@ class TimingThresholdEstimator:
         return thresholds, all_durations, all_durations_des
         
 
-import yaml
-import json
-if __name__ == "__main__":
-    task_config = {}
-    task_name = "2_blocks"
-    try:
-        with open(f"../../config/tasks/{task_name}.yaml", "r") as file:
-            task_config = yaml.safe_load(file)
-            print(task_config)
-    except FileNotFoundError:
-        print(f"Task {task_name} not found")
+# import yaml
+# import json
+# if __name__ == "__main__":
+#     task_config = {}
+#     task_name = "2_blocks"
+#     try:
+#         with open(f"../../config/tasks/{task_name}.yaml", "r") as file:
+#             task_config = yaml.safe_load(file)
+#             print(task_config)
+#     except FileNotFoundError:
+#         print(f"Task {task_name} not found")
 
-    timing_threshold_estimator = TimingThresholdEstimator()
-    thresholds, all_durations, des = timing_threshold_estimator.compute_thresholds(task_config)
-    print(all_durations)
-    print(des)
-    # print(thresholds)
-    # print(all_durations)
+#     timing_threshold_estimator = TimingThresholdEstimator()
+#     thresholds, all_durations, des = timing_threshold_estimator.compute_thresholds(task_config)
+#     print(all_durations)
+#     print(des)
+#     # print(thresholds)
+#     # print(all_durations)
 
     
