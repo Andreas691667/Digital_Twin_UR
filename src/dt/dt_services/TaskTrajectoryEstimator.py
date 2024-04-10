@@ -63,7 +63,7 @@ class TaskTrajectoryEstimator:
         df.to_csv(f"../dt_trajectories/{file_name}.csv", sep=" ", index=False)
 
     def estimate_trajectory(
-        self, task_with_timings, save_to_file=False, file_name=None
+        self, task_with_timings, start_time = 0, save_to_file=False, file_name=None
     ):
         """Estimate the trajectory of a task.
         params:
@@ -86,7 +86,7 @@ class TaskTrajectoryEstimator:
         final_traj_q = []
         final_traj_qd = []
         final_traj_qdd = []
-        final_time = [0]
+        final_time = [start_time]
 
         last_traj_q = [start]
         last_traj_qd = [0] * 6
@@ -201,5 +201,5 @@ if __name__ == "__main__":
     ]
 
     trajq, trajqd, trajqdd, time = task_estimator.estimate_trajectory(
-        task_with_timings, True, file_name="trajectory_dt_2_blocks"
+        task_with_timings,start_time=100, save_to_file=True, file_name="trajectory_dt_2_blocks"
     )
