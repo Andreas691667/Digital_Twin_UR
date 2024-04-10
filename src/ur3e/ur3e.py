@@ -167,10 +167,13 @@ class UR3e(rtb.DHRobot):
         self.n_steps_motion = int(self.motion_time / dt)
         return self.n_steps_motion
 
-    def plot_trajectory(self):
+    def plot_trajectory(self, traj=None):
         """Plot the trajectory of the robot arm"""
         # self.traj.plot(block=True)
-        self.plot(self.traj.q, block=True)
+        if traj is None:
+            self.plot(self.traj.q, block=True)
+        else:
+            self.plot(traj, block=True)
 
     def compute_trajectory(self, start, target):
         """Compute the trajectory of the robot arm

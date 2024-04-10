@@ -207,3 +207,5 @@ if __name__ == "__main__":
     trajq, trajqd, trajqdd, time = task_estimator.estimate_trajectory(
         task_with_timings,start_time=100, save_to_file=True, file_name="trajectory_dt_2_blocks"
     )
+
+    model.plot_trajectory(trajq)
