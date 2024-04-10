@@ -2,8 +2,6 @@ import sys
 
 sys.path.append("../..")
 from config.grid_config import GRID_CONFIG
-from dt_services.TimingThresholdEstimator import TimingThresholdEstimator
-# import rectangle_packer.RectanglePacker as rp
 import numpy as np
 from time import time
 
@@ -21,13 +19,6 @@ class TaskValidator:
         self.task = None
 
         self.validating_threshold = 2 # should handle new task in 2 second
-        self.timing_threshold_estimator = TimingThresholdEstimator()
-        self.estimated_thresholds = []
-        
-        self.missing_block = None
-
-    def set_missing_block(self, missing_block: int) -> None:
-        self.missing_block = missing_block
     
     def validate_task(self, task: dict):
         """Validate the task
@@ -45,16 +36,7 @@ class TaskValidator:
         if valid: 
             # parse matrices to task again
             self.__update_task()
-            self.__compute_thresholds()
-            print(f"Print here? {self.estimated_thresholds}")
-            self.__update_task()
-            print(self.task)
         return valid, self.task
-
-    def __compute_thresholds(self):
-        """Computes thresholds"""
-        self.estimated_thresholds, _, _ = self.timing_threshold_estimator.compute_thresholds(self.task.copy(), missing_block=self.missing_block)
-
 
     def __update_task(self):
         """Update task from matrices"""
@@ -63,16 +45,14 @@ class TaskValidator:
             self.task[i][GRID_CONFIG.ORIGIN][GRID_CONFIG.x] = int(self.block_origin_map[0, i])
             self.task[i][GRID_CONFIG.ORIGIN][GRID_CONFIG.y] = int(self.block_origin_map[1, i])
             self.task[i][GRID_CONFIG.ORIGIN].update({GRID_CONFIG.ROTATE_WRIST: bool(self.block_origin_map[2, i])})
-            # self.task[i][GRID_CONFIG.ORIGIN][GRID_CONFIG.ROTATE_WRIST] = bool(self.block_origin_map[2, i])
             self.task[i][GRID_CONFIG.TARGET][GRID_CONFIG.x] = int(self.block_target_map[0, i])
             self.task[i][GRID_CONFIG.TARGET][GRID_CONFIG.y] = int(self.block_target_map[1, i])
             self.task[i][GRID_CONFIG.TARGET].update({GRID_CONFIG.ROTATE_WRIST: bool(self.block_target_map[2, i])})
-            # self.task[i][GRID_CONFIG.TARGET][GRID_CONFIG.ROTATE_WRIST] = bool(self.block_target_map[2, i])
+
             # Update thresholds
-            # print(len(self.estimated_thresholds))
-            # print(i)
-            if (len(self.estimated_thresholds) != 0):
-                self.task[i].update({GRID_CONFIG.TIMING_THRESHOLD: self.estimated_thresholds[i]})
+
+            # if (len(self.estimated_thresholds) != 0):
+            #     self.task[i].update({GRID_CONFIG.TIMING_THRESHOLD: self.estimated_thresholds[i]})
 
     def __create_maps(self):
         """Create matrices of block positions from task"""
@@ -155,18 +135,18 @@ class TaskValidator:
         return grip_possible
 
 # main
-if __name__ == "__main__":
-    import yaml
-    import json
-    # task = GRID_CONFIG.block_config_close_blocks
+# if __name__ == "__main__":
+#     import yaml
+#     import json
+#     # task = GRID_CONFIG.block_config_close_blocks
 
-    with open("../../config/tasks/close_blocks.yaml", "r") as file:
-        task = yaml.safe_load(file)
+#     with open("../../config/tasks/close_blocks.yaml", "r") as file:
+#         task = yaml.safe_load(file)
 
-    print(task)
+#     print(task)
 
-    task_validator = TaskValidator()
-    valid, task_new = task_validator.validate_task(task)
+#     task_validator = TaskValidator()
+#     valid, task_new = task_validator.validate_task(task)
 
-    print(f"Task valid: {valid}")
-    print(json.dumps(task_new, indent=4))
+#     print(f"Task valid: {valid}")
+#     print(json.dumps(task_new, indent=4))
