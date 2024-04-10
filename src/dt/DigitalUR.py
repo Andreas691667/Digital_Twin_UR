@@ -10,9 +10,6 @@ sys.path.append("..")
 import cli_arguments
 from rmq.RMQClient import Client
 
-# from digitalur_states import DT_STATES
-# from digitalur_fault_types import FAULT_TYPES
-
 from config.rmq_config import RMQ_CONFIG
 from config.msg_config import MSG_TYPES_CONTROLLER_TO_DT, MSG_TYPES_DT_TO_CONTROLLER
 from config.grid_config import GRID_CONFIG

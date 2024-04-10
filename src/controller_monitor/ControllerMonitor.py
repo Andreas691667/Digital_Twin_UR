@@ -2,6 +2,7 @@
 from sys import path, exit
 import numpy as np
 import ast
+from dataclasses import dataclass
 
 path.append("..")
 path.append("../urinterface/src")
@@ -14,7 +15,7 @@ from queue import Queue, Empty
 from time import sleep
 import msvcrt  # for user input
 
-from controller_monitor_states import CM_STATES
+# from controller_monitor_states import CM_STATES
 
 from rmq.RMQClient import Client
 from config.rmq_config import RMQ_CONFIG
@@ -24,6 +25,16 @@ from ur3e.ur3e import UR3e
 import json
 import yaml
 
+@dataclass
+class CMState:
+    """Dataclass for controller monitor states"""
+    INITIALIZING = 0 # Before establishing connection to broker
+    WAITING_FOR_TASK_VALIDATION = 1 # Waiting for task validation
+    WAITING_FOR_USER_INPUT = 2 # Waits for user to press enter
+    NORMAL_OPERATION = 3 # Performing task
+    WAITING_FOR_FAULT_RESOLUTION = 4 # Waiting for resolution
+    MANUEL_INTERVENTION = 5 # Waiting for manuel intervention
+    SHUTTING_DOWN = 6 # Shutting down
 
 class ControllerMonitor:
     """Class responsible for all robot interaction"""
@@ -31,7 +42,7 @@ class ControllerMonitor:
     def __init__(self, task_name, go_to_home=False) -> None:
 
         # Attributes
-        self.STATE = CM_STATES.INITIALIZING  # flag to check if main program is running
+        self.STATE = CMState.INITIALIZING  # flag to check if main program is running
         self.block_number = 0  # current block number being processed
         # self.task_config = (
         #     GRID_CONFIG.block_config_close_blocks.copy()
@@ -112,11 +123,11 @@ class ControllerMonitor:
             k = msvcrt.getwche()
             if k == "c":
                 print(f"\t [USER INPUT] {k}")
-                self.STATE = CM_STATES.SHUTTING_DOWN
+                self.STATE = CMState.SHUTTING_DOWN
                 print("\t [STATE] SHUTTING_DOWN")
             elif k == "2":
                 print(f"\t [USER INPUT] {k}")
-                self.STATE = CM_STATES.NORMAL_OPERATION
+                self.STATE = CMState.NORMAL_OPERATION
                 print("\t[STATE] NORMAL_OPERATION")
             
             elif k == "i" and self.task_finished:
@@ -126,7 +137,7 @@ class ControllerMonitor:
             k = "a"
         except KeyboardInterrupt:
             print("Exiting")
-            self.STATE = CM_STATES.SHUTTING_DOWN
+            self.STATE = CMState.SHUTTING_DOWN
             print("\t [STATE] SHUTTING_DOWN")
 
     def invert_task(self):
@@ -145,7 +156,7 @@ class ControllerMonitor:
         self.task_finished = False
         # restart rtde connection
         self.rtde_connection = RTDEConnect(ROBOT_CONFIG.ROBOT_HOST, self.conf_file)
-        self.STATE = CM_STATES.INITIALIZING
+        self.STATE = CMState.INITIALIZING
 
 
     def init_robot_registers(self):
@@ -225,7 +236,7 @@ class ControllerMonitor:
 
         if main_program:
             sleep(1)
-            self.STATE = CM_STATES.NORMAL_OPERATION
+            self.STATE = CMState.NORMAL_OPERATION
 
     def stop_program(self) -> None:
         """stop current exection"""
@@ -283,7 +294,7 @@ class ControllerMonitor:
             # -- NO MESSAGE --
             except Empty:
                 # ---- STATE MACHINE ----
-                if self.STATE == CM_STATES.INITIALIZING:
+                if self.STATE == CMState.INITIALIZING:
                     # Initialize robot registers
                     self.init_robot_registers()
 
@@ -291,23 +302,23 @@ class ControllerMonitor:
                     self.publish_task_to_DT()
 
                     print("Waiting for DT to validate task")
-                    self.STATE = CM_STATES.WAITING_FOR_TASK_VALIDATION
+                    self.STATE = CMState.WAITING_FOR_TASK_VALIDATION
 
-                elif self.STATE == CM_STATES.WAITING_FOR_TASK_VALIDATION:
+                elif self.STATE == CMState.WAITING_FOR_TASK_VALIDATION:
                     # Wait for DT to validate task
                     if self.task_validated:
                         print("\n \t [USER] Ready to play program. Press '2' to start, 'c' to exit \n")
                         # register_values = self.__get_register_values()
                         # self.__initialize_task_registers(register_values)
-                        self.STATE = CM_STATES.WAITING_FOR_USER_INPUT
+                        self.STATE = CMState.WAITING_FOR_USER_INPUT
                     else:
                         pass
                         # self.recieve_user_input()
 
-                elif self.STATE == CM_STATES.WAITING_FOR_USER_INPUT:
+                elif self.STATE == CMState.WAITING_FOR_USER_INPUT:
                     self.recieve_user_input()
 
-                elif self.STATE == CM_STATES.NORMAL_OPERATION:
+                elif self.STATE == CMState.NORMAL_OPERATION:
                     # Subtask is done, and there is more blocks to move
                     if (not self.robot_connection.program_running()) and (
                         self.block_number < self.task_config[GRID_CONFIG.NO_BLOCKS]
@@ -339,20 +350,20 @@ class ControllerMonitor:
                         self.init_robot_registers()
                         print("\n \t [USER] Press 'i' to perform inverse task. Press 'c' to exit \n")
                         self.rtde_connection.shutdown()
-                        self.STATE = CM_STATES.WAITING_FOR_USER_INPUT
+                        self.STATE = CMState.WAITING_FOR_USER_INPUT
                         self.task_finished = True
 
-                elif self.STATE == CM_STATES.WAITING_FOR_FAULT_RESOLUTION:
+                elif self.STATE == CMState.WAITING_FOR_FAULT_RESOLUTION:
                     pass
 
-                elif self.STATE == CM_STATES.SHUTTING_DOWN:
+                elif self.STATE == CMState.SHUTTING_DOWN:
                     self.shutdown_event.set()
 
             # -- MESSAGE FROM DT --
             else:
                 # Fault was detected, wait for DT to plan
                 if msg_type == MSG_TYPES_DT_TO_CONTROLLER.WAIT:
-                    self.STATE = CM_STATES.WAITING_FOR_FAULT_RESOLUTION
+                    self.STATE = CMState.WAITING_FOR_FAULT_RESOLUTION
                     print("\t [STATE] WAITING_FOR_FAULT_RESOLUTION")
                     self.stop_program()
 
@@ -362,21 +373,21 @@ class ControllerMonitor:
 
                 elif msg_type == MSG_TYPES_DT_TO_CONTROLLER.TASK_NOT_VALIDATED:
                     self.robot_connection.popup("Task not validated. Exiting")
-                    self.STATE = CM_STATES.SHUTTING_DOWN
+                    self.STATE = CMState.SHUTTING_DOWN
                     print("\t [STATE] SHUTTING_DOWN")
 
                 # A resolution was send
                 elif msg_type == MSG_TYPES_DT_TO_CONTROLLER.RESOLVED:
                     # new_task = str(msg_body)  # TODO: check if this is necessary
                     self.__reconfigure_task(msg_body, decr=True)
-                    self.STATE = CM_STATES.NORMAL_OPERATION
+                    self.STATE = CMState.NORMAL_OPERATION
                     print("\t [STATE] NORMAL_OPERATION")
 
                 # DT could not resolve
                 elif msg_type == MSG_TYPES_DT_TO_CONTROLLER.COULD_NOT_RESOLVE:
                     print("DT could not resolve")
                     self.robot_connection.popup("DT could not resolve. Task not possible. Exiting")
-                    self.STATE = CM_STATES.SHUTTING_DOWN
+                    self.STATE = CMState.SHUTTING_DOWN
                     print("\t [STATE] SHUTTING_DOWN")
 
     def __go_to_home(self):
