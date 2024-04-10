@@ -4,13 +4,14 @@ import threading
 from queue import Queue, Empty
 import time
 import ast
+from dataclasses import dataclass
 
 sys.path.append("..")
 import cli_arguments
 from rmq.RMQClient import Client
 
-from digitalur_states import DT_STATES
-from digitalur_fault_types import FAULT_TYPES
+# from digitalur_states import DT_STATES
+# from digitalur_fault_types import FAULT_TYPES
 
 from config.rmq_config import RMQ_CONFIG
 from config.msg_config import MSG_TYPES_CONTROLLER_TO_DT, MSG_TYPES_DT_TO_CONTROLLER
@@ -23,11 +24,35 @@ from dt_services.TaskTrajectoryEstimator import TaskTrajectoryEstimator
 from dt_services.TimingThresholdEstimator import TimingThresholdEstimator
 
 
+@dataclass
+class MitigationStrategy:
+    """Class for the mitigation strategies"""
+    SHIFT_ORIGIN = "SHIFT_ORIGIN"
+    TRY_PICK_STOCK = "TRY_PICK_STOCK"
+
+@dataclass
+class FaultType:
+    """Class for the fault types"""
+    MISSING_OBJECT = "MISSING_OBJECT"
+    PROTECTIVE_STOP = "PROTECTIVE_STOP"
+    UNKOWN_FAULT = "UNKOWN_FAULT"
+    NO_FAULT = "NO_FAULT"
+
+@dataclass
+class DTState:
+    """Class for the states of the digital twin"""
+    INITIALIZING = 0
+    WAITING_TO_RECEIVE_TASK = 1
+    VALIDATING_TASK = 2
+    WAITING_FOR_TASK_TO_START = 3
+    NORMAL_OPERATION = 4
+    FAULT_RESOLUTION = 5
+
 class DigitalUR:
     """Class for the digital twin of the UR3e Robot"""
 
     def __init__(self, mitigation_strategy: str):
-        self.state: DT_STATES = DT_STATES.INITIALIZING
+        self.state: DTState = DTState.INITIALIZING
         self.rmq_client_in = Client(host=RMQ_CONFIG.RMQ_SERVER_IP)
         # self.rmq_client_in_monitor = Client(host=RMQ_CONFIG.RMQ_SERVER_IP, name="monitor")
         self.rmq_client_out = Client(host=RMQ_CONFIG.RMQ_SERVER_IP)
@@ -47,7 +72,7 @@ class DigitalUR:
 
         self.mitigation_strategy = None
         self.__set_mitigation_strategy(mitigation_strategy)
-        self.current_fault: FAULT_TYPES = None
+        self.current_fault: FaultType = None
         self.state_machine_thread.start()
 
         # parameters for detecting a fault
@@ -66,9 +91,9 @@ class DigitalUR:
     def __set_mitigation_strategy(self, mitigation_strategy: str) -> None:
         """Set the mitigation strategy"""
         if mitigation_strategy == cli_arguments.SHIFT:
-            self.mitigation_strategy = GRID_CONFIG.MITIGATION_STRATEGIES.SHIFT_ORIGIN
+            self.mitigation_strategy = MitigationStrategy.SHIFT_ORIGIN
         elif mitigation_strategy == cli_arguments.STOCK:
-            self.mitigation_strategy = GRID_CONFIG.MITIGATION_STRATEGIES.TRY_PICK_STOCK
+            self.mitigation_strategy = MitigationStrategy.TRY_PICK_STOCK
 
     def configure_rmq_clients(self):
         """Configures rmq_client_in to receive data from monitor
@@ -157,14 +182,14 @@ class DigitalUR:
     def state_machine(self):
         """The state machine for the digital twin"""
         while not self.state_machine_stop_event.is_set():
-            if self.state == DT_STATES.INITIALIZING:
+            if self.state == DTState.INITIALIZING:
                 self.configure_rmq_clients()
                 time.sleep(.5)
                 self.start_consuming()
-                self.state = DT_STATES.WAITING_TO_RECEIVE_TASK
+                self.state = DTState.WAITING_TO_RECEIVE_TASK
                 print("State transition -> WAITING_TO_RECEIVE_TASK")
             
-            elif self.state == DT_STATES.WAITING_TO_RECEIVE_TASK:
+            elif self.state == DTState.WAITING_TO_RECEIVE_TASK:
                 msg_type, msg_data = self.__get_message(self.controller_msg_queue)
                 if msg_data:
                     if msg_type == MSG_TYPES_CONTROLLER_TO_DT.NEW_TASK:
@@ -176,11 +201,11 @@ class DigitalUR:
                         self.rmq_client_out.send_message(validate_msg, RMQ_CONFIG.DT_EXCHANGE)
                         # state transition
                         if valid:
-                            self.state = DT_STATES.WAITING_FOR_TASK_TO_START
+                            self.state = DTState.WAITING_FOR_TASK_TO_START
                             self.monitor_msg_queue.queue.clear() # clear the monitor queue                
                             print("State transition -> WAITING_FOR_TASK_TO_START")
 
-            elif self.state == DT_STATES.WAITING_FOR_TASK_TO_START:
+            elif self.state == DTState.WAITING_FOR_TASK_TO_START:
                 msg_type, msg_data = self.__get_message(self.monitor_msg_queue)
                 if msg_data:
                     # check the digital bit 0 of the data
@@ -188,20 +213,20 @@ class DigitalUR:
                     # else pass
                     if self.check_start_bit(msg_data):
                         print("State transition -> NORMAL_OPERATION")
-                        self.state = DT_STATES.NORMAL_OPERATION
+                        self.state = DTState.NORMAL_OPERATION
                         # Start timer
                         self.time_of_last_message = time.time()
 
-            elif self.state == DT_STATES.NORMAL_OPERATION:
+            elif self.state == DTState.NORMAL_OPERATION:
                 self.monitor_pt()
-            elif self.state == DT_STATES.FAULT_RESOLUTION:
+            elif self.state == DTState.FAULT_RESOLUTION:
                 # Stop program firstly
                 self.execute_fault_resolution(f"{MSG_TYPES_DT_TO_CONTROLLER.WAIT} None")
                 # resolve the fault and update the task_config
                 msg_type = self.plan_fault_resolution()
 
                 # tell task_validator what object is missing
-                if self.current_fault == FAULT_TYPES.MISSING_OBJECT:
+                if self.current_fault == FaultType.MISSING_OBJECT:
                     self.task_validator.set_missing_block(self.current_block+1)
 
                 # Validate task
@@ -210,7 +235,7 @@ class DigitalUR:
                 
                 # Execute fault resolution
                 self.execute_fault_resolution(fault_msg)
-                self.state = DT_STATES.WAITING_FOR_TASK_TO_START
+                self.state = DTState.WAITING_FOR_TASK_TO_START
                 print("State transition -> WAITING_FOR_TASK_TO_START")
 
     def validate_task(self):
@@ -230,8 +255,8 @@ class DigitalUR:
         # if fault unresovled send could not resolve fault message to controller
         # in both cases go to waiting for task to start state
         
-        if self.current_fault == FAULT_TYPES.MISSING_OBJECT:
-            if self.mitigation_strategy == GRID_CONFIG.MITIGATION_STRATEGIES.SHIFT_ORIGIN:
+        if self.current_fault == FaultType.MISSING_OBJECT:
+            if self.mitigation_strategy == MitigationStrategy.SHIFT_ORIGIN:
                 # print(f"Task config before (1): \n {self.task_config}")
                 # # 1) remove the blocks that have already been moved
                 
@@ -263,7 +288,7 @@ class DigitalUR:
                 # return fault_msg with the new task_config
                 return f"{MSG_TYPES_DT_TO_CONTROLLER.RESOLVED}"
             
-            elif self.mitigation_strategy == GRID_CONFIG.MITIGATION_STRATEGIES.TRY_PICK_STOCK:
+            elif self.mitigation_strategy == MitigationStrategy.TRY_PICK_STOCK:
                 # For block[j] try PICK_STOCK[i++]
                 if self.pick_stock_tried < len(GRID_CONFIG.PICK_STOCK_COORDINATES):
                     self.task_config[self.current_block+1][GRID_CONFIG.ORIGIN][GRID_CONFIG.x] = GRID_CONFIG.PICK_STOCK_COORDINATES[self.pick_stock_tried][GRID_CONFIG.ORIGIN][GRID_CONFIG.x]
@@ -274,10 +299,10 @@ class DigitalUR:
                 else:
                     return f"{MSG_TYPES_DT_TO_CONTROLLER.COULD_NOT_RESOLVE}"           
 
-        elif self.current_fault == FAULT_TYPES.PROTECTIVE_STOP:
+        elif self.current_fault == FaultType.PROTECTIVE_STOP:
             pass
 
-        elif self.current_fault == FAULT_TYPES.UNKOWN_FAULT:
+        elif self.current_fault == FaultType.UNKOWN_FAULT:
             pass
 
     def execute_fault_resolution(self, fault_msg) -> None:
@@ -301,7 +326,7 @@ class DigitalUR:
         # protective stop
         if safety_status == 3:
             print("Protective stop")
-            return True, FAULT_TYPES.PROTECTIVE_STOP
+            return True, FaultType.PROTECTIVE_STOP
 
         # Normal
         elif safety_status == 1:
@@ -328,10 +353,10 @@ class DigitalUR:
                     # print(f'Task done for timestamp: {data["timestamp"]}')
                     self.current_block = -1
                     self.monitor_msg_queue.queue.clear()
-                    self.state = DT_STATES.WAITING_TO_RECEIVE_TASK
+                    self.state = DTState.WAITING_TO_RECEIVE_TASK
                     print("State transition -> WAITING_TO_RECEIVE_TASK")
 
-                return False, FAULT_TYPES.NO_FAULT                      # No fault present (TODO: Not needed here?)
+                return False, FaultType.NO_FAULT                      # No fault present (TODO: Not needed here?)
             
             # If we have not grapped an object, we check for timing constraints
             # it is only when the timer have expired that we report a missing object
@@ -341,9 +366,9 @@ class DigitalUR:
                     > self.task_config[self.current_block+1][GRID_CONFIG.TIMING_THRESHOLD]  # ... the time has expired for next block's threshold
                 ):
                     print(f"Missing object {self.current_block + 1}")
-                    return True, FAULT_TYPES.MISSING_OBJECT                                   # ... a fault present (i.e. missing object)
+                    return True, FaultType.MISSING_OBJECT                                   # ... a fault present (i.e. missing object)
 
-            return False, FAULT_TYPES.NO_FAULT
+            return False, FaultType.NO_FAULT
 
     def check_start_bit(self, data: str) -> bool:
         """Check the digital bit of the data"""
@@ -359,7 +384,7 @@ class DigitalUR:
             if fault_present:
                 print(f"Fault present: {fault_type}")
                 self.current_fault = fault_type
-                self.state = DT_STATES.FAULT_RESOLUTION
+                self.state = DTState.FAULT_RESOLUTION
                 print("State transition -> FAULT_RESOLUTION")
 
     def shutdown(self):

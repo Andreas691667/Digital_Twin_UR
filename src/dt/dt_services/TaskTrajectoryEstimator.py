@@ -67,10 +67,13 @@ class TaskTrajectoryEstimator:
     ):
         """Estimate the trajectory of a task.
         params:
-            task_with_timings: Array with all starts and ends of the task and the timing intervals.
-            type task_with_timings: Mx13 array where M=N+D, N is the number of start-target-waypoints and D is the number delays
-        returns:
-            Estimated trajectory."""
+            :param Mx13 ndarray task_with_timings: Array with all starts and ends of the task and the timing intervals.
+                                                   Mx13 array where M=N+D, N is the number of start-target-waypoints and D is the number delays
+                                                   For a row r, r[0:6] is the start, r[6:12] is the target and r[12] is the motion time.
+            :param bool save_to_file: If True, save the trajectory to a file.
+
+        :return: Estimated trajectory.
+        :rtype: ndarray"""
 
         # get first start in task_with_timings that is not None
         start = None
