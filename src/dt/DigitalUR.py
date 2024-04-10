@@ -236,7 +236,8 @@ class DigitalUR:
                 self.rmq_client_out.send_message(validate_msg, RMQ_CONFIG.DT_EXCHANGE)
 
                 if valid:
-                    # if task is valid, estimate the trajectory and go to waiting for task to start state
+                    # if task is valid, estimate the trajectory,
+                    # and go to waiting for task to start state
                     self.expected_trajectory_q, _, _, self.expected_trajectory_time = (
                         self.trajectory_estimator.estimate_trajectory(
                             self.timed_task,
