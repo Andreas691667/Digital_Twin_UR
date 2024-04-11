@@ -203,3 +203,4 @@ if __name__ == "__main__":
     trajq, trajqd, trajqdd, time = task_estimator.estimate_trajectory(
         task_with_timings, True, file_name="trajectory_dt_2_blocks"
     )
+    print(trajq)
