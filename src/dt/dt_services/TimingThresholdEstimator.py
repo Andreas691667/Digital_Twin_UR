@@ -222,7 +222,7 @@ class TimingThresholdEstimator:
 
         # Create a task with timings
         task_with_timings = [
-            # np.concatenate((v_none, v_none, [3])),
+            np.concatenate((v_none, v_none, [.6])),
             np.concatenate((HOME, BGP0, [1.3])),
             np.concatenate((BGP0, GP0, [0.8])),
             np.concatenate((v_none, v_none, [0.8])),
