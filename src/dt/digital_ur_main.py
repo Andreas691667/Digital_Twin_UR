@@ -12,20 +12,18 @@ if __name__ == "__main__":
      \t- {cli_arguments.STOCK} : {cli_arguments.STOCK_HELP}
      \t- {cli_arguments.NONE} : {cli_arguments.NONE_HELP}"""
     
-    a_help = f"""The name of the approach to use 
-     \tOptions: 
-     \t- {cli_arguments.APPROACH} : {cli_arguments.APPROACH_HELP}"""
+    a_help = cli_arguments.APPROACH_HELP
+    
+    key_help = cli_arguments.FILE_NAME_KEY_HELP
 
     parser = argparse.ArgumentParser(description='Digital UR', formatter_class=RawTextHelpFormatter)
     parser.add_argument("-ms", type=str, required=True, help=ms_help)
     parser.add_argument("-a", type=int, required=True, help=a_help)
+    parser.add_argument("-key", type=str, required=False, help=key_help, default="")
 
     args = parser.parse_args()
 
-    mitigation_strategy = args.ms
-    approach = args.a
-
-    digital_ur = DigitalUR(mitigation_strategy, approach)
+    digital_ur = DigitalUR(args.ms, args.a, args.key)
     digital_ur.start_consuming()
 
 # while until keyboard interrupt

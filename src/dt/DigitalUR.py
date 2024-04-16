@@ -57,7 +57,7 @@ class DTState:
 class DigitalUR:
     """Class for the digital twin of the UR3e Robot"""
 
-    def __init__(self, mitigation_strategy: str, approach: int):
+    def __init__(self, mitigation_strategy: str, approach: int, file_name_key: str = ""):
         # state of the digital twin
         self.state: DTState = DTState.INITIALIZING
 
@@ -104,6 +104,9 @@ class DigitalUR:
         self.expected_trajectory_q = []
         self.expected_trajectory_time = []
         self.pos_epsilon = 0.02  # allowed error for each joint [rad]
+        # log files
+        self.traj_file_name = file_name_key + "_dt_trajectory.csv"
+        self.error_file_name = file_name_key + "_dt_error_log.csv"
 
     def __set_fault_detection_approach(self, approach: int) -> None:
         """Set the fault detection approach"""
@@ -259,7 +262,7 @@ class DigitalUR:
                             self.timed_task,
                             start_time=0,
                             save_to_file=True,
-                            file_name=f"{self.task_config[GRID_CONFIG.NO_BLOCKS]}_blocks_trajectory"
+                            file_name=self.traj_file_name,
                         )
                     )
                     self.state = DTState.WAITING_FOR_TASK_TO_START
@@ -453,7 +456,7 @@ class DigitalUR:
         error = np.abs(np.array(pt_q) - np.array(expected_q))
 
         # log error to csv
-        with open("error_log.csv", "a") as f:
+        with open(f"error_logs/{self.error_file_name}", "a") as f:
             f.write(f"{pt_time} {error[0]} {error[1]} {error[2]} {error[3]} {error[4]} {error[5]}\n")
 
         # if expected_q is last element in expected_trajectory_q, we are done

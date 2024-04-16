@@ -39,7 +39,7 @@ class CMState:
 class ControllerMonitor:
     """Class responsible for all robot interaction"""
 
-    def __init__(self, task_name, go_to_home=False) -> None:
+    def __init__(self, task_name, go_to_home=False, file_name_key="") -> None:
 
         # Attributes
         self.STATE = CMState.INITIALIZING  # flag to check if main program is running
@@ -54,8 +54,8 @@ class ControllerMonitor:
         self.task_config = None
         self.program_running_name: str = ""
         self.conf_file = "record_configuration.xml"
-        self.log_file = "robot_output.csv"
-        self.log_file_path = Path("test_results") / Path(self.log_file)
+        self.log_file = file_name_key + "_robot_output.csv" if file_name_key != "" else f"{task_name}_robot_output.csv"
+        self.log_file_path = Path("robot_output") / Path(self.log_file)
 
         # model of the robot
         self.robot_model = UR3e()

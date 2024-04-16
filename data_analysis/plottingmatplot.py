@@ -65,9 +65,19 @@ def read_ts(r:pd.DataFrame, start_time=0):
 
 if __name__ == "__main__":
    
-    r_dt = pd.read_csv("test_results/dt_trajectories/2_blocks_trajectory_sim_200hz.csv", delimiter=' ')
-    r_pt = pd.read_csv("test_results/robot_data/robot_output_2_blocks_sim.csv", delimiter=' ')
-    error = pd.read_csv("test_results/error_logs/error_log_sim_200hz.csv", delimiter=' ')
+    file_name_key = "sim0"
+    task_name = "2_blocks"
+
+    # ----- WITH KEY AND NAME -----
+    r_dt = pd.read_csv(f"../src/dt/dt_trajectories/{file_name_key}_dt_trajectory.csv", delimiter=' ')
+    r_pt = pd.read_csv(f"../src/controller_monitor/robot_output/{file_name_key}_{task_name}_robot_output.csv", delimiter=' ')
+    error = pd.read_csv(f"../src/dt/error_logs/{file_name_key}_dt_error_log.csv", delimiter=' ')
+
+    # ----- WITHOUT KEY AND NAME (MANUAL) -----
+    # r_dt = pd.read_csv("test_results/dt_trajectories/2_blocks_trajectory_sim_200hz.csv", delimiter=' ')
+    # r_pt = pd.read_csv("test_results/robot_data/robot_output_2_blocks_sim.csv", delimiter=' ')
+    # error = pd.read_csv("test_results/error_logs/error_log_sim_200hz.csv", delimiter=' ')
+
     error_ts = error.iloc[:, 0]
     start_time = error_ts[0]
     error_ts = [x - error_ts[0] for x in error_ts]
