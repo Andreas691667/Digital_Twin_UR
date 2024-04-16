@@ -81,7 +81,7 @@ class TaskTrajectoryEstimator:
         # get first start in task_with_timings that is not None
         start = None
         for elem in task_with_timings:
-            if (elem[0:6] != [None] * 6).all():
+            if (elem[0:6] != [16] * 6).all():
                 start = elem[0:6]
                 break
 
@@ -97,8 +97,8 @@ class TaskTrajectoryEstimator:
 
         for elem in task_with_timings:
             # Get the start, target and motion time
-            start = None if (elem[0:6] == [None] * 6).all() else elem[0:6]
-            target = None if (elem[6:12] == [None] * 6).all() else elem[6:12]
+            start = None if (elem[0:6] == [16] * 6).all() else elem[0:6]
+            target = None if (elem[6:12] == [16] * 6).all() else elem[6:12]
             motion_time = elem[12]
 
             # Calculate the trajectory
@@ -191,7 +191,7 @@ if __name__ == "__main__":
     BGP1, GP1, BTP1, TP1 = model.compute_joint_positions_origin_target(origin1, target1)
     BTP1[-1] -= np.pi/2
     TP1[-1] -= np.pi/2
-    v_none = [None] * 6
+    v_none = [16] * 6
 
     # Create a task with timings
     task_with_timings = [
@@ -217,8 +217,11 @@ if __name__ == "__main__":
         np.concatenate((BTP1, HOME, [2.3])),
     ]
 
+    task_with_timings2 = traj_timing_est.get_traj_timings(task_config)
+
     trajq, trajqd, trajqdd, time = task_estimator.estimate_trajectory(
-        task_with_timings,start_time=100, save_to_file=True, file_name="dt_traj_2_blocks"
+        task_with_timings2,start_time=100, save_to_file=True, file_name="dt_traj_2_blocks"
     )
 
-    # model.plot_trajectory(trajq)
+    model.plot_trajectory()
+    
