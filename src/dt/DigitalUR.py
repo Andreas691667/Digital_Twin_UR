@@ -20,6 +20,7 @@ from ur3e.ur3e import UR3e
 from dt_services.TaskValidator import TaskValidator
 from dt_services.TaskTrajectoryEstimator import TaskTrajectoryEstimator
 from dt_services.TimingThresholdEstimator import TimingThresholdEstimator
+from dt_services.TrajectoryTimingEstimator import TrajectoryTimingEstimator
 
 @dataclass
 class MitigationStrategy:
@@ -31,7 +32,7 @@ class MitigationStrategy:
 class FaultDetectionApproach:
     """Class for the fault detection approaches"""
     MODEL_BASED = "MODEL_BASED"
-    DATA_DRIVEN = "DATA_DRIVEN"
+    TIMING_THRESHOLDS = "TIMING_THRESHOLDS"
 
 @dataclass
 class FaultType:
@@ -79,6 +80,7 @@ class DigitalUR:
         self.task_validator = TaskValidator()
         self.timing_estimator = TimingThresholdEstimator(self.robot_model)
         self.trajectory_estimator = TaskTrajectoryEstimator(self.robot_model)
+        self.trajectory_timing_estimator = TrajectoryTimingEstimator(self.robot_model)
 
         self.mitigation_strategy = None
         self.__set_mitigation_strategy(mitigation_strategy)
@@ -107,8 +109,8 @@ class DigitalUR:
         """Set the fault detection approach"""
         if approach == cli_arguments.MODEL_BASED:
             self.approach = FaultDetectionApproach.MODEL_BASED
-        elif approach == cli_arguments.DATA_DRIVEN:
-            self.approach = FaultDetectionApproach.DATA_DRIVEN
+        elif approach == cli_arguments.TIMING_THRESHOLDS:
+            self.approach = FaultDetectionApproach.TIMING_THRESHOLDS
 
     def __set_mitigation_strategy(self, mitigation_strategy: str) -> None:
         """Set the mitigation strategy"""
@@ -241,7 +243,7 @@ class DigitalUR:
                 self.task_config, _, _, _ = self.timing_estimator.compute_thresholds(
                     self.task_config
                 )
-                self.timed_task = self.timing_estimator.get_timed_task()
+                self.timed_task = self.trajectory_timing_estimator.get_traj_timings(self.task_config)
                 # send validated task to controller
                 print(validate_msg)
                 self.rmq_client_out.send_message(validate_msg, RMQ_CONFIG.DT_EXCHANGE)
@@ -254,7 +256,7 @@ class DigitalUR:
                             self.timed_task,
                             start_time=self.last_pt_time,
                             save_to_file=True,
-                            file_name=f"{self.task_config[GRID_CONFIG.NO_BLOCKS]}_blocks_trajectory.csv"
+                            file_name=f"{self.task_config[GRID_CONFIG.NO_BLOCKS]}_blocks_trajectory"
                         )
                     )
                     self.state = DTState.WAITING_FOR_TASK_TO_START
@@ -406,7 +408,7 @@ class DigitalUR:
         # TODO: Check if task is done before doing the rest! I.e. check for more blocks to move here??
 
         safety_status = data["safety_status"]
-        
+
         # protective stop
         if safety_status == 3:
             print("Protective stop")
@@ -414,7 +416,7 @@ class DigitalUR:
 
         # Normal
         elif safety_status == 1:
-            if self.approach == FaultDetectionApproach.DATA_DRIVEN:
+            if self.approach == FaultDetectionApproach.TIMING_THRESHOLDS:
                 return self.analyse_object_detection(data)
             elif self.approach == FaultDetectionApproach.MODEL_BASED:
                 return self.analyse_model_divergence(data)

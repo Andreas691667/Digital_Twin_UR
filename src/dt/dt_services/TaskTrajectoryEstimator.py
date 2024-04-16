@@ -1,8 +1,6 @@
 import numpy as np
 import pandas as pd
 import datetime
-from TrajectoryTimingEstimator import TrajectoryTimingEstimator
-
 
 class TaskTrajectoryEstimator:
     """Class to estimate the trajectory of a task."""
@@ -179,6 +177,8 @@ if __name__ == "__main__":
         task_config = yaml.safe_load(file)
 
     model = UR3e()
+    from TrajectoryTimingEstimator import TrajectoryTimingEstimator
+
     task_estimator = TaskTrajectoryEstimator(model)
     traj_timing_est = TrajectoryTimingEstimator(model)
 
@@ -223,5 +223,5 @@ if __name__ == "__main__":
         task_with_timings2,start_time=100, save_to_file=True, file_name="dt_traj_2_blocks"
     )
 
-    model.plot_trajectory()
+    model.plot_trajectory(trajq)
     
