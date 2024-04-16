@@ -11,13 +11,17 @@ class TIMING_INTERVALS:
     JOINT_SPEED_MAX_DEG = 60 # deg/s
     JOINT_ACCELERATION_DEG = 80 # deg/s^2
     GRAP_TIME = 0.7 # TODO: 2 seconds might need to be added
+    GRAP_TIME_STR = str(GRAP_TIME) # TODO: 2 seconds might need to be added
     JOINT_SPEED_MAX_RAD = np.deg2rad(JOINT_SPEED_MAX_DEG) # rad/s
     JOINT_ACCELERATION_RAD = np.deg2rad(JOINT_ACCELERATION_DEG) # rad/s^2
     ACCELERATION_TIME = JOINT_SPEED_MAX_RAD / JOINT_ACCELERATION_RAD # Time it takes to reach maximun velocity
     ACCELERATION_DIST = 1/2 * JOINT_ACCELERATION_RAD * ACCELERATION_TIME**2
     PARTLY_OPEN_GRIPPER = 0.3
+    PARTLY_OPEN_GRIPPER_STR = str(PARTLY_OPEN_GRIPPER)
     FULLY_OPEN_GRIPPER = 1.1
+    FULLY_OPEN_GRIPPER_STR = str(FULLY_OPEN_GRIPPER)
     INITALIZATION_DELAY = 0.5
+    INITALIZATION_DELAY_STR = str(INITALIZATION_DELAY)
     
     class TYPES:
         ACC = "ACCELERATION"
@@ -29,15 +33,44 @@ class TIMING_INTERVALS:
         TRI = "TRIP"
         TRAP = "TRAP" 
         DEL_ALL = "DEL_ALL"
-
     
-
+    # class DELAYS:
+    #     class CASES:
+    #         FROM_HOME = "FROM_HOME"
+    #         DEFAULT = "DEFAULT"
+    #         MISSING_BLOCK = "MISSING_BLOCK"
+    #     class TYPES:
+    #         ELEMENTS = "ELEMENTS"
+    #         INDEXES = "INDEXES" 
 
 class TrajectoryTimingEstimator:
     def __init__(self, model) -> None:
         self.robot_model = model
         self.is_in_home_position = True
         self.last_ik_solutions = None
+
+        # self.DELAY_TYPES = TIMING_INTERVALS.DELAYS.TYPES
+        # self.DELAY_CASES = TIMING_INTERVALS.DELAYS.CASES
+        # self.delays = {
+        #     self.DELAY_CASES.DEFAULT
+        #         : {
+        #             self.DELAY_TYPES.ELEMENTS: 
+        #                 np.array([
+        #                     [TIMING_INTERVALS.PARTLY_OPEN_GRIPPER_STR, TIMING_INTERVALS.TYPES.DEL_ALL],
+        #                     [str(TIMING_INTERVALS.FULLY_OPEN_GRIPPER + TIMING_INTERVALS.INITALIZATION_DELAY), TIMING_INTERVALS.TYPES.DEL_ALL],
+        #                     [TIMING_INTERVALS.GRAP_TIME_STR, TIMING_INTERVALS.TYPES.DEL_ALL]
+        #                 ]),
+        #             self.DELAY_TYPES.INDEXES: [-3, -2, number_of_speed_profiles_ti]
+        #         },
+        #     TIMING_INTERVALS.DELAYS.TYPES.FROM_HOME
+        #         : np.array([
+        #                 []
+        #         ])
+        # }
+            
+                
+        
+
 
     def compute_ik_solutions (self, task_config):
         return self.__compute_ik_solutions(task_config)
@@ -252,22 +285,21 @@ class TrajectoryTimingEstimator:
         if block_number == missing_block:
             pass
             
-        # First block (or last if there are only one)
-        elif block_number == 0 and self.is_in_home_position:
-            pass
-            # set home position to false
-            self.is_in_home_position = False
+        # First block
+        elif block_number == 0:
+            indexes = [number_of_speed_profiles_ti]
+            elements = np.array([[TIMING_INTERVALS.GRAP_TIME_STR, TIMING_INTERVALS.TYPES.DEL_ALL]])
         
         # Middle block or last block
         else:
-           print(speed_profiles_ti)
            indexes = [-3, -2, number_of_speed_profiles_ti]
            elements = np.array([
-                                [str(TIMING_INTERVALS.PARTLY_OPEN_GRIPPER), TIMING_INTERVALS.TYPES.DEL_ALL],
+                                [TIMING_INTERVALS.PARTLY_OPEN_GRIPPER_STR, TIMING_INTERVALS.TYPES.DEL_ALL],
                                 [str(TIMING_INTERVALS.FULLY_OPEN_GRIPPER + TIMING_INTERVALS.INITALIZATION_DELAY), TIMING_INTERVALS.TYPES.DEL_ALL],
-                                [str(TIMING_INTERVALS.GRAP_TIME), TIMING_INTERVALS.TYPES.DEL_ALL]
+                                [TIMING_INTERVALS.GRAP_TIME_STR, TIMING_INTERVALS.TYPES.DEL_ALL]
                                 ])
-           speed_profiles_ti = self.__insert_at_indexes(speed_profiles_ti, elements, indexes)
+        
+        speed_profiles_ti = self.__insert_at_indexes(speed_profiles_ti, elements, indexes)
            
 
 
@@ -318,8 +350,25 @@ class TrajectoryTimingEstimator:
             speed_profiles_and_delays: 
             """
         # Initialize output matrix
-        speed_profiles_and_delays = speed_profiles_and_delays[:, np.newaxis] # Turn into columns vector
-        subtask_with_timings = np.hstack((timing_essential_joint_positions[:-1, :], timing_essential_joint_positions[1:, :], speed_profiles_and_delays))
+        _, number_of_actions = np.shape(speed_profiles_and_delays)
+        subtask_with_timings = np.empty(shape=(number_of_actions, 13))
+        
+        # get types and values
+        types = speed_profiles_and_delays[1, :]
+        values = self.__strl2floatl(speed_profiles_and_delays[0, :])
+
+        # essential concatenated
+        timing_essential_concat = np.hstack((timing_essential_joint_positions[:-1, :], timing_essential_joint_positions[1:, :]))
+        
+        # formatting
+        j = 0 # move counter
+        for i, type in enumerate (types):
+            if type == "MOVE": #TODO add a type
+                subtask_with_timings[i, :] = np.hstack((timing_essential_concat[j, :], values[i]))
+                j += 1
+            else:
+                subtask_with_timings[i, :] = np.hstack(([None]*12, values[i]))
+        
         return subtask_with_timings
     
     
@@ -347,13 +396,14 @@ class TrajectoryTimingEstimator:
                 _, speed_profiles_ti_with_delays = self.__add_additional_ti(speed_profiles_ti_extended, speed_profiles_ti, block_number, -1)
 
                 print(speed_profiles_ti_with_delays)
-                # subtask_with_timings = self.__format_task_with_timings(timing_essential_positions, speed_profiles_ti_with_delays)
+                # print(speed_profiles_ti_with_delays)
+                subtask_with_timings = self.__format_task_with_timings(timing_essential_positions, speed_profiles_ti_with_delays)
 
-                # # Add to task with timings
-                # if (len(task_with_timings) == 0):
-                #     task_with_timings = subtask_with_timings
-                # else:
-                #     task_with_timings = np.vstack((task_with_timings, subtask_with_timings)) 
+                # Add to task with timings
+                if (len(task_with_timings) == 0):
+                    task_with_timings = subtask_with_timings
+                else:
+                    task_with_timings = np.vstack((task_with_timings, subtask_with_timings)) 
                    
             return task_with_timings
 
@@ -390,9 +440,8 @@ if __name__ == "__main__":
         print(spdpf_and_dels)
     
     elif test == "get_traj_timings":
-        trajtimingestimator.get_traj_timings(task_config)
+        timingss = trajtimingestimator.get_traj_timings(task_config)
+        print(timingss)
 
-
-    # print(ik_solutions)
 
 
