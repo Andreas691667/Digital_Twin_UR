@@ -85,53 +85,70 @@ if __name__ == "__main__":
     timestamp_floats_pt, start_idx = read_ts(r_pt, start_time)
     q0_floats_pt, q1_floats_pt, q2_floats_pt, q3_floats_pt, q4_floats_pt, q5_floats_pt = read_qs(r_pt, start_idx)
     qd0_floats_pt, qd1_floats_pt, qd2_floats_pt, qd3_floats_pt, qd4_floats_pt, qd5_floats_pt = read_qds(r_pt)
-    # # plot positions
-    fig, (ax1, ax2) = plt.subplots(2, 1, sharex=True, sharey=True)
-    ax1.plot(timestamp_floats_dt, q0_floats_dt, label="q0")
-    ax1.plot(timestamp_floats_dt, q1_floats_dt, label="q1")
-    ax1.plot(timestamp_floats_dt, q2_floats_dt, label="q2")
-    ax1.plot(timestamp_floats_dt, q3_floats_dt, label="q3")
-    ax1.plot(timestamp_floats_dt, q4_floats_dt, label="q4")
-    ax1.plot(timestamp_floats_dt, q5_floats_dt, label="q5")
-    # cursor = Cursor(ax1, useblit=True, color='red', linewidth=2)
     
-    ax1.set_xlabel("Time [s]")
-    ax1.set_ylabel("Joint Position [rad]")
-    ax1.set_title("DT")
     
-    ax2.plot(timestamp_floats_pt, q0_floats_pt, label="q0")
-    ax2.plot(timestamp_floats_pt, q1_floats_pt, label="q1")
-    ax2.plot(timestamp_floats_pt, q2_floats_pt, label="q2")
-    ax2.plot(timestamp_floats_pt, q3_floats_pt, label="q3")
-    ax2.plot(timestamp_floats_pt, q4_floats_pt, label="q4")
-    ax2.plot(timestamp_floats_pt, q5_floats_pt, label="q5")
-    cursor = MultiCursor(None, (ax1,ax2), useblit=True, color='red', linewidth=1)
+    # make 1 one plot for each of the 6 joints with PT, DT and error
+    fig, axs = plt.subplots(6, 1, sharex=True, sharey=True)
+    for i in range(6):
+        axs[i].plot(timestamp_floats_dt, [q0_floats_dt[i], q1_floats_dt[i], q2_floats_dt[i], q3_floats_dt[i], q4_floats_dt[i], q5_floats_dt[i]], label="DT")
+        axs[i].plot(timestamp_floats_pt, [q0_floats_pt[i], q1_floats_pt[i], q2_floats_pt[i], q3_floats_pt[i], q4_floats_pt[i], q5_floats_pt[i]], label="PT")
+        axs[i].plot(error_ts, [error_q0[i], error_q1[i], error_q2[i], error_q3[i], error_q4[i], error_q5[i]], label="Error")
+        axs[i].set_title(f"Joint {i}")
+        axs[i].set_ylabel("Joint Position [deg]")
+        axs[i].grid()
+    
+    axs[5].set_xlabel("Time [s]")
 
-    ax2.set_xlabel("Time [s]")
-    ax2.set_ylabel("Joint Position [rad]")
-    ax2.set_title("PT")
+    
+    
+    # # # plot positions
+    # fig, (ax1, ax2) = plt.subplots(2, 1, sharex=True, sharey=True)
+    # ax1.plot(timestamp_floats_dt, q0_floats_dt, label="q0")
+    # ax1.plot(timestamp_floats_dt, q1_floats_dt, label="q1")
+    # ax1.plot(timestamp_floats_dt, q2_floats_dt, label="q2")
+    # ax1.plot(timestamp_floats_dt, q3_floats_dt, label="q3")
+    # ax1.plot(timestamp_floats_dt, q4_floats_dt, label="q4")
+    # ax1.plot(timestamp_floats_dt, q5_floats_dt, label="q5")
+    # # cursor = Cursor(ax1, useblit=True, color='red', linewidth=2)
+    
+    # ax1.set_xlabel("Time [s]")
+    # ax1.set_ylabel("Joint Position [rad]")
+    # ax1.set_title("DT")
+    
+    # ax2.plot(timestamp_floats_pt, q0_floats_pt, label="q0")
+    # ax2.plot(timestamp_floats_pt, q1_floats_pt, label="q1")
+    # ax2.plot(timestamp_floats_pt, q2_floats_pt, label="q2")
+    # ax2.plot(timestamp_floats_pt, q3_floats_pt, label="q3")
+    # ax2.plot(timestamp_floats_pt, q4_floats_pt, label="q4")
+    # ax2.plot(timestamp_floats_pt, q5_floats_pt, label="q5")
+    # cursor = MultiCursor(None, (ax1,ax2), useblit=True, color='red', linewidth=1)
 
-    # increase granularity of x-axis
-    ax2.set_xticks(np.arange(0, 25, 1))
+    # ax2.set_xlabel("Time [s]")
+    # ax2.set_ylabel("Joint Position [rad]")
+    # ax2.set_title("PT")
 
-    fig.legend()
+    # # increase granularity of x-axis
+    # ax2.set_xticks(np.arange(0, 25, 1))
+    # ax1.grid()
+    # ax2.grid()
+    # fig.legend()
 
-    # plot errors
-    figt, axt = plt.subplots(6, 1, sharex=True, sharey=True)
-    axt[0].plot(error_ts, error_q0, label="q0")
-    axt[1].plot(error_ts, error_q1, label="q1")
-    axt[2].plot(error_ts, error_q2, label="q2")
-    axt[3].plot(error_ts, error_q3, label="q3")
-    axt[4].plot(error_ts, error_q4, label="q4")
-    axt[5].plot(error_ts, error_q5, label="q5")
+    # # plot errors
+    # figt, axt = plt.subplots(6, 1, sharex=True, sharey=True)
+    # axt[0].plot(error_ts, error_q0, label="q0")
+    # axt[1].plot(error_ts, error_q1, label="q1")
+    # axt[2].plot(error_ts, error_q2, label="q2")
+    # axt[3].plot(error_ts, error_q3, label="q3")
+    # axt[4].plot(error_ts, error_q4, label="q4")
+    # axt[5].plot(error_ts, error_q5, label="q5")
 
-    axt[5].set_xlabel("Time [s]")
-    axt[0].set_ylabel("Joint Position Error [rad]")
-    axt[0].set_title("Errors")
+    # axt[5].set_xlabel("Time [s]")
+    # axt[0].set_ylabel("Joint Position Error [rad]")
+    # axt[0].set_title("Errors")
 
-    axt[0].set_xticks(np.arange(0, 25, 1))
+    # axt[0].set_xticks(np.arange(0, 25, 1))
 
-    figt.legend()
+    # figt.legend()
 
     # plt.show()
 

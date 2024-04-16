@@ -252,7 +252,6 @@ class TrajectoryTimingEstimator:
             all_leading_axis.extend(leading_axis)
         
         
-        print(f"Leading axis of movements: {all_leading_axis}")    
         return thresholds, all_durations, all_durations_des
 
     def __insert_at_indexes (self, array, elements, indexes):
@@ -285,8 +284,9 @@ class TrajectoryTimingEstimator:
             
         # First block
         elif block_number == 0:
-            indexes = [number_of_speed_profiles_ti]
-            elements = np.array([[TIMING_INTERVALS.GRAP_TIME_STR, TIMING_INTERVALS.TYPES.DEL_ALL]])
+            indexes = [-2, number_of_speed_profiles_ti]
+            elements = np.array([[str(0.68-0.17), TIMING_INTERVALS.TYPES.DEL_ALL], [TIMING_INTERVALS.GRAP_TIME_STR, TIMING_INTERVALS.TYPES.DEL_ALL]])
+            # add initial delay
         
         # Middle block
         elif block_number != number_of_blocks:
@@ -298,7 +298,6 @@ class TrajectoryTimingEstimator:
                                 ])
         # Last move
         else:
-            print(speed_profiles_ti)
             indexes = [-2, -1]
             elements = np.array([
                                 [TIMING_INTERVALS.PARTLY_OPEN_GRIPPER_STR, TIMING_INTERVALS.TYPES.DEL_ALL],
