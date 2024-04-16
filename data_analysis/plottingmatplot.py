@@ -32,13 +32,13 @@ def convert_ndarray_from_radians_to_degrees (array_in: np.ndarray) -> np.ndarray
     return array_in
     # return np.array([(180 / np.pi)*x for x in array_in])
 
-def read_qs(r:pd.DataFrame):
-    q0_floats = convert_ndarray_from_radians_to_degrees(r.actual_q_0.astype(float))
-    q1_floats = convert_ndarray_from_radians_to_degrees(r.actual_q_1.astype(float))
-    q2_floats = convert_ndarray_from_radians_to_degrees(r.actual_q_2.astype(float))
-    q3_floats = convert_ndarray_from_radians_to_degrees(r.actual_q_3.astype(float))
-    q4_floats = convert_ndarray_from_radians_to_degrees(r.actual_q_4.astype(float))
-    q5_floats = convert_ndarray_from_radians_to_degrees(r.actual_q_5.astype(float))
+def read_qs(r:pd.DataFrame, start_indx = 0):
+    q0_floats = convert_ndarray_from_radians_to_degrees(r.actual_q_0.astype(float).to_list()[start_indx:])
+    q1_floats = convert_ndarray_from_radians_to_degrees(r.actual_q_1.astype(float).to_list()[start_indx:])
+    q2_floats = convert_ndarray_from_radians_to_degrees(r.actual_q_2.astype(float).to_list()[start_indx:])
+    q3_floats = convert_ndarray_from_radians_to_degrees(r.actual_q_3.astype(float).to_list()[start_indx:])
+    q4_floats = convert_ndarray_from_radians_to_degrees(r.actual_q_4.astype(float).to_list()[start_indx:])
+    q5_floats = convert_ndarray_from_radians_to_degrees(r.actual_q_5.astype(float).to_list()[start_indx:])
     return q0_floats, q1_floats, q2_floats, q3_floats, q4_floats, q5_floats
 
 def read_qds(r:pd.DataFrame):
@@ -50,24 +50,41 @@ def read_qds(r:pd.DataFrame):
     qd5_floats = convert_ndarray_from_radians_to_degrees(r.actual_qd_5.astype(float))
     return qd0_floats, qd1_floats, qd2_floats, qd3_floats, qd4_floats, qd5_floats
 
-def read_ts(r:pd.DataFrame):
+def read_ts(r:pd.DataFrame, start_time=0):
     timestamp_floats = r.timestamp.astype(float)
+    # timestamp_float type is pandas.core.series.Series
+    # convert to list
+    timestamp_floats = timestamp_floats.tolist()
+    start_indx = 0
+    if start_time != 0:
+        start_indx = timestamp_floats.index(start_time)
+        timestamp_floats = timestamp_floats[start_indx:]
+
     timestamp_floats = [x - timestamp_floats[0] for x in timestamp_floats]
-    return timestamp_floats
+    return timestamp_floats, start_indx
 
 if __name__ == "__main__":
    
     r_dt = pd.read_csv("test_results/trajectory_dt_2_blocks.csv", delimiter=' ')
-    r_pt = pd.read_csv("test_results/robot_output_two_blocks.csv", delimiter=' ')
+    r_pt = pd.read_csv("test_results/robot_output.csv", delimiter=' ')
+    error = pd.read_csv("test_results/error_log.csv", delimiter=' ')
+    error_ts = error.iloc[:, 0]
+    start_time = error_ts[0]
+    error_ts = [x - error_ts[0] for x in error_ts]
+    error_q0 = error.iloc[:, 1]
+    error_q1 = error.iloc[:, 2]
+    error_q2 = error.iloc[:, 3]
+    error_q3 = error.iloc[:, 4]
+    error_q4 = error.iloc[:, 5]
+    error_q5 = error.iloc[:, 6]
 
-    timestamp_floats_dt = read_ts(r_dt)
+    timestamp_floats_dt,_ = read_ts(r_dt)
     q0_floats_dt, q1_floats_dt, q2_floats_dt, q3_floats_dt, q4_floats_dt, q5_floats_dt = read_qs(r_dt)
     qd0_floats_dt, qd1_floats_dt, qd2_floats_dt, qd3_floats_dt, qd4_floats_dt, qd5_floats_dt = read_qds(r_dt)
 
-    timestamp_floats_pt = read_ts(r_pt)
-    q0_floats_pt, q1_floats_pt, q2_floats_pt, q3_floats_pt, q4_floats_pt, q5_floats_pt = read_qs(r_pt)
+    timestamp_floats_pt, start_idx = read_ts(r_pt, start_time)
+    q0_floats_pt, q1_floats_pt, q2_floats_pt, q3_floats_pt, q4_floats_pt, q5_floats_pt = read_qs(r_pt, start_idx)
     qd0_floats_pt, qd1_floats_pt, qd2_floats_pt, qd3_floats_pt, qd4_floats_pt, qd5_floats_pt = read_qds(r_pt)
-    
     # # plot positions
     fig, (ax1, ax2) = plt.subplots(2, 1, sharex=True, sharey=True)
     ax1.plot(timestamp_floats_dt, q0_floats_dt, label="q0")
@@ -98,36 +115,54 @@ if __name__ == "__main__":
     ax2.set_xticks(np.arange(0, 25, 1))
 
     fig.legend()
+
+    # plot errors
+    figt, axt = plt.subplots(6, 1, sharex=True)
+    axt[0].plot(error_ts, error_q0, label="q0")
+    axt[1].plot(error_ts, error_q1, label="q1")
+    axt[2].plot(error_ts, error_q2, label="q2")
+    axt[3].plot(error_ts, error_q3, label="q3")
+    axt[4].plot(error_ts, error_q4, label="q4")
+    axt[5].plot(error_ts, error_q5, label="q5")
+
+    axt[5].set_xlabel("Time [s]")
+    axt[0].set_ylabel("Joint Position Error [rad]")
+    axt[0].set_title("Errors")
+
+    axt[0].set_xticks(np.arange(0, 25, 1))
+
+    figt.legend()
+
     # plt.show()
 
-    # # plot velocities
-    fig, (ax1, ax2) = plt.subplots(2, 1, sharex=True, sharey=True)
-    ax1.plot(timestamp_floats_dt, qd0_floats_dt, label="q0")
-    ax1.plot(timestamp_floats_dt, qd1_floats_dt, label="q1")
-    ax1.plot(timestamp_floats_dt, qd2_floats_dt, label="q2")
-    ax1.plot(timestamp_floats_dt, qd3_floats_dt, label="q3")
-    ax1.plot(timestamp_floats_dt, qd4_floats_dt, label="q4")
-    ax1.plot(timestamp_floats_dt, qd5_floats_dt, label="q5")
-    cursor = Cursor(ax1, useblit=True, color='red', linewidth=2)
+    # # # plot velocities
+    # fig, (ax1, ax2) = plt.subplots(2, 1, sharex=True, sharey=True)
+    # ax1.plot(timestamp_floats_dt, qd0_floats_dt, label="q0")
+    # ax1.plot(timestamp_floats_dt, qd1_floats_dt, label="q1")
+    # ax1.plot(timestamp_floats_dt, qd2_floats_dt, label="q2")
+    # ax1.plot(timestamp_floats_dt, qd3_floats_dt, label="q3")
+    # ax1.plot(timestamp_floats_dt, qd4_floats_dt, label="q4")
+    # ax1.plot(timestamp_floats_dt, qd5_floats_dt, label="q5")
+    # cursor = Cursor(ax1, useblit=True, color='red', linewidth=2)
     
-    ax1.set_xlabel("Time [s]")
-    ax1.set_ylabel("Joint Velocity [rad/s]")
-    ax1.set_title("DT")
+    # ax1.set_xlabel("Time [s]")
+    # ax1.set_ylabel("Joint Velocity [rad/s]")
+    # ax1.set_title("DT")
     
-    ax2.plot(timestamp_floats_pt, qd0_floats_pt, label="q0")
-    ax2.plot(timestamp_floats_pt, qd1_floats_pt, label="q1")
-    ax2.plot(timestamp_floats_pt, qd2_floats_pt, label="q2")
-    ax2.plot(timestamp_floats_pt, qd3_floats_pt, label="q3")
-    ax2.plot(timestamp_floats_pt, qd4_floats_pt, label="q4")
-    ax2.plot(timestamp_floats_pt, qd5_floats_pt, label="q5")
-    cursor = Cursor(ax2, useblit=True, color='red', linewidth=2)
+    # ax2.plot(timestamp_floats_pt, qd0_floats_pt, label="q0")
+    # ax2.plot(timestamp_floats_pt, qd1_floats_pt, label="q1")
+    # ax2.plot(timestamp_floats_pt, qd2_floats_pt, label="q2")
+    # ax2.plot(timestamp_floats_pt, qd3_floats_pt, label="q3")
+    # ax2.plot(timestamp_floats_pt, qd4_floats_pt, label="q4")
+    # ax2.plot(timestamp_floats_pt, qd5_floats_pt, label="q5")
+    # cursor = Cursor(ax2, useblit=True, color='red', linewidth=2)
 
-    ax2.set_xlabel("Time [s]")
-    ax2.set_ylabel("Joint Velocoty [rad/s]")
-    ax2.set_title("PT")
+    # ax2.set_xlabel("Time [s]")
+    # ax2.set_ylabel("Joint Velocoty [rad/s]")
+    # ax2.set_title("PT")
 
-    # increase granularity of x-axis
-    ax2.set_xticks(np.arange(0, 25, 1))
+    # # increase granularity of x-axis
+    # ax2.set_xticks(np.arange(0, 25, 1))
 
-    fig.legend()
+    # fig.legend()
     plt.show()

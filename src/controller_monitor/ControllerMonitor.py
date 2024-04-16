@@ -93,7 +93,7 @@ class ControllerMonitor:
                 config_file=self.conf_file,
                 filename=self.log_file_path,
                 overwrite=True,
-                frequency=50,
+                frequency=20,
                 publish_topic=["actual_q"],
                 rmq_client=self.rmq_client_out_monitor,
                 publish_topic_rmq=MSG_TYPES_MONITOR_TO_DT.MONITOR_DATA,

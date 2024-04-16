@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 import datetime
+from TrajectoryTimingEstimator import TrajectoryTimingEstimator
 
 
 class TaskTrajectoryEstimator:
@@ -63,14 +64,16 @@ class TaskTrajectoryEstimator:
         df.to_csv(f"../dt_trajectories/{file_name}.csv", sep=" ", index=False)
 
     def estimate_trajectory(
-        self, task_with_timings, save_to_file=False, file_name=None
+        self, task_with_timings, start_time = 0, save_to_file=False, file_name=None
     ):
         """Estimate the trajectory of a task.
         params:
             :param Mx13 ndarray task_with_timings: Array with all starts and ends of the task and the timing intervals.
                                                    Mx13 array where M=N+D, N is the number of start-target-waypoints and D is the number delays
                                                    For a row r, r[0:6] is the start, r[6:12] is the target and r[12] is the motion time.
+            :param float start_time: The start time of the trajectory.
             :param bool save_to_file: If True, save the trajectory to a file.
+            :param str file_name: The name of the file to save the trajectory.
 
         :return: Estimated trajectory.
         :rtype: ndarray"""
@@ -86,7 +89,7 @@ class TaskTrajectoryEstimator:
         final_traj_q = []
         final_traj_qd = []
         final_traj_qdd = []
-        final_time = [0]
+        final_time = [start_time]
 
         last_traj_q = [start]
         last_traj_qd = [0] * 6
@@ -166,6 +169,7 @@ if __name__ == "__main__":
 
     model = UR3e()
     task_estimator = TaskTrajectoryEstimator(model)
+    traj_timing_est = TrajectoryTimingEstimator(model)
 
     origin0 = task_config[0]["ORIGIN"]
     target0 = task_config[0]["TARGET"]
@@ -174,33 +178,37 @@ if __name__ == "__main__":
     HOME = model.compute_joint_positions_xy(11, -2)
     BGP0, GP0, BTP0, TP0 = model.compute_joint_positions_origin_target(origin0, target0)
     BGP1, GP1, BTP1, TP1 = model.compute_joint_positions_origin_target(origin1, target1)
+    BTP1[-1] -= np.pi/2
+    TP1[-1] -= np.pi/2
     v_none = [None] * 6
 
     # Create a task with timings
     task_with_timings = [
-        np.concatenate((v_none, v_none, [3])),
-        np.concatenate((HOME, BGP0, [1.5])),
-        np.concatenate((BGP0, GP0, [1.15])),
-        np.concatenate((v_none, v_none, [0.7])),
-        np.concatenate((GP0, BGP0, [1.15])),
-        np.concatenate((BGP0, BTP0, [2.2])),
+        # np.concatenate((v_none, v_none, [3])),
+        np.concatenate((HOME, BGP0, [1.3])),
+        np.concatenate((BGP0, GP0, [0.8])),
+        np.concatenate((v_none, v_none, [0.8])),
+        np.concatenate((GP0, BGP0, [0.8])),
+        np.concatenate((BGP0, BTP0, [2.4])),
         np.concatenate((BTP0, TP0, [0.8])),
-        np.concatenate((v_none, v_none, [0.3])),
+        np.concatenate((v_none, v_none, [0.6])),
         np.concatenate((TP0, BTP0, [0.8])),
-        np.concatenate((v_none, v_none, [1.1])),
-        np.concatenate((BTP0, BGP1, [2.2])),
-        np.concatenate((BGP1, GP1, [1.15])),
-        np.concatenate((v_none, v_none, [0.7])),
-        np.concatenate((GP1, BGP1, [1.15])),
-        np.concatenate((BGP1, BTP1, [2.2])),
+        np.concatenate((v_none, v_none, [1.5])),
+        np.concatenate((BTP0, BGP1, [2.5])),
+        np.concatenate((BGP1, GP1, [.8])),
+        np.concatenate((v_none, v_none, [0.8])),
+        np.concatenate((GP1, BGP1, [0.8])),
+        np.concatenate((BGP1, BTP1, [3.7])),
         np.concatenate((BTP1, TP1, [0.8])),
-        np.concatenate((v_none, v_none, [0.3])),
-        np.concatenate((TP1, BTP1, [0.8])),
-        np.concatenate((v_none, v_none, [1.1])),
-        np.concatenate((TP1, HOME, [1.2])),
+        np.concatenate((v_none, v_none, [0.6])),
+        np.concatenate((TP1, BTP1, [1.0])),
+        np.concatenate((v_none, v_none, [.8])),
+        np.concatenate((BTP1, HOME, [2.3])),
     ]
 
     trajq, trajqd, trajqdd, time = task_estimator.estimate_trajectory(
-        task_with_timings, True, file_name="trajectory_dt_2_blocks"
+        task_with_timings,start_time=100, save_to_file=True, file_name="trajectory_dt_2_blocks"
     )
+
+    model.plot_trajectory(trajq)
     print(trajq)
