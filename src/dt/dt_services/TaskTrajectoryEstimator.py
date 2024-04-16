@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 import datetime
+from TrajectoryTimingEstimator import TrajectoryTimingEstimator
 
 
 class TaskTrajectoryEstimator:
@@ -179,6 +180,7 @@ if __name__ == "__main__":
 
     model = UR3e()
     task_estimator = TaskTrajectoryEstimator(model)
+    traj_timing_est = TrajectoryTimingEstimator(model)
 
     origin0 = task_config[0]["ORIGIN"]
     target0 = task_config[0]["TARGET"]
