@@ -367,7 +367,7 @@ class TrajectoryTimingEstimator:
                 subtask_with_timings[i, :] = np.hstack((timing_essential_concat[j, :], values[i]))
                 j += 1
             else:
-                subtask_with_timings[i, :] = np.hstack(([None]*12, values[i]))
+                subtask_with_timings[i, :] = np.hstack(([16]*12, values[i]))
         
         return subtask_with_timings
     
