@@ -11,7 +11,6 @@ class ZMQPublisher():
     def publish_on_topic(self, topic, msg_data):
         self.socket.send_string(f"{topic} {msg_data}")
 
-
     def send_stop(self):
         print("STOPPING ZMQ SOCKET")
         self.socket.send_string(f"stop stop")
