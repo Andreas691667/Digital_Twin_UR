@@ -65,7 +65,7 @@ def read_ts(r:pd.DataFrame, start_time=0):
 
 if __name__ == "__main__":
    
-    r_dt = pd.read_csv("test_results/04_11_2024_08_44_23.csv", delimiter=' ')
+    r_dt = pd.read_csv("test_results/dt_traj_2_blocks.csv", delimiter=' ')
     r_pt = pd.read_csv("test_results/robot_output_2_blocks.csv", delimiter=' ')
     error = pd.read_csv("test_results/error_log.csv", delimiter=' ')
     error_ts = error.iloc[:, 0]

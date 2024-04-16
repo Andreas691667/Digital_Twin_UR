@@ -1,7 +1,6 @@
 import numpy as np
 import pandas as pd
 import datetime
-from TrajectoryTimingEstimator import TrajectoryTimingEstimator
 
 
 class TaskTrajectoryEstimator:
@@ -61,7 +60,7 @@ class TaskTrajectoryEstimator:
             else datetime.datetime.now().strftime("%m_%d_%Y_%H_%M_%S")
         )
 
-        df.to_csv(f"../dt_trajectories/{file_name}.csv", sep=" ", index=False)
+        df.to_csv(f"dt_trajectories/{file_name}.csv", sep=" ", index=False)
 
     def estimate_trajectory(
         self, task_with_timings, start_time = 0, save_to_file=False, file_name=None
@@ -179,6 +178,8 @@ if __name__ == "__main__":
         task_config = yaml.safe_load(file)
 
     model = UR3e()
+    from TrajectoryTimingEstimator import TrajectoryTimingEstimator
+
     task_estimator = TaskTrajectoryEstimator(model)
     traj_timing_est = TrajectoryTimingEstimator(model)
 
@@ -220,8 +221,8 @@ if __name__ == "__main__":
     task_with_timings2 = traj_timing_est.get_traj_timings(task_config)
 
     trajq, trajqd, trajqdd, time = task_estimator.estimate_trajectory(
-        task_with_timings2,start_time=100, save_to_file=True, file_name="dt_traj_2_blocks"
+        task_with_timings2, start_time=100, save_to_file=True, file_name="dt_traj_2_blocks"
     )
 
-    model.plot_trajectory()
+    model.plot_trajectory(trajq)
     
