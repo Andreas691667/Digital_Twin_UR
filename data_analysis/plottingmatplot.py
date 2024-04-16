@@ -65,9 +65,9 @@ def read_ts(r:pd.DataFrame, start_time=0):
 
 if __name__ == "__main__":
    
-    r_dt = pd.read_csv("test_results/dt_trajectories/2_blocks_trajectory.csv", delimiter=' ')
-    r_pt = pd.read_csv("test_results/robot_data/robot_output.csv", delimiter=' ')
-    error = pd.read_csv("test_results/error_logs/error_log.csv", delimiter=' ')
+    r_dt = pd.read_csv("test_results/dt_trajectories/14_blocks_trajectory_heart.csv", delimiter=' ')
+    r_pt = pd.read_csv("test_results/robot_data/robot_output_heart.csv", delimiter=' ')
+    error = pd.read_csv("test_results/error_logs/error_log_heart.csv", delimiter=' ')
     error_ts = error.iloc[:, 0]
     start_time = error_ts[0]
     error_ts = [x - error_ts[0] for x in error_ts]
@@ -78,26 +78,84 @@ if __name__ == "__main__":
     error_q4 = error.iloc[:, 5]
     error_q5 = error.iloc[:, 6]
 
+    erros = [error_q0, error_q1, error_q2, error_q3, error_q4, error_q5]
+    # get max error
+    max_error = max([max(x) for x in erros])
+
     timestamp_floats_dt,_ = read_ts(r_dt)
     q0_floats_dt, q1_floats_dt, q2_floats_dt, q3_floats_dt, q4_floats_dt, q5_floats_dt = read_qs(r_dt)
+    dt_qs = [q0_floats_dt, q1_floats_dt, q2_floats_dt, q3_floats_dt, q4_floats_dt, q5_floats_dt]
     # qd0_floats_dt, qd1_floats_dt, qd2_floats_dt, qd3_floats_dt, qd4_floats_dt, qd5_floats_dt = read_qds(r_dt)
 
     timestamp_floats_pt, start_idx = read_ts(r_pt, start_time)
     q0_floats_pt, q1_floats_pt, q2_floats_pt, q3_floats_pt, q4_floats_pt, q5_floats_pt = read_qs(r_pt, start_idx)
+    pt_qs = [q0_floats_pt, q1_floats_pt, q2_floats_pt, q3_floats_pt, q4_floats_pt, q5_floats_pt]
     qd0_floats_pt, qd1_floats_pt, qd2_floats_pt, qd3_floats_pt, qd4_floats_pt, qd5_floats_pt = read_qds(r_pt)
     
     
-    # make 1 one plot for each of the 6 joints with PT, DT and error
-    fig, axs = plt.subplots(6, 1, sharex=True, sharey=True)
+    # make 1 one large figure with 6 subplots with 3 axes each (q_dt, q_pt, q_error)
+    # Create a large figure
+    large_fig = plt.figure()
+
+    # Create 6 subfigs
+    subfigs = large_fig.subfigures(3, 2)
+    subfigs = subfigs.ravel()
+
     for i in range(6):
-        axs[i].plot(timestamp_floats_dt, [q0_floats_dt[i], q1_floats_dt[i], q2_floats_dt[i], q3_floats_dt[i], q4_floats_dt[i], q5_floats_dt[i]], label="DT")
-        axs[i].plot(timestamp_floats_pt, [q0_floats_pt[i], q1_floats_pt[i], q2_floats_pt[i], q3_floats_pt[i], q4_floats_pt[i], q5_floats_pt[i]], label="PT")
-        axs[i].plot(error_ts, [error_q0[i], error_q1[i], error_q2[i], error_q3[i], error_q4[i], error_q5[i]], label="Error")
-        axs[i].set_title(f"Joint {i}")
-        axs[i].set_ylabel("Joint Position [deg]")
-        axs[i].grid()
-    
-    axs[5].set_xlabel("Time [s]")
+        subfigs[i].suptitle(f"Joint {i}")
+        axs = subfigs[i].subplots(2, 1, sharex=True)
+        axs = axs.ravel()
+        axs[0].set_ylabel("[rad]")
+        axs[1].set_ylabel("[rad]")
+        axs[1].set_xlabel("Time [s]")
+
+        # get max q value
+        max_q = max(max(dt_qs[i]), max(pt_qs[i]))
+        # get min q value
+        min_q = min(min(dt_qs[i]), min(pt_qs[i]))
+        axs[0].plot(timestamp_floats_dt, dt_qs[i], label="DT", color='blue', linestyle='dashed')
+        axs[0].plot(timestamp_floats_pt, pt_qs[i], label="PT", color='red')
+
+        # diff_err = abs(dt_qs[i] - pt_qs[i])
+
+        axs[1].plot(error_ts, erros[i], label="Error")
+        # set axs[2] y axis limits
+        axs[0].set_ylim([min_q-0.1, max_q+0.1])
+        # axs[1].set_ylim([min_q-0.1, max_q+0.1])
+        axs[1].set_ylim([-0.01, max_error+0.1])
+
+        # add legend to all subplots
+        for ax in axs:
+            ax.legend()
+            ax.grid()
+
+
+
+
+
+
+    # fig, axs = plt.subplots(3, 2, sharex=True, sharey=True)
+    # fig.suptitle("Joint Positions, Velocities and Errors")
+    # fig.subplots_adjust(hspace=0.5)
+    # fig.subplots_adjust(wspace=0.5)
+    # fig.set_size_inches(10, 10)
+
+    # # plot positions
+    # for i in range(6):
+    #     # axs[i, :].grid()
+    #     # axs[i, :].set_xlabel("Time [s]")
+    #     axs[i, 0].set_ylabel("Joint Position [deg]")
+    #     axs[i, 1].set_ylabel("Joint Position [deg]")
+    #     # axs[i, j].set_title(f"q{i}")
+    #     axs[i, 0].plot(timestamp_floats_dt, dt_qs[i], label="DT")
+    #     axs[i, 1].plot(timestamp_floats_pt, pt_qs[i], label="PT")
+    #     axs[i, 2].plot(error_ts, error_q0, label="Error")
+    #     # axs[i, :].legend()
+
+
+
+
+
 
     
     

@@ -213,9 +213,12 @@ class DigitalUR:
     def __update_time_vector(self):
         """updated expected_trajectory_time to have last_pt_time as the first element and accumulating with 0.05"""
         # TODO: Should be done in the trajectory estimator
-        self.expected_trajectory_time = [self.last_pt_time]
-        for i in range(1, len(self.expected_trajectory_q)):
-            self.expected_trajectory_time.append(self.expected_trajectory_time[i-1] + 0.05)
+        # self.expected_trajectory_time = [self.last_pt_time]
+        # for i in range(1, len(self.expected_trajectory_q)):
+        #     self.expected_trajectory_time.append(self.expected_trajectory_time[i-1] + 0.05)
+        # add self.last_pt_time to all elements in expected_trajectory_time
+        for i, _ in enumerate(self.expected_trajectory_time):
+            self.expected_trajectory_time[i] += self.last_pt_time
 
     def state_machine(self):
         """The state machine for the digital twin"""
@@ -254,7 +257,7 @@ class DigitalUR:
                     self.expected_trajectory_q, _, _, self.expected_trajectory_time = (
                         self.trajectory_estimator.estimate_trajectory(
                             self.timed_task,
-                            start_time=self.last_pt_time,
+                            start_time=0,
                             save_to_file=True,
                             file_name=f"{self.task_config[GRID_CONFIG.NO_BLOCKS]}_blocks_trajectory"
                         )

@@ -285,9 +285,8 @@ class TrajectoryTimingEstimator:
         # First block
         elif block_number == 0:
             indexes = [-2, number_of_speed_profiles_ti]
-            elements = np.array([[str(0.68-0.17), TIMING_INTERVALS.TYPES.DEL_ALL], [TIMING_INTERVALS.GRAP_TIME_STR, TIMING_INTERVALS.TYPES.DEL_ALL]])
-            # add initial delay
-        
+            elements = np.array([[str(TIMING_INTERVALS.FULLY_OPEN_GRIPPER-0.4-0.1), TIMING_INTERVALS.TYPES.DEL_ALL], [TIMING_INTERVALS.GRAP_TIME_STR, TIMING_INTERVALS.TYPES.DEL_ALL]])
+
         # Middle block
         elif block_number != number_of_blocks:
             indexes = [-3, -2, number_of_speed_profiles_ti]
@@ -298,14 +297,15 @@ class TrajectoryTimingEstimator:
                                 ])
         # Last move
         else:
-            indexes = [-2, -1]
+            indexes = [-2]
             elements = np.array([
-                                [TIMING_INTERVALS.PARTLY_OPEN_GRIPPER_STR, TIMING_INTERVALS.TYPES.DEL_ALL],
-                                [TIMING_INTERVALS.FULLY_OPEN_GRIPPER_STR, TIMING_INTERVALS.TYPES.DEL_ALL],
+                                [str(TIMING_INTERVALS.PARTLY_OPEN_GRIPPER+0.3), TIMING_INTERVALS.TYPES.DEL_ALL]
                                 ])
+                                
 
         speed_profiles_ti = self.__insert_at_indexes(speed_profiles_ti, elements, indexes)
-           
+        print("speed_profiles_ti")
+        print(speed_profiles_ti)
         return -1, speed_profiles_ti
 
     def __get_timing_essential_positions (self, ik_solutions, block_number, number_of_blocks, missing_block):
