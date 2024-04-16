@@ -23,7 +23,7 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 import matplotlib.pyplot as plt
-from matplotlib.widgets import Cursor
+from matplotlib.widgets import Cursor, MultiCursor
 
 import numpy as np
 import pandas as pd
@@ -65,8 +65,8 @@ def read_ts(r:pd.DataFrame, start_time=0):
 
 if __name__ == "__main__":
    
-    r_dt = pd.read_csv("test_results/trajectory_dt_2_blocks.csv", delimiter=' ')
-    r_pt = pd.read_csv("test_results/robot_output.csv", delimiter=' ')
+    r_dt = pd.read_csv("test_results/04_11_2024_08_44_23.csv", delimiter=' ')
+    r_pt = pd.read_csv("test_results/robot_output_2_blocks.csv", delimiter=' ')
     error = pd.read_csv("test_results/error_log.csv", delimiter=' ')
     error_ts = error.iloc[:, 0]
     start_time = error_ts[0]
@@ -80,7 +80,7 @@ if __name__ == "__main__":
 
     timestamp_floats_dt,_ = read_ts(r_dt)
     q0_floats_dt, q1_floats_dt, q2_floats_dt, q3_floats_dt, q4_floats_dt, q5_floats_dt = read_qs(r_dt)
-    qd0_floats_dt, qd1_floats_dt, qd2_floats_dt, qd3_floats_dt, qd4_floats_dt, qd5_floats_dt = read_qds(r_dt)
+    # qd0_floats_dt, qd1_floats_dt, qd2_floats_dt, qd3_floats_dt, qd4_floats_dt, qd5_floats_dt = read_qds(r_dt)
 
     timestamp_floats_pt, start_idx = read_ts(r_pt, start_time)
     q0_floats_pt, q1_floats_pt, q2_floats_pt, q3_floats_pt, q4_floats_pt, q5_floats_pt = read_qs(r_pt, start_idx)
@@ -93,7 +93,7 @@ if __name__ == "__main__":
     ax1.plot(timestamp_floats_dt, q3_floats_dt, label="q3")
     ax1.plot(timestamp_floats_dt, q4_floats_dt, label="q4")
     ax1.plot(timestamp_floats_dt, q5_floats_dt, label="q5")
-    cursor = Cursor(ax1, useblit=True, color='red', linewidth=2)
+    # cursor = Cursor(ax1, useblit=True, color='red', linewidth=2)
     
     ax1.set_xlabel("Time [s]")
     ax1.set_ylabel("Joint Position [rad]")
@@ -105,7 +105,7 @@ if __name__ == "__main__":
     ax2.plot(timestamp_floats_pt, q3_floats_pt, label="q3")
     ax2.plot(timestamp_floats_pt, q4_floats_pt, label="q4")
     ax2.plot(timestamp_floats_pt, q5_floats_pt, label="q5")
-    cursor = Cursor(ax2, useblit=True, color='red', linewidth=2)
+    cursor = MultiCursor(None, (ax1,ax2), useblit=True, color='red', linewidth=1)
 
     ax2.set_xlabel("Time [s]")
     ax2.set_ylabel("Joint Position [rad]")
@@ -117,7 +117,7 @@ if __name__ == "__main__":
     fig.legend()
 
     # plot errors
-    figt, axt = plt.subplots(6, 1, sharex=True)
+    figt, axt = plt.subplots(6, 1, sharex=True, sharey=True)
     axt[0].plot(error_ts, error_q0, label="q0")
     axt[1].plot(error_ts, error_q1, label="q1")
     axt[2].plot(error_ts, error_q2, label="q2")

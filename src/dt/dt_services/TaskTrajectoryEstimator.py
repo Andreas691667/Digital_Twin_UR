@@ -143,6 +143,17 @@ class TaskTrajectoryEstimator:
                 final_time = np.append(final_time, time_vector, axis=0)
 
         # Reshape the final trajectory
+        # pad with zeros to make the length of the trajectories multiple of 6
+        if len(final_traj_q) % 6 != 0:
+            final_traj_q = np.append(final_traj_q, np.zeros((6-len(final_traj_q)%6)))
+        if len(final_traj_qd) % 6 != 0:
+            final_traj_qd = np.append(final_traj_qd, np.zeros((6-len(final_traj_qd)%6)))
+        if len(final_traj_qdd) % 6 != 0:
+            final_traj_qdd = np.append(final_traj_qdd, np.zeros((6-len(final_traj_qdd)%6)))
+
+
+        print(final_traj_q.shape, final_traj_qd.shape, final_traj_qdd.shape, len(final_time))
+
         self.traj_q = np.reshape(final_traj_q, (-1, 6))
         self.traj_qd = np.reshape(final_traj_qd, (-1, 6))
         self.traj_qdd = np.reshape(final_traj_qdd, (-1, 6))
@@ -184,7 +195,7 @@ if __name__ == "__main__":
 
     # Create a task with timings
     task_with_timings = [
-        # np.concatenate((v_none, v_none, [3])),
+        np.concatenate((v_none, v_none, [.6])),
         np.concatenate((HOME, BGP0, [1.3])),
         np.concatenate((BGP0, GP0, [0.8])),
         np.concatenate((v_none, v_none, [0.8])),
@@ -207,8 +218,7 @@ if __name__ == "__main__":
     ]
 
     trajq, trajqd, trajqdd, time = task_estimator.estimate_trajectory(
-        task_with_timings,start_time=100, save_to_file=True, file_name="trajectory_dt_2_blocks"
+        task_with_timings,start_time=100, save_to_file=True, file_name="dt_traj_2_blocks"
     )
 
-    model.plot_trajectory(trajq)
-    print(trajq)
+    # model.plot_trajectory(trajq)
