@@ -271,17 +271,15 @@ class TrajectoryTimingEstimator:
 
         return arr_out
 
-    def __add_additional_ti (self, speed_profiles_ti_extended, speed_profiles_ti, block_number, missing_block):
+    def __add_additional_ti (self, speed_profiles_ti_extended, speed_profiles_ti, block_number, number_of_blocks,missing_block):
         """To be implemented"""
-        # TODO: THIS IS A HACK AND WILL NOT WORK
-        self.is_in_home_position = True
         speed_profiles_ti_extended = np.copy(speed_profiles_ti_extended)
         speed_profiles_ti = np.copy(speed_profiles_ti)
         _, number_of_speed_profiles_ti_extended = np.shape(speed_profiles_ti_extended)
         _, number_of_speed_profiles_ti = np.shape(speed_profiles_ti)
         
 
-         # missing block
+        # missing block
         if block_number == missing_block:
             pass
             
@@ -290,50 +288,59 @@ class TrajectoryTimingEstimator:
             indexes = [number_of_speed_profiles_ti]
             elements = np.array([[TIMING_INTERVALS.GRAP_TIME_STR, TIMING_INTERVALS.TYPES.DEL_ALL]])
         
-        # Middle block or last block
-        else:
-           indexes = [-3, -2, number_of_speed_profiles_ti]
-           elements = np.array([
+        # Middle block
+        elif block_number != number_of_blocks:
+            indexes = [-3, -2, number_of_speed_profiles_ti]
+            elements = np.array([
                                 [TIMING_INTERVALS.PARTLY_OPEN_GRIPPER_STR, TIMING_INTERVALS.TYPES.DEL_ALL],
                                 [str(TIMING_INTERVALS.FULLY_OPEN_GRIPPER + TIMING_INTERVALS.INITALIZATION_DELAY), TIMING_INTERVALS.TYPES.DEL_ALL],
                                 [TIMING_INTERVALS.GRAP_TIME_STR, TIMING_INTERVALS.TYPES.DEL_ALL]
                                 ])
-        
+        # Last move
+        else:
+            print(speed_profiles_ti)
+            indexes = [-2, -1]
+            elements = np.array([
+                                [TIMING_INTERVALS.PARTLY_OPEN_GRIPPER_STR, TIMING_INTERVALS.TYPES.DEL_ALL],
+                                [TIMING_INTERVALS.FULLY_OPEN_GRIPPER_STR, TIMING_INTERVALS.TYPES.DEL_ALL],
+                                ])
+
         speed_profiles_ti = self.__insert_at_indexes(speed_profiles_ti, elements, indexes)
            
-
-
         return -1, speed_profiles_ti
 
-    def __get_timing_essential_positions (self, ik_solutions, block_number, missing_block):
+    def __get_timing_essential_positions (self, ik_solutions, block_number, number_of_blocks, missing_block):
         """Get timing essential joint positions"""
         # TODO: store ik_solutions in an attribute
         timing_essential_positions = []
-            
+        
         # missing block
         if block_number == missing_block:
             # Set threshold[block_number/missing_block] = <time from last origin to new origin>
             old_origin_grip_pos = self.last_ik_solutions[block_number, 1, :]
             current_origins = ik_solutions[block_number, :2, :]
             timing_essential_positions = np.vstack((old_origin_grip_pos, current_origins))
-            
         
         # First block (or last if there are only one)
-        elif block_number == 0 and self.is_in_home_position:
+        elif block_number == 0:
             home_sol = self.__get_home_ik_sol()
             origin_positions = ik_solutions[block_number, :2, :]
             timing_essential_positions = np.vstack((home_sol, origin_positions))
-            
-            # set home position to false
-            self.is_in_home_position = False
         
-        # Middle block or last block
-        else:
+        # Middle block
+        elif block_number != number_of_blocks:
             joint_positions_current_block = ik_solutions[block_number-1, :, :]
             joint_positions_next_block = ik_solutions[block_number, :, :]
             before_grip_joint_position = joint_positions_current_block[-2, :] # The gripper goes up before it moves on
             first_joint_positions_of_next_block = joint_positions_next_block[:2, :] # Origin before grip and grip pos
             timing_essential_positions = np.vstack((joint_positions_current_block, before_grip_joint_position, first_joint_positions_of_next_block))
+
+        # Last move
+        else:
+            joint_positions_current_block = ik_solutions[block_number-1, :, :]
+            before_grip_joint_position = joint_positions_current_block[-2, :] # The gripper goes up before it moves on
+            home_sol = self.__get_home_ik_sol()
+            timing_essential_positions = np.vstack((joint_positions_current_block, before_grip_joint_position, home_sol))
 
         return timing_essential_positions
     
@@ -377,26 +384,24 @@ class TrajectoryTimingEstimator:
             see __compute_ik_solutions for input format
             """
             ik_solutions = self.__compute_ik_solutions(task_config)
-            number_of_blocks, _, _ = np.shape(ik_solutions)
+            number_of_blocks: int = task_config[GRID_CONFIG.NO_BLOCKS] 
             
             # Initialize threshold
             task_with_timings = np.array([])
         
             # Calculate thresholds for blocks, if there is more than one block to move
-            for block_number in range(number_of_blocks):
+            for block_number in range(number_of_blocks+1):
                 # Get positions which matters for the timing calculations
                 # That is: All subtasks jp of the first task, and the first subtask jp of the next task
-                timing_essential_positions = self.__get_timing_essential_positions(ik_solutions, block_number, -1)
+                timing_essential_positions = self.__get_timing_essential_positions(ik_solutions, block_number, number_of_blocks, -1)
                 
                 # Get speed profile timing intervals
                 # TODO: Agree on this termonology througtout codebase!
                 _, speed_profiles_ti_extended, speed_profiles_ti = self.__get_duration_between_positions(timing_essential_positions, block_number)
                 
                 # Add additional ties
-                _, speed_profiles_ti_with_delays = self.__add_additional_ti(speed_profiles_ti_extended, speed_profiles_ti, block_number, -1)
+                _, speed_profiles_ti_with_delays = self.__add_additional_ti(speed_profiles_ti_extended, speed_profiles_ti, block_number, number_of_blocks, -1)
 
-                print(speed_profiles_ti_with_delays)
-                # print(speed_profiles_ti_with_delays)
                 subtask_with_timings = self.__format_task_with_timings(timing_essential_positions, speed_profiles_ti_with_delays)
 
                 # Add to task with timings
