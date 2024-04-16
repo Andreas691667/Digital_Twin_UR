@@ -24,15 +24,18 @@ from dt_services.TimingThresholdEstimator import TimingThresholdEstimator
 @dataclass
 class MitigationStrategy:
     """Class for the mitigation strategies"""
-
     SHIFT_ORIGIN = "SHIFT_ORIGIN"
     TRY_PICK_STOCK = "TRY_PICK_STOCK"
 
+@dataclass
+class FaultDetectionApproach:
+    """Class for the fault detection approaches"""
+    MODEL_BASED = "MODEL_BASED"
+    DATA_DRIVEN = "DATA_DRIVEN"
 
 @dataclass
 class FaultType:
     """Class for the fault types"""
-
     MISSING_OBJECT = "MISSING_OBJECT"
     PROTECTIVE_STOP = "PROTECTIVE_STOP"
     UNKOWN_FAULT = "UNKOWN_FAULT"
@@ -42,7 +45,6 @@ class FaultType:
 @dataclass
 class DTState:
     """Class for the states of the digital twin"""
-
     INITIALIZING = 0
     WAITING_TO_RECEIVE_TASK = 1
     VALIDATING_TASK = 2
@@ -54,7 +56,7 @@ class DTState:
 class DigitalUR:
     """Class for the digital twin of the UR3e Robot"""
 
-    def __init__(self, mitigation_strategy: str):
+    def __init__(self, mitigation_strategy: str, approach: int):
         # state of the digital twin
         self.state: DTState = DTState.INITIALIZING
 
@@ -80,6 +82,8 @@ class DigitalUR:
 
         self.mitigation_strategy = None
         self.__set_mitigation_strategy(mitigation_strategy)
+        self.approach = None
+        self.__set_fault_detection_approach(approach)
         self.current_fault: FaultType = None
         self.state_machine_thread.start()
 
@@ -98,6 +102,13 @@ class DigitalUR:
         self.expected_trajectory_q = []
         self.expected_trajectory_time = []
         self.pos_epsilon = 0.02  # allowed error for each joint [rad]
+
+    def __set_fault_detection_approach(self, approach: int) -> None:
+        """Set the fault detection approach"""
+        if approach == cli_arguments.MODEL_BASED:
+            self.approach = FaultDetectionApproach.MODEL_BASED
+        elif approach == cli_arguments.DATA_DRIVEN:
+            self.approach = FaultDetectionApproach.DATA_DRIVEN
 
     def __set_mitigation_strategy(self, mitigation_strategy: str) -> None:
         """Set the mitigation strategy"""
@@ -243,6 +254,7 @@ class DigitalUR:
                             self.timed_task,
                             start_time=self.last_pt_time,
                             save_to_file=True,
+                            file_name=f"{self.task_config[GRID_CONFIG.NO_BLOCKS]}_blocks_trajectory.csv"
                         )
                     )
                     self.state = DTState.WAITING_FOR_TASK_TO_START
@@ -394,6 +406,7 @@ class DigitalUR:
         # TODO: Check if task is done before doing the rest! I.e. check for more blocks to move here??
 
         safety_status = data["safety_status"]
+        
         # protective stop
         if safety_status == 3:
             print("Protective stop")
@@ -401,11 +414,12 @@ class DigitalUR:
 
         # Normal
         elif safety_status == 1:
-            # return self.check_object_detection(data)
-            return self.check_model_divergence(data)
+            if self.approach == FaultDetectionApproach.DATA_DRIVEN:
+                return self.analyse_object_detection(data)
+            elif self.approach == FaultDetectionApproach.MODEL_BASED:
+                return self.analyse_model_divergence(data)
 
-
-    def check_model_divergence(self, data: str):
+    def analyse_model_divergence(self, data: str):
         """Check if the model diverges from the actual robot"""
         # check if the model diverges from the actual robot
         # if the model diverges from the actual robot, return fault
@@ -449,7 +463,7 @@ class DigitalUR:
         return False, FaultType.NO_FAULT
 
 
-    def check_object_detection(self, data: str):
+    def analyse_object_detection(self, data: str):
         # check if object is detected
         object_detected = data["output_bit_register_66"]
 
