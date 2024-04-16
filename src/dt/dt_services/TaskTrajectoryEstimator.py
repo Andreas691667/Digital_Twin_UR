@@ -217,8 +217,11 @@ if __name__ == "__main__":
         np.concatenate((BTP1, HOME, [2.3])),
     ]
 
+    task_with_timings2 = traj_timing_est.get_traj_timings(task_config)
+
     trajq, trajqd, trajqdd, time = task_estimator.estimate_trajectory(
-        task_with_timings,start_time=100, save_to_file=True, file_name="dt_traj_2_blocks"
+        task_with_timings2,start_time=100, save_to_file=True, file_name="dt_traj_2_blocks"
     )
 
-    model.plot_trajectory(trajq)
+    model.plot_trajectory()
+    
