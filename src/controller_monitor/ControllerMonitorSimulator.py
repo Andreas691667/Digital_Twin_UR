@@ -40,12 +40,19 @@ class ControllerMonitorSimulator(ControllerMonitor):
     def __publish_data(self):
         """Publish data to the RabbitMQ server."""
         while True:
-            for _, row in self.df.iterrows():
+            for index, row in self.df.iterrows():
                 data = row.to_list()
                 self.rmq_client_out_monitor.send_message(f'{MSG_TYPES_MONITOR_TO_DT.MONITOR_DATA} {data}', "MONITOR_EXCHANGE")
+                print(f"\t\rPublished message [{index}/{self.len_df-1}]", end='', flush=True)
                 sleep(1/self.publish_frequency)
             break
-        print("Data publishing completed")
+        print("\nData publishing completed")
+        self.shutdown()
+
+    def shutdown(self):
+        """Shutdown the simulator."""
+        print("Shutting down")
+        self.rmq_client_in.stop_consuming()
         exit(0)
 
 # main
