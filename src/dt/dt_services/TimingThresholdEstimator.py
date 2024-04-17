@@ -197,54 +197,7 @@ class TimingThresholdEstimator:
         # print(f"Leading axis of movements: {all_leading_axis}")    
         return task_config, thresholds, all_durations, all_durations_des
     
-    def get_timed_task(self):
-        """ONLY FOR TESTING PURPOSES"""
-        import sys
-        import yaml
 
-        sys.path.append("../..")
-        from ur3e.ur3e import UR3e
-
-        with open(f"../config/tasks/2_blocks.yaml", "r") as file:
-            task_config = yaml.safe_load(file)
-
-        model = UR3e()
-        origin0 = task_config[0]["ORIGIN"]
-        target0 = task_config[0]["TARGET"]
-        origin1 = task_config[1]["ORIGIN"]
-        target1 = task_config[1]["TARGET"]
-        HOME = model.compute_joint_positions_xy(11, -2)
-        BGP0, GP0, BTP0, TP0 = model.compute_joint_positions_origin_target(origin0, target0)
-        BGP1, GP1, BTP1, TP1 = model.compute_joint_positions_origin_target(origin1, target1)
-        BTP1[-1] -= np.pi/2
-        TP1[-1] -= np.pi/2
-        v_none = [None] * 6
-
-        # Create a task with timings
-        task_with_timings = [
-            np.concatenate((v_none, v_none, [.6])),
-            np.concatenate((HOME, BGP0, [1.3])),
-            np.concatenate((BGP0, GP0, [0.8])),
-            np.concatenate((v_none, v_none, [0.8])),
-            np.concatenate((GP0, BGP0, [0.8])),
-            np.concatenate((BGP0, BTP0, [2.4])),
-            np.concatenate((BTP0, TP0, [0.8])),
-            np.concatenate((v_none, v_none, [0.6])),
-            np.concatenate((TP0, BTP0, [0.8])),
-            np.concatenate((v_none, v_none, [1.5])),
-            np.concatenate((BTP0, BGP1, [2.5])),
-            np.concatenate((BGP1, GP1, [.8])),
-            np.concatenate((v_none, v_none, [0.8])),
-            np.concatenate((GP1, BGP1, [0.8])),
-            np.concatenate((BGP1, BTP1, [3.7])),
-            np.concatenate((BTP1, TP1, [0.8])),
-            np.concatenate((v_none, v_none, [0.6])),
-            np.concatenate((TP1, BTP1, [1.0])),
-            np.concatenate((v_none, v_none, [.8])),
-            np.concatenate((BTP1, HOME, [2.3])),
-        ]
-        return task_with_timings
-        
 
 # import yaml
 # import json
