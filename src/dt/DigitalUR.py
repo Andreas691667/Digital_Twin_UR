@@ -103,10 +103,16 @@ class DigitalUR:
         self.last_pt_time = 0  # last time the PT was monitored
         self.expected_trajectory_q = []
         self.expected_trajectory_time = []
-        self.pos_epsilon = 0.02  # allowed error for each joint [rad]
+        self.pos_epsilon = 0.5  # allowed error for each joint [rad]
         # log files
         self.traj_file_name = file_name_key + "_dt_trajectory.csv"
         self.error_file_name = file_name_key + "_dt_error_log.csv"
+        self.__create_log_files()
+
+    def __create_log_files(self):
+        """Create the log files. Overwrite if they already exist"""
+        open(f"error_logs/{self.error_file_name}", "w").close()
+        open(f"dt_trajectories/{self.traj_file_name}", "w").close()
 
     def __set_fault_detection_approach(self, approach: int) -> None:
         """Set the fault detection approach"""
@@ -251,7 +257,6 @@ class DigitalUR:
                 )
                 self.timed_task = self.trajectory_timing_estimator.get_traj_timings(self.task_config)
                 # send validated task to controller
-                print(validate_msg)
                 self.rmq_client_out.send_message(validate_msg, RMQ_CONFIG.DT_EXCHANGE)
 
                 if valid:
@@ -324,7 +329,6 @@ class DigitalUR:
 
         if self.current_fault == FaultType.MISSING_OBJECT:
             if self.mitigation_strategy == MitigationStrategy.SHIFT_ORIGIN:
-                # print(f"Task config before (1): \n {self.task_config}")
                 # # 1) remove the blocks that have already been moved
 
                 # 2) from the current block, change two first rows in its config to the next block
@@ -455,9 +459,17 @@ class DigitalUR:
         # calculate the error
         error = np.abs(np.array(pt_q) - np.array(expected_q))
 
+        # check if error is above epsilon for each joint
+        faults = [False, False, False, False, False, False]
+        for i in range(6):
+            if error[i] > self.pos_epsilon:
+                print(f"Model diverged at time {pt_time} in joint {i}")
+                faults[i] = True
+                
+
         # log error to csv
         with open(f"error_logs/{self.error_file_name}", "a") as f:
-            f.write(f"{pt_time} {error[0]} {error[1]} {error[2]} {error[3]} {error[4]} {error[5]}\n")
+            f.write(f"{pt_time} {error[0]} {error[1]} {error[2]} {error[3]} {error[4]} {error[5]} {faults[0]} {faults[1]} {faults[2]} {faults[3]} {faults[4]} {faults[5]}\n")
 
         # if expected_q is last element in expected_trajectory_q, we are done
         # go to waiting to receive task state
@@ -468,10 +480,15 @@ class DigitalUR:
             print("State transition -> WAITING_TO_RECEIVE_TASK")
             return False, FaultType.NO_FAULT
 
-        return False, FaultType.NO_FAULT
+        self.analyse_object_grip(data)
 
-
-    def analyse_object_detection(self, data: str):
+        # if any of the joints diverge, return fault
+        if any(faults):
+            return True, FaultType.MISSING_OBJECT
+        else:
+            return False, FaultType.NO_FAULT
+        
+    def analyse_object_grip(self, data: str):
         # check if object is detected
         object_detected = data["output_bit_register_66"]
 
@@ -484,10 +501,15 @@ class DigitalUR:
         # If we grap an object, we increment the current block being processed, i.e. it is initialized from 0
         if object_grapped:
             self.current_block += 1  # Increment block number
-            self.time_of_last_message = time.time()  # Reset timer
             self.pick_stock_tried = 1  # Reset pick_stock_tried
             print(f"Object grapped in block {self.current_block}")
 
+        return object_grapped
+
+    def analyse_object_detection(self, data: str):
+        # check if object is detected
+        if self.analyse_object_grip(data):
+            self.time_of_last_message = time.time()  # Reset timer
             # If we have grapped the last object, we are done
             # go to waiting to receive task state
             if self.current_block == self.task_config[GRID_CONFIG.NO_BLOCKS] - 1:
@@ -535,6 +557,7 @@ class DigitalUR:
 
         if monitor_data:
             fault_present, fault_type = self.analyse_data(monitor_data)
+            print(self.task_config)
             if fault_present:
                 print(f"Fault present: {fault_type}")
                 self.current_fault = fault_type
