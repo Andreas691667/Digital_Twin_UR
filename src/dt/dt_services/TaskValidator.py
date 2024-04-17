@@ -40,7 +40,6 @@ class TaskValidator:
 
     def __update_task(self):
         """Update task from matrices"""
-        print(self.no_blocks)
         for i in range(self.no_blocks):
             self.task[i][GRID_CONFIG.ORIGIN][GRID_CONFIG.x] = int(self.block_origin_map[0, i])
             self.task[i][GRID_CONFIG.ORIGIN][GRID_CONFIG.y] = int(self.block_origin_map[1, i])

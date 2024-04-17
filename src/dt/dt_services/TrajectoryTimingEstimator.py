@@ -304,8 +304,8 @@ class TrajectoryTimingEstimator:
                                 
 
         speed_profiles_ti = self.__insert_at_indexes(speed_profiles_ti, elements, indexes)
-        print("speed_profiles_ti")
-        print(speed_profiles_ti)
+        # print("speed_profiles_ti")
+        # print(speed_profiles_ti)
         return -1, speed_profiles_ti
 
     def __get_timing_essential_positions (self, ik_solutions, block_number, number_of_blocks, missing_block):
@@ -313,41 +313,42 @@ class TrajectoryTimingEstimator:
         # TODO: store ik_solutions in an attribute
         timing_essential_positions = []
         
-        # missing block
-        if block_number == missing_block:
-            # Set threshold[block_number/missing_block] = <time from last origin to new origin>
-            old_origin_grip_pos = self.last_ik_solutions[block_number, 1, :]
-            current_origins = ik_solutions[block_number, :2, :]
-            timing_essential_positions = np.vstack((old_origin_grip_pos, current_origins))
-        
-        # First block (or last if there are only one)
-        elif block_number == 0:
-            home_sol = self.__get_home_ik_sol()
-            origin_positions = ik_solutions[block_number, :2, :]
-            timing_essential_positions = np.vstack((home_sol, origin_positions))
-        
-        # Middle block
-        elif block_number != number_of_blocks:
-            joint_positions_current_block = ik_solutions[block_number-1, :, :]
-            joint_positions_next_block = ik_solutions[block_number, :, :]
-            BGP = joint_positions_current_block[0, :]
-            GP = joint_positions_current_block[1, :] 
-            BTP = joint_positions_current_block[2, :] 
-            TP = joint_positions_current_block[3, :] 
-            origins_next = joint_positions_next_block[:2, :] # Origin before grip and grip pos
-            timing_essential_positions = np.vstack((GP, BGP, BTP, TP, BTP, origins_next))
+        if number_of_blocks > 0:
+            # missing block
+            if block_number == missing_block:
+                # Set threshold[block_number/missing_block] = <time from last origin to new origin>
+                old_origin_grip_pos = self.last_ik_solutions[block_number, 1, :]
+                current_origins = ik_solutions[block_number, :2, :]
+                timing_essential_positions = np.vstack((old_origin_grip_pos, current_origins))
+            
+            # First block (or last if there is only one)
+            elif block_number == 0:
+                home_sol = self.__get_home_ik_sol()
+                origin_positions = ik_solutions[block_number, :2, :]
+                timing_essential_positions = np.vstack((home_sol, origin_positions))
+            
+            # Middle block
+            elif block_number != number_of_blocks:
+                joint_positions_current_block = ik_solutions[block_number-1, :, :]
+                joint_positions_next_block = ik_solutions[block_number, :, :]
+                BGP = joint_positions_current_block[0, :]
+                GP = joint_positions_current_block[1, :] 
+                BTP = joint_positions_current_block[2, :] 
+                TP = joint_positions_current_block[3, :] 
+                origins_next = joint_positions_next_block[:2, :] # Origin before grip and grip pos
+                timing_essential_positions = np.vstack((GP, BGP, BTP, TP, BTP, origins_next))
 
-        # Last move
-        else:
-            joint_positions_current_block = ik_solutions[block_number-1, :, :]
-            BGP = joint_positions_current_block[0, :]
-            GP = joint_positions_current_block[1, :] 
-            BTP = joint_positions_current_block[2, :] 
-            TP = joint_positions_current_block[3, :] 
-            HOME = self.__get_home_ik_sol()
-            timing_essential_positions = np.vstack((GP, BGP, BTP, TP, BTP, HOME))
-        
-        return timing_essential_positions
+            # Last move
+            else:
+                joint_positions_current_block = ik_solutions[block_number-1, :, :]
+                BGP = joint_positions_current_block[0, :]
+                GP = joint_positions_current_block[1, :] 
+                BTP = joint_positions_current_block[2, :] 
+                TP = joint_positions_current_block[3, :] 
+                HOME = self.__get_home_ik_sol()
+                timing_essential_positions = np.vstack((GP, BGP, BTP, TP, BTP, HOME))
+            
+            return timing_essential_positions
     
     def __strl2floatl (self, str_list: np.ndarray) -> np.ndarray: 
         """Convert string list to float list

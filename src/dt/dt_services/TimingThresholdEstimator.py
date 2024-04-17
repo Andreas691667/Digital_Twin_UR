@@ -140,7 +140,7 @@ class TimingThresholdEstimator:
             task[i].update({GRID_CONFIG.TIMING_THRESHOLD: thresholds[i]})
 
 
-    def compute_thresholds (self, task_config,  missing_block = -1):
+    def compute_thresholds (self, task_config):
         """Computes the thresholds corresponding to block movements
         see __compute_ik_solutions for input format
         """
@@ -161,7 +161,7 @@ class TimingThresholdEstimator:
             timing_essential_positions = []
             
             #missing block
-            if block_number == missing_block:
+            if block_number == self.missing_block:
                 # Set threshold[block_number/missing_block] = <time from last origin to new origin>
                 old_origin_grip_pos = self.last_ik_solutions[block_number, 1, :]
                 current_origins = ik_solutions[block_number, :2, :]

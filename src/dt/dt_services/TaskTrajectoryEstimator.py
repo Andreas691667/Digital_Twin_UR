@@ -61,6 +61,12 @@ class TaskTrajectoryEstimator:
 
         df.to_csv(f"dt_trajectories/{file_name}", sep=" ", index=False)
 
+    def update_time_vector(self, start_time):
+        """Update the time vector by adding the start time to the time vector."""
+        for i, _ in enumerate(self.time):
+            self.time[i] += start_time
+        return self.time
+    
     def estimate_trajectory(
         self, task_with_timings, start_time = 0, save_to_file=False, file_name=None
     ):

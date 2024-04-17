@@ -17,6 +17,7 @@ from config.grid_config import GRID_CONFIG
 
 from ur3e.ur3e import UR3e
 
+from dt_services.FaultResolver import FaultResolver
 from dt_services.TaskValidator import TaskValidator
 from dt_services.TaskTrajectoryEstimator import TaskTrajectoryEstimator
 from dt_services.TimingThresholdEstimator import TimingThresholdEstimator
@@ -25,18 +26,23 @@ from dt_services.TrajectoryTimingEstimator import TrajectoryTimingEstimator
 @dataclass
 class MitigationStrategy:
     """Class for the mitigation strategies"""
+
     SHIFT_ORIGIN = "SHIFT_ORIGIN"
     TRY_PICK_STOCK = "TRY_PICK_STOCK"
+
 
 @dataclass
 class FaultDetectionApproach:
     """Class for the fault detection approaches"""
+
     MODEL_BASED = "MODEL_BASED"
     TIMING_THRESHOLDS = "TIMING_THRESHOLDS"
+
 
 @dataclass
 class FaultType:
     """Class for the fault types"""
+
     MISSING_OBJECT = "MISSING_OBJECT"
     PROTECTIVE_STOP = "PROTECTIVE_STOP"
     UNKOWN_FAULT = "UNKOWN_FAULT"
@@ -46,18 +52,24 @@ class FaultType:
 @dataclass
 class DTState:
     """Class for the states of the digital twin"""
+
     INITIALIZING = 0
     WAITING_TO_RECEIVE_TASK = 1
-    VALIDATING_TASK = 2
+    PROCESSING_AND_VALIDATING_TASK = 2
     WAITING_FOR_TASK_TO_START = 3
     NORMAL_OPERATION = 4
     FAULT_RESOLUTION = 5
 
 
 class DigitalUR:
-    """Class for the digital twin of the UR3e Robot"""
+    """Class for the digital twin of the UR3e Robot
+    :param mitigation_strategy: The mitigation strategy to use
+    :param approach: The fault detection approach to use
+    :param file_name_key: The key for the log files"""
 
-    def __init__(self, mitigation_strategy: str, approach: int, file_name_key: str = ""):
+    def __init__(
+        self, mitigation_strategy: str, approach: int, file_name_key: str = ""
+    ):
         # state of the digital twin
         self.state: DTState = DTState.INITIALIZING
 
@@ -71,12 +83,13 @@ class DigitalUR:
 
         # state machine
         self.state_machine_stop_event = threading.Event()
-        self.state_machine_thread = threading.Thread(target=self.state_machine)
+        self.state_machine_thread = threading.Thread(target=self.__state_machine)
 
         # kinematic model of the UR3e robot
         self.robot_model = UR3e()
 
         # dt services
+        self.fault_resolver = FaultResolver()
         self.task_validator = TaskValidator()
         self.timing_estimator = TimingThresholdEstimator(self.robot_model)
         self.trajectory_estimator = TaskTrajectoryEstimator(self.robot_model)
@@ -98,12 +111,12 @@ class DigitalUR:
         self.pick_stock_tried = 1
 
         # ----- MODEL-BASED FAULT DETECTION -----
-        self.timed_task = [] # list of timed tasks, row: [start, target, time]
+        self.timed_task = []  # list of timed tasks, row: [start, target, time]
         self.step_no = 0  # simulation step number
         self.last_pt_time = 0  # last time the PT was monitored
         self.expected_trajectory_q = []
         self.expected_trajectory_time = []
-        self.pos_epsilon = 0.5  # allowed error for each joint [rad]
+        self.pos_epsilon = 0.7  # allowed error for each joint [rad]
         # log files
         self.traj_file_name = file_name_key + "_dt_trajectory.csv"
         self.error_file_name = file_name_key + "_dt_error_log.csv"
@@ -128,18 +141,18 @@ class DigitalUR:
         elif mitigation_strategy == cli_arguments.STOCK:
             self.mitigation_strategy = MitigationStrategy.TRY_PICK_STOCK
 
-    def configure_rmq_clients(self):
+    def __configure_rmq_clients(self):
         """Configures rmq_client_in to receive data from monitor
         and rmq_client_out to send data to controller"""
 
         self.rmq_client_in.configure_incoming_channel(
-            self.on_controller_message,
+            self.__on_controller_message,
             RMQ_CONFIG.CONTROLLER_EXCHANGE,
             RMQ_CONFIG.FANOUT,
             RMQ_CONFIG.DT_QUEUE_CONTROLLER,
         )
         self.rmq_client_in.configure_incoming_channel(
-            self.on_monitor_message,
+            self.__on_monitor_message,
             RMQ_CONFIG.MONITOR_EXCHANGE,
             RMQ_CONFIG.FANOUT,
             RMQ_CONFIG.DT_QUEUE_MONITOR,
@@ -152,11 +165,11 @@ class DigitalUR:
 
         print("RMQ clients configured")
 
-    def start_consuming(self) -> None:
+    def __start_consuming(self) -> None:
         """Start the consumer thread"""
         self.rmq_client_in.start_consumer_thread()
 
-    def on_controller_message(self, ch, method, properties, body) -> None:
+    def __on_controller_message(self, ch, method, properties, body) -> None:
         """Callback function for when a message is received
         ch: The channel object
         method: The method object
@@ -170,11 +183,10 @@ class DigitalUR:
             print("Invalid message received from controller")
 
         else:
-            # print(f"Message received: {data}")
             msg_type, msg_data = data.split(" ", 1)
             self.controller_msg_queue.put((msg_type, msg_data))
 
-    def on_monitor_message(self, ch, method, properties, body) -> None:
+    def __on_monitor_message(self, ch, method, properties, body) -> None:
         """Callback function for when a message is received
         ch: The channel object
         method: The method object
@@ -213,103 +225,121 @@ class DigitalUR:
     def __get_message(self, msg_queue: Queue, block: bool = False):
         """Wait for a message"""
         try:
-            type, data = msg_queue.get(block=block)
+            type_, data = msg_queue.get(block=block)
         except Empty:
             return None, None
         else:
-            return type, data
-        
-    def __update_time_vector(self):
-        """updated expected_trajectory_time to have last_pt_time as the first element and accumulating with 0.05"""
-        # TODO: Should be done in the trajectory estimator
-        # self.expected_trajectory_time = [self.last_pt_time]
-        # for i in range(1, len(self.expected_trajectory_q)):
-        #     self.expected_trajectory_time.append(self.expected_trajectory_time[i-1] + 0.05)
-        # add self.last_pt_time to all elements in expected_trajectory_time
-        for i, _ in enumerate(self.expected_trajectory_time):
-            self.expected_trajectory_time[i] += self.last_pt_time
+            return type_, data
 
-    def state_machine(self):
+    def __state_machine(self):
         """The state machine for the digital twin"""
         while not self.state_machine_stop_event.is_set():
             if self.state == DTState.INITIALIZING:
-                self.configure_rmq_clients()
-                time.sleep(0.5)
-                self.start_consuming()
-                self.state = DTState.WAITING_TO_RECEIVE_TASK
-                print("State transition -> WAITING_TO_RECEIVE_TASK")
-
+                self.__initialize()
             elif self.state == DTState.WAITING_TO_RECEIVE_TASK:
-                # wait for new task from controller
-                msg_type, msg_data = self.__get_message(self.controller_msg_queue)
-                if msg_data:
-                    if msg_type == MSG_TYPES_CONTROLLER_TO_DT.NEW_TASK:
-                        self.task_config = ast.literal_eval(msg_data)
-                        self.state = DTState.VALIDATING_TASK
-                        print("State transition -> VALIDATING_TASK")
-
-            elif self.state == DTState.VALIDATING_TASK:
-                # validate the task
-                valid, validate_msg = self.validate_task()
-                # compute timing thresholds
-                self.task_config, _, _, _ = self.timing_estimator.compute_thresholds(
-                    self.task_config
-                )
-                self.timed_task = self.trajectory_timing_estimator.get_traj_timings(self.task_config)
-                # send validated task to controller
-                self.rmq_client_out.send_message(validate_msg, RMQ_CONFIG.DT_EXCHANGE)
-
-                if valid:
-                    # if task is valid, estimate the trajectory,
-                    # and go to waiting for task to start state
-                    self.expected_trajectory_q, _, _, self.expected_trajectory_time = (
-                        self.trajectory_estimator.estimate_trajectory(
-                            self.timed_task,
-                            start_time=0,
-                            save_to_file=True,
-                            file_name=self.traj_file_name,
-                        )
-                    )
-                    self.state = DTState.WAITING_FOR_TASK_TO_START
-                    self.monitor_msg_queue.queue.clear()  # clear the monitor queue
-                    print("State transition -> WAITING_FOR_TASK_TO_START")
-
+                self.__receive_task()
+            elif self.state == DTState.PROCESSING_AND_VALIDATING_TASK:
+                self.__process_and_validate_task()
             elif self.state == DTState.WAITING_FOR_TASK_TO_START:
-                msg_type, msg_data = self.__get_message(self.monitor_msg_queue)
-                if msg_data:
-                    # check the digital bit 0 of the data
-                    # if set go to monitoring state
-                    # else pass
-                    if self.check_start_bit(msg_data):
-                        # update the time vector
-                        self.__update_time_vector()
-                        print("State transition -> NORMAL_OPERATION")
-                        self.state = DTState.NORMAL_OPERATION
-                        # Start timer
-                        self.time_of_last_message = time.time()
-
+                self.__wait_for_task_to_start()
             elif self.state == DTState.NORMAL_OPERATION:
-                self.monitor_pt()
+                self.__monitor_pt()
             elif self.state == DTState.FAULT_RESOLUTION:
-                # Stop program firstly
-                self.execute_fault_resolution(f"{MSG_TYPES_DT_TO_CONTROLLER.WAIT} None")
-                # resolve the fault and update the task_config
-                msg_type = self.plan_fault_resolution()
+                self.__resolve_fault()
 
-                # tell task_validator what object is missing
-                if self.current_fault == FaultType.MISSING_OBJECT:
-                    self.timing_estimator.set_missing_block(self.current_block + 1)
+    # region ---- STATE MACHINE FUNCTIONS ----
+    def __wait_for_task_to_start(self):
+        msg_type, msg_data = self.__get_message(self.monitor_msg_queue)
+        if msg_data:
+            # check the digital bit 0 of the data
+            # if set go to monitoring state
+            if self.__check_start_bit(msg_data):
+                # update the time vector to align with pt's time
+                self.trajectory_estimator.update_time_vector(self.last_pt_time)
+                self.state = DTState.NORMAL_OPERATION
+                print("State transition -> NORMAL_OPERATION")
+                # Start timer
+                self.time_of_last_message = time.time()
 
-                # Validate task
-                self.validate_task()
-                fault_msg = f"{msg_type} {self.task_config}"
+    def __receive_task(self):
+        # wait for new task from controller
+        msg_type, msg_data = self.__get_message(self.controller_msg_queue)
+        if msg_data:
+            if msg_type == MSG_TYPES_CONTROLLER_TO_DT.NEW_TASK:
+                self.task_config = ast.literal_eval(msg_data)
+                self.state = DTState.PROCESSING_AND_VALIDATING_TASK
+                print("State transition -> PROCESSING_AND_VALIDATING_TASK")
 
-                # Execute fault resolution
-                self.execute_fault_resolution(fault_msg)
-                self.state = DTState.WAITING_FOR_TASK_TO_START
-                print("State transition -> WAITING_FOR_TASK_TO_START")
+    def __initialize(self):
+        self.__configure_rmq_clients()
+        time.sleep(0.5) # wait for the RMQ clients to be configured
+        self.__start_consuming()
+        self.state = DTState.WAITING_TO_RECEIVE_TASK
+        print("State transition -> WAITING_TO_RECEIVE_TASK")
 
-    def validate_task(self):
+    def __resolve_fault(self):
+        # tell controller to wait
+        self.__send_message_to_controller(
+            f"{MSG_TYPES_DT_TO_CONTROLLER.WAIT} None"
+        )
+
+        # resolve the fault and update the task_config
+        fault_resolved = self.__plan_fault_resolution()
+
+        # tell task_validator what object is missing if that is the case
+        if self.current_fault == FaultType.MISSING_OBJECT:
+            self.timing_estimator.set_missing_block(self.current_block + 1)
+
+        # if fault resolved, go to validating task state
+        if fault_resolved:
+            self.state = DTState.PROCESSING_AND_VALIDATING_TASK
+            print("State transition -> PROCESSING_AND_VALIDATING_TASK")
+
+        # if fault not resolved, go to waiting to receive task state
+        else:
+            self.__send_message_to_controller(
+                f'{MSG_TYPES_DT_TO_CONTROLLER.COULD_NOT_RESOLVE} ""'
+            )
+            self.state = DTState.WAITING_TO_RECEIVE_TASK
+            print("State transition -> WAITING_TO_RECEIVE_TASK")
+
+    def __process_and_validate_task(self):
+        # validate the task (task_config is updated also)
+        valid, validate_msg = self.__validate_task()
+
+        # compute timing thresholds
+        if self.approach == FaultDetectionApproach.TIMING_THRESHOLDS:
+            self.task_config, _, _, _ = self.timing_estimator.compute_thresholds(
+                self.task_config
+            )
+
+        elif self.approach == FaultDetectionApproach.MODEL_BASED:
+            # estimate the task trajectory timings
+            self.timed_task = self.trajectory_timing_estimator.get_traj_timings(
+                self.task_config
+            )
+
+        # send validated task (not containing thresholds) to controller
+        self.rmq_client_out.send_message(validate_msg, RMQ_CONFIG.DT_EXCHANGE)
+
+        if valid:
+            # if task is valid, estimate the trajectory,
+            # and go to waiting for task to start state
+            self.expected_trajectory_q, _, _, self.expected_trajectory_time = (
+                self.trajectory_estimator.estimate_trajectory(
+                    self.timed_task,
+                    start_time=0,
+                    save_to_file=True,
+                    file_name=self.traj_file_name,
+                )
+            )
+            self.monitor_msg_queue.queue.clear()  # clear the monitor queue
+            self.state = DTState.WAITING_FOR_TASK_TO_START
+            print("State transition -> WAITING_FOR_TASK_TO_START")
+
+    # endregion
+
+    def __validate_task(self):
         """Validate the task using the task validator"""
         valid, self.task_config = self.task_validator.validate_task(
             self.task_config.copy()
@@ -320,8 +350,8 @@ class DigitalUR:
             msg = f"{MSG_TYPES_DT_TO_CONTROLLER.TASK_NOT_VALIDATED} None"
         return valid, msg
 
-    def plan_fault_resolution(self) -> None:
-        """Resolve the current fault"""
+    def __plan_fault_resolution(self) -> None:
+        """Resolve the current fault using the FaultResolver"""
         # resolve the fault here based on current fault and mitigation stragety
         # if fault resolved send new data to controller
         # if fault unresovled send could not resolve fault message to controller
@@ -329,71 +359,16 @@ class DigitalUR:
 
         if self.current_fault == FaultType.MISSING_OBJECT:
             if self.mitigation_strategy == MitigationStrategy.SHIFT_ORIGIN:
-                # # 1) remove the blocks that have already been moved
-
-                # 2) from the current block, change two first rows in its config to the next block
-                for block_no in range(  # Iterate over blocks
-                    self.current_block + 1,
-                    self.task_config[GRID_CONFIG.NO_BLOCKS]
-                    - 1,  # ... from the next block to the last block
-                ):
-
-                    self.task_config[block_no][GRID_CONFIG.ORIGIN][GRID_CONFIG.x] = (
-                        self.task_config[  # Change the x-coordinate to the next block's x-coordinate
-                            block_no + 1
-                        ][
-                            GRID_CONFIG.ORIGIN
-                        ][
-                            GRID_CONFIG.x
-                        ]
-                    )
-                    self.task_config[block_no][GRID_CONFIG.ORIGIN][GRID_CONFIG.y] = (
-                        self.task_config[  # Change the y-coordinate to the next block's y-coordinate
-                            block_no + 1
-                        ][
-                            GRID_CONFIG.ORIGIN
-                        ][
-                            GRID_CONFIG.y
-                        ]
-                    )
-
-                    # Change the timing threshold to the next block's threshold
-                    self.task_config[block_no][GRID_CONFIG.TIMING_THRESHOLD] = (
-                        self.task_config[block_no + 1][GRID_CONFIG.TIMING_THRESHOLD]
-                    )
-
-                # remove the last block and decrement the number of blocks
-                self.task_config.pop(self.task_config[GRID_CONFIG.NO_BLOCKS] - 1)
-                self.task_config[GRID_CONFIG.NO_BLOCKS] -= 1
-
-                # Reset timer
-                self.time_of_last_message = time.time()
-
-                # return fault_msg with the new task_config
-                return f"{MSG_TYPES_DT_TO_CONTROLLER.RESOLVED}"
+                shift_thresholds = True if self.approach == FaultDetectionApproach.TIMING_THRESHOLDS else False
+                fault_resolved, self.task_config = self.fault_resolver.shift_origins(self.task_config, self.current_block, shift_thresholds)
+                self.time_of_last_message = time.time() # Reset timer
+                print(self.task_config)
+                return fault_resolved
 
             elif self.mitigation_strategy == MitigationStrategy.TRY_PICK_STOCK:
-                # For block[j] try PICK_STOCK[i++]
-                if self.pick_stock_tried < len(GRID_CONFIG.PICK_STOCK_COORDINATES):
-                    self.task_config[self.current_block + 1][GRID_CONFIG.ORIGIN][
-                        GRID_CONFIG.x
-                    ] = GRID_CONFIG.PICK_STOCK_COORDINATES[self.pick_stock_tried][
-                        GRID_CONFIG.ORIGIN
-                    ][
-                        GRID_CONFIG.x
-                    ]
-                    self.task_config[self.current_block + 1][GRID_CONFIG.ORIGIN][
-                        GRID_CONFIG.y
-                    ] = GRID_CONFIG.PICK_STOCK_COORDINATES[self.pick_stock_tried][
-                        GRID_CONFIG.ORIGIN
-                    ][
-                        GRID_CONFIG.y
-                    ]
-                    self.pick_stock_tried += 1
-                    self.time_of_last_message = time.time()  # Reset timer
-                    return f"{MSG_TYPES_DT_TO_CONTROLLER.RESOLVED}"
-                else:
-                    return f"{MSG_TYPES_DT_TO_CONTROLLER.COULD_NOT_RESOLVE}"
+                fault_resolved, self.task_config, self.pick_stock_tried = self.fault_resolver.use_stock(self.task_config, self.current_block, self.pick_stock_tried)
+                self.time_of_last_message = time.time()  # Reset timer
+                return fault_resolved
 
         elif self.current_fault == FaultType.PROTECTIVE_STOP:
             pass
@@ -401,15 +376,13 @@ class DigitalUR:
         elif self.current_fault == FaultType.UNKOWN_FAULT:
             pass
 
-    def execute_fault_resolution(self, fault_msg) -> None:
-        """Execute the fault resolution: send message to controller
-        fault_msg: The fault message to send to the controller
-        "msg_type, task_config"
-        """
+    def __send_message_to_controller(self, fault_msg) -> None:
+        """Send a message to the controller
+        fault_msg: The message to send to the controller
+        FORMAT: 'MSG_TYPE DATA'"""
         self.rmq_client_out.send_message(fault_msg, RMQ_CONFIG.DT_EXCHANGE)
 
-    # TODO: add proper return type
-    def analyse_data(self, data):
+    def __analyse_data(self, data):
         """Check for faults in the data"""
         # if fault present return True, fault_type
         # else return False, FAULT_TYPES.NO_FAULT
@@ -427,16 +400,16 @@ class DigitalUR:
         # Normal
         elif safety_status == 1:
             if self.approach == FaultDetectionApproach.TIMING_THRESHOLDS:
-                return self.analyse_object_detection(data)
+                return self.__analyse_timing_thresholds(data)
             elif self.approach == FaultDetectionApproach.MODEL_BASED:
-                return self.analyse_model_divergence(data)
+                return self.__analyse_model_divergence(data)
 
-    def analyse_model_divergence(self, data: str):
+    def __analyse_model_divergence(self, data: str):
         """Check if the model diverges from the actual robot"""
         # check if the model diverges from the actual robot
         # if the model diverges from the actual robot, return fault
         # else return no fault
-        
+
         # Get the actual joint positions
         pt_q = [
             data["actual_q0"],
@@ -444,7 +417,7 @@ class DigitalUR:
             data["actual_q2"],
             data["actual_q3"],
             data["actual_q4"],
-            data["actual_q5"]
+            data["actual_q5"],
         ]
 
         # Get actual time
@@ -465,11 +438,12 @@ class DigitalUR:
             if error[i] > self.pos_epsilon:
                 print(f"Model diverged at time {pt_time} in joint {i}")
                 faults[i] = True
-                
 
         # log error to csv
         with open(f"error_logs/{self.error_file_name}", "a") as f:
-            f.write(f"{pt_time} {error[0]} {error[1]} {error[2]} {error[3]} {error[4]} {error[5]} {faults[0]} {faults[1]} {faults[2]} {faults[3]} {faults[4]} {faults[5]}\n")
+            f.write(
+                f"{pt_time} {error[0]} {error[1]} {error[2]} {error[3]} {error[4]} {error[5]} {faults[0]} {faults[1]} {faults[2]} {faults[3]} {faults[4]} {faults[5]}\n"
+            )
 
         # if expected_q is last element in expected_trajectory_q, we are done
         # go to waiting to receive task state
@@ -480,15 +454,18 @@ class DigitalUR:
             print("State transition -> WAITING_TO_RECEIVE_TASK")
             return False, FaultType.NO_FAULT
 
-        self.analyse_object_grip(data)
+        self.__analyse_object_grip(data)
 
         # if any of the joints diverge, return fault
+        # TODO: We shouldn't always return the same type of fault
         if any(faults):
             return True, FaultType.MISSING_OBJECT
         else:
             return False, FaultType.NO_FAULT
-        
-    def analyse_object_grip(self, data: str):
+        # return False, FaultType.NO_FAULT
+
+    def __analyse_object_grip(self, data: str):
+        """Check if an object is gripped"""
         # check if object is detected
         object_detected = data["output_bit_register_66"]
 
@@ -506,9 +483,10 @@ class DigitalUR:
 
         return object_grapped
 
-    def analyse_object_detection(self, data: str):
-        # check if object is detected
-        if self.analyse_object_grip(data):
+    def __analyse_timing_thresholds(self, data: str):
+        """Check if the timing thresholds are met"""
+        # check if object is gripped
+        if self.__analyse_object_grip(data):
             self.time_of_last_message = time.time()  # Reset timer
             # If we have grapped the last object, we are done
             # go to waiting to receive task state
@@ -545,19 +523,17 @@ class DigitalUR:
 
         return False, FaultType.NO_FAULT
 
-
-    def check_start_bit(self, data: str) -> bool:
+    def __check_start_bit(self, data: str) -> bool:
         """Check the digital bit of the data"""
         return data["output_bit_register_65"]
 
-    def monitor_pt(self) -> None:
+    def __monitor_pt(self) -> None:
         """Monitor the PT"""
 
         _, monitor_data = self.__get_message(self.monitor_msg_queue)
 
         if monitor_data:
-            fault_present, fault_type = self.analyse_data(monitor_data)
-            print(self.task_config)
+            fault_present, fault_type = self.__analyse_data(monitor_data)
             if fault_present:
                 print(f"Fault present: {fault_type}")
                 self.current_fault = fault_type
