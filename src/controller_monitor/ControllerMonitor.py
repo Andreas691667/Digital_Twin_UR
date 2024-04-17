@@ -308,8 +308,7 @@ class ControllerMonitor:
                     # Wait for DT to validate task
                     if self.task_validated:
                         print("\n \t [USER] Ready to play program. Press '2' to start, 'c' to exit \n")
-                        # register_values = self.__get_register_values()
-                        # self.__initialize_task_registers(register_values)
+                        self.load_program("/move_registers.urp")
                         self.STATE = CMState.WAITING_FOR_USER_INPUT
                     else:
                         pass
@@ -378,7 +377,6 @@ class ControllerMonitor:
 
                 # A resolution was send
                 elif msg_type == MSG_TYPES_DT_TO_CONTROLLER.RESOLVED:
-                    # new_task = str(msg_body)  # TODO: check if this is necessary
                     self.__reconfigure_task(msg_body, decr=True)
                     self.STATE = CMState.NORMAL_OPERATION
                     print("\t [STATE] NORMAL_OPERATION")
