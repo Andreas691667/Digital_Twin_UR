@@ -9,7 +9,7 @@ from time import sleep
 from ControllerMonitor import ControllerMonitor
 from queue import Queue
 
-class DataPublisher(ControllerMonitor):
+class ControllerMonitorSimulator(ControllerMonitor):
     """Class to publish data to RabbitMQ server. 
      It will read data from a simulation file and publish it to the RabbitMQ server. 
      It will publish data to the specified topic"""
@@ -50,7 +50,7 @@ class DataPublisher(ControllerMonitor):
 
 # main
 if __name__ == "__main__":
-    simulator = DataPublisher("robot_output_2_blocks.csv", "2_blocks", frequency=200)
+    simulator = ControllerMonitorSimulator("robot_output_2_blocks.csv", "2_blocks", frequency=200)
     sleep(2)
     print("Starting data publisher")
     simulator.start_publishing()
