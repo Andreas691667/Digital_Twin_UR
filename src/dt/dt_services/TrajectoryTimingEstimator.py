@@ -285,7 +285,7 @@ class TrajectoryTimingEstimator:
         # First block
         elif block_number == 0:
             indexes = [-2, number_of_speed_profiles_ti]
-            elements = np.array([[str(TIMING_INTERVALS.FULLY_OPEN_GRIPPER-0.4-0.1), TIMING_INTERVALS.TYPES.DEL_ALL], [TIMING_INTERVALS.GRAP_TIME_STR, TIMING_INTERVALS.TYPES.DEL_ALL]])
+            elements = np.array([[str(TIMING_INTERVALS.FULLY_OPEN_GRIPPER-(0.4)-(0.1)), TIMING_INTERVALS.TYPES.DEL_ALL], [TIMING_INTERVALS.GRAP_TIME_STR, TIMING_INTERVALS.TYPES.DEL_ALL]])
 
         # Middle block
         elif block_number != number_of_blocks:
