@@ -57,7 +57,7 @@ class ControllerMonitorSimulator(ControllerMonitor):
 
 # main
 if __name__ == "__main__":
-    simulator = ControllerMonitorSimulator("robot_output_2_blocks.csv", "2_blocks", frequency=200)
+    simulator = ControllerMonitorSimulator("case1_2miss_shift_robot_output.csv", "case1_close_blocks", frequency=200)
     sleep(2)
     print("Starting data publisher")
     simulator.start_publishing()

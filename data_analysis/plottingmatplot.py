@@ -65,13 +65,19 @@ def read_ts(r:pd.DataFrame, start_time=0):
 
 if __name__ == "__main__":
    
-    file_name_key = "sim0"
+    file_name_key = "case1sim"
     task_name = "2_blocks"
 
     # ----- WITH KEY AND NAME -----
     r_dt = pd.read_csv(f"../src/dt/dt_trajectories/{file_name_key}_dt_trajectory.csv", delimiter=' ')
-    r_pt = pd.read_csv(f"../src/controller_monitor/robot_output/{file_name_key}_{task_name}_robot_output.csv", delimiter=' ')
     error = pd.read_csv(f"../src/dt/error_logs/{file_name_key}_dt_error_log.csv", delimiter=' ')
+
+    # robot data file
+    # r_pt = pd.read_csv(f"../src/controller_monitor/robot_output/{file_name_key}_robot_output.csv", delimiter=' ')
+
+    # simulation data file
+    r_pt = pd.read_csv("../src/controller_monitor/simulation_data/case1_robot_output.csv", delimiter=' ')
+    
 
     # ----- WITHOUT KEY AND NAME (MANUAL) -----
     # r_dt = pd.read_csv("test_results/dt_trajectories/2_blocks_trajectory_sim_200hz.csv", delimiter=' ')
@@ -87,8 +93,15 @@ if __name__ == "__main__":
     error_q3 = error.iloc[:, 4]
     error_q4 = error.iloc[:, 5]
     error_q5 = error.iloc[:, 6]
+    fault_q0 = error.iloc[:, 7]
+    fault_q1 = error.iloc[:, 8]
+    fault_q2 = error.iloc[:, 9]
+    fault_q3 = error.iloc[:, 10]
+    fault_q4 = error.iloc[:, 11]
+    fault_q5 = error.iloc[:, 12]
 
     erros = [error_q0, error_q1, error_q2, error_q3, error_q4, error_q5]
+    faults = [fault_q0, fault_q1, fault_q2, fault_q3, fault_q4, fault_q5]
     # get max error
     max_error = max([max(x) for x in erros])
 
@@ -128,15 +141,21 @@ if __name__ == "__main__":
 
         # diff_err = abs(dt_qs[i] - pt_qs[i])
 
-        axs[1].plot(error_ts, erros[i], label="Error")
+        axs[1].plot(error_ts, erros[i], label="Real-Time Measured Error")
         # set axs[2] y axis limits
         axs[0].set_ylim([min_q-0.1, max_q+0.1])
         # axs[1].set_ylim([min_q-0.1, max_q+0.1])
         axs[1].set_ylim([-0.01, max_error+0.1])
 
-        # add legend to all subplots
+        # for all True values in faults_qi, plot a vertical line at that time
+        for j in range(len(faults[i])):
+            if faults[i][j]:
+                axs[0].axvline(x=error_ts[j], color='green', linestyle='dotted', label=f"Fault {j}")
+                axs[1].axvline(x=error_ts[j], color='green', linestyle='dotted', label=f"Fault {j}")
+
+        # add legend to all subplots and align to the right
         for ax in axs:
-            ax.legend()
+            ax.legend(loc='upper right')
             ax.grid()
 
 
