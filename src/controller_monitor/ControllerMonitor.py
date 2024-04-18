@@ -368,7 +368,6 @@ class ControllerMonitor:
 
                 elif msg_type == MSG_TYPES_DT_TO_CONTROLLER.TASK_VALIDATED:
                     self.__reconfigure_task(msg_body, decr=False)
-
                     # task validated as part of fault resolution
                     if self.STATE == CMState.WAITING_FOR_FAULT_RESOLUTION:
                         self.STATE = CMState.NORMAL_OPERATION

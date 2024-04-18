@@ -65,8 +65,7 @@ def read_ts(r:pd.DataFrame, start_time=0):
 
 if __name__ == "__main__":
    
-    file_name_key = "case1sim"
-    task_name = "2_blocks"
+    file_name_key = "DUMSIM"
 
     # ----- WITH KEY AND NAME -----
     r_dt = pd.read_csv(f"../src/dt/dt_trajectories/{file_name_key}_dt_trajectory.csv", delimiter=' ')
@@ -76,7 +75,7 @@ if __name__ == "__main__":
     # r_pt = pd.read_csv(f"../src/controller_monitor/robot_output/{file_name_key}_robot_output.csv", delimiter=' ')
 
     # simulation data file
-    r_pt = pd.read_csv("../src/controller_monitor/simulation_data/case1_robot_output.csv", delimiter=' ')
+    r_pt = pd.read_csv("../src/controller_monitor/simulation_data/robot_output_heart.csv", delimiter=' ')
     
 
     # ----- WITHOUT KEY AND NAME (MANUAL) -----
