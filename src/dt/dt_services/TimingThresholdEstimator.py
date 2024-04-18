@@ -4,7 +4,8 @@ path.append("../..")
 from ur3e.ur3e import UR3e
 import numpy as np
 from config.grid_config import GRID_CONFIG
-from TimingModel import TimingModel
+from dt_services.TimingModel import TimingModel
+
 
 class TimingThresholdEstimator:
     def __init__(self, model) -> None:
@@ -102,7 +103,7 @@ class TimingThresholdEstimator:
         return all_durations, all_durations_des
 
 
-    def __get_duration_between_positions (self, joint_positions: np.ndarray, block_number: int) -> np.ndarray:
+    def get_duration_between_positions (self, joint_positions: np.ndarray, block_number: int) -> np.ndarray:
         """
         Input is joins_positions of NxM, where N are the number of positions and M are DOF
         Outputs the combined duration between each joint position and the individual durations
@@ -141,7 +142,7 @@ class TimingThresholdEstimator:
             task[i].update({GRID_CONFIG.TIMING_THRESHOLD: thresholds[i]})
 
 
-    def compute_thresholds (self, task_config,  missing_block = -1):
+    def compute_thresholds (self, task_config):
         """Computes the thresholds corresponding to block movements
         see __compute_ik_solutions for input format
         """
@@ -162,7 +163,7 @@ class TimingThresholdEstimator:
             timing_essential_positions = []
             
             #missing block
-            if block_number == missing_block:
+            if block_number == self.missing_block:
                 # Set threshold[block_number/missing_block] = <time from last origin to new origin>
                 old_origin_grip_pos = self.last_ik_solutions[block_number, 1, :]
                 current_origins = ik_solutions[block_number, :2, :]
@@ -188,7 +189,7 @@ class TimingThresholdEstimator:
             # Get durations in between positions
             # combined_duration: total time between timing_essential_positions
             # durations: durations between all moves
-            combined_duration, durations, des, leading_axis = self.__get_duration_between_positions(timing_essential_positions, block_number)
+            combined_duration, durations, des, leading_axis = self.get_duration_between_positions(timing_essential_positions, block_number)
             thresholds.append(combined_duration)
             all_durations.extend(durations)
             all_durations_des.extend(des)

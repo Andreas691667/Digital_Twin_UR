@@ -5,37 +5,35 @@ import numpy as np
 from config.grid_config import GRID_CONFIG
 from dataclasses import dataclass
 
+@dataclass 
+class TIMING_INTERVALS:
+    JOINT_SPEED_MAX_DEG = 60 # deg/s
+    JOINT_ACCELERATION_DEG = 80 # deg/s^2
+    GRAP_TIME = 0.7 # TODO: 2 seconds might need to be added
+    GRAP_TIME_STR = str(GRAP_TIME) # TODO: 2 seconds might need to be added
+    JOINT_SPEED_MAX_RAD = np.deg2rad(JOINT_SPEED_MAX_DEG) # rad/s
+    JOINT_ACCELERATION_RAD = np.deg2rad(JOINT_ACCELERATION_DEG) # rad/s^2
+    ACCELERATION_TIME = JOINT_SPEED_MAX_RAD / JOINT_ACCELERATION_RAD # Time it takes to reach maximun velocity
+    ACCELERATION_DIST = 1/2 * JOINT_ACCELERATION_RAD * ACCELERATION_TIME**2 - 0.09
+    PARTLY_OPEN_GRIPPER = 0.3
+    PARTLY_OPEN_GRIPPER_STR = str(PARTLY_OPEN_GRIPPER)
+    FULLY_OPEN_GRIPPER = 1.1
+    FULLY_OPEN_GRIPPER_STR = str(FULLY_OPEN_GRIPPER)
+    INITALIZATION_DELAY = 0.5
+    INITALIZATION_DELAY_STR = str(INITALIZATION_DELAY)
+    
+    class TYPES:
+        ACC = "ACCELERATION"
+        DEC = "DEC"
+        CON = "CON"
+        PO = "PO"
+        FO = "FO"
+        DEL = "INITALIZATION_DELAY"
+        TRI = "TRIP"
+        TRAP = "TRAP" 
+        DEL_ALL = "DEL_ALL"
 
 class TimingModel:
-    @dataclass 
-    class TIMING_INTERVALS:
-        JOINT_SPEED_MAX_DEG = 60 # deg/s
-        JOINT_ACCELERATION_DEG = 80 # deg/s^2
-        GRAP_TIME = 0.7 # TODO: 2 seconds might need to be added
-        GRAP_TIME_STR = str(GRAP_TIME) # TODO: 2 seconds might need to be added
-        JOINT_SPEED_MAX_RAD = np.deg2rad(JOINT_SPEED_MAX_DEG) # rad/s
-        JOINT_ACCELERATION_RAD = np.deg2rad(JOINT_ACCELERATION_DEG) # rad/s^2
-        ACCELERATION_TIME = JOINT_SPEED_MAX_RAD / JOINT_ACCELERATION_RAD # Time it takes to reach maximun velocity
-        ACCELERATION_DIST = 1/2 * JOINT_ACCELERATION_RAD * ACCELERATION_TIME**2
-        PARTLY_OPEN_GRIPPER = 0.3
-        PARTLY_OPEN_GRIPPER_STR = str(PARTLY_OPEN_GRIPPER)
-        FULLY_OPEN_GRIPPER = 1.1
-        FULLY_OPEN_GRIPPER_STR = str(FULLY_OPEN_GRIPPER)
-        INITALIZATION_DELAY = 0.5
-        INITALIZATION_DELAY_STR = str(INITALIZATION_DELAY)
-        
-        @dataclass
-        class TYPES:
-            ACC = "ACCELERATION"
-            DEC = "DEC"
-            CON = "CON"
-            PO = "PO"
-            FO = "FO"
-            DEL = "INITALIZATION_DELAY"
-            TRI = "TRIP"
-            TRAP = "TRAP" 
-            DEL_ALL = "DEL_ALL"
-    
     def __init__(self, model) -> None:
         self.robot_model = model
         self.last_ik_solutions = None

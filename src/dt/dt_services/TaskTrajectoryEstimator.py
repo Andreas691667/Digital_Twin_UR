@@ -11,11 +11,17 @@ class TaskTrajectoryEstimator:
         self.traj_qd = []
         self.traj_qdd = []
         self.time = []
+        self.dt = 0.05
 
-    def __save_traj_to_file(self, file_name):
+    def save_traj_to_file(self, file_name, trajectory_q=None, trajectory_qd=None, trajectory_qdd=None, time=None):
         """Save the trajectory to a file specified by file name."""
+        trajectory_q = trajectory_q if trajectory_q is not None else self.traj_q
+        trajectory_qd = trajectory_qd if trajectory_qd is not None else self.traj_qd
+        trajectory_qdd = trajectory_qdd if trajectory_qdd is not None else self.traj_qdd
+        time = time if time is not None else self.time
+
         dfq = pd.DataFrame(
-            self.traj_q,
+            trajectory_q,
             columns=[
                 "actual_q_0",
                 "actual_q_1",
@@ -25,41 +31,63 @@ class TaskTrajectoryEstimator:
                 "actual_q_5",
             ],
         )
-        dfqd = pd.DataFrame(
-            self.traj_qd,
-            columns=[
-                "actual_qd_0",
-                "actual_qd_1",
-                "actual_qd_2",
-                "actual_qd_3",
-                "actual_qd_4",
-                "actual_qd_5",
-            ],
-        )
+        # dfqd = pd.DataFrame(
+        #     trajectory_qd,
+        #     columns=[
+        #         "actual_qd_0",
+        #         "actual_qd_1",
+        #         "actual_qd_2",
+        #         "actual_qd_3",
+        #         "actual_qd_4",
+        #         "actual_qd_5",
+        #     ],
+        # )
 
-        dfqdd = pd.DataFrame(
-            self.traj_qdd,
-            columns=[
-                "actual_qdd_0",
-                "actual_qdd_1",
-                "actual_qdd_2",
-                "actual_qdd_3",
-                "actual_qdd_4",
-                "actual_qdd_5",
-            ],
-        )
+        # dfqdd = pd.DataFrame(
+        #     trajectory_qdd,
+        #     columns=[
+        #         "actual_qdd_0",
+        #         "actual_qdd_1",
+        #         "actual_qdd_2",
+        #         "actual_qdd_3",
+        #         "actual_qdd_4",
+        #         "actual_qdd_5",
+        #     ],
+        # )
 
-        dft = pd.DataFrame(self.time, columns=["timestamp"])
+        dft = pd.DataFrame(time, columns=["timestamp"])
 
-        df = pd.concat([dfq, dfqd, dfqdd, dft], axis=1)
+        # df = pd.concat([dfq, dfqd, dfqdd, dft], axis=1)
+        df = pd.concat([dfq, dft], axis=1)
 
+        # if file already exists in folder dt_trajectories, append a number to the file name
         file_name = (
             file_name
             if file_name is not None
             else datetime.datetime.now().strftime("%m_%d_%Y_%H_%M_%S")
         )
 
+        # import os
+        # i = 1
+        # while os.path.exists(f"dt_trajectories/{file_name}"):
+        #     file_name = str(i) + "_" + file_name
+        #     i += 1
+
         df.to_csv(f"dt_trajectories/{file_name}", sep=" ", index=False)
+
+    def update_time_vector(self, start_time, time_vec = None, index = 0):
+        """Update the time vector by making start_time first element and then add dt."""
+        # time_vec = time_vec if time_vec is not None else self.time
+        # new_time = [start_time]
+        # for i in range(1, len(time_vec)):
+        #     new_time.append(new_time[i - 1] + 0.05)
+        # self.time = new_time
+        # return self.time
+        time_vec[index] = start_time
+        for i in range(index + 1, len(time_vec)):
+            time_vec[i] = time_vec[i - 1] + self.dt
+        self.time = time_vec
+        return time_vec
 
     def estimate_trajectory(
         self, task_with_timings, start_time = 0, save_to_file=False, file_name=None
@@ -79,7 +107,7 @@ class TaskTrajectoryEstimator:
         # get first start in task_with_timings that is not None
         start = None
         for elem in task_with_timings:
-            if (elem[0:6] != [16] * 6).all():
+            if (elem[0:6] != [None] * 6).all():
                 start = elem[0:6]
                 break
 
@@ -95,8 +123,8 @@ class TaskTrajectoryEstimator:
 
         for elem in task_with_timings:
             # Get the start, target and motion time
-            start = None if (elem[0:6] == [16] * 6).all() else elem[0:6]
-            target = None if (elem[6:12] == [16] * 6).all() else elem[6:12]
+            start = None if (elem[0:6] == [None] * 6).all() else elem[0:6]
+            target = None if (elem[6:12] == [None] * 6).all() else elem[6:12]
             motion_time = elem[12]
 
             # Calculate the trajectory
@@ -159,69 +187,69 @@ class TaskTrajectoryEstimator:
 
         # Save the trajectory to a file
         if save_to_file:
-            self.__save_traj_to_file(file_name)
+            self.save_traj_to_file(file_name)
 
         return self.traj_q, self.traj_qd, self.traj_qdd, self.time
 
 
-# Example of usage
-# main
-if __name__ == "__main__":
-    import sys
-    import yaml
+# # Example of usage
+# # main
+# if __name__ == "__main__":
+#     import sys
+#     import yaml
 
-    sys.path.append("../..")
-    from ur3e.ur3e import UR3e
+#     sys.path.append("../..")
+#     from ur3e.ur3e import UR3e
 
-    with open(f"../../config/tasks/2_blocks.yaml", "r") as file:
-        task_config = yaml.safe_load(file)
+#     with open(f"../../config/tasks/2_blocks.yaml", "r") as file:
+#         task_config = yaml.safe_load(file)
 
-    model = UR3e()
-    from TrajectoryTimingEstimator import TrajectoryTimingEstimator
+#     model = UR3e()
+#     from dt.dt_services.TaskTrajectoryTimingEstimator import TrajectoryTimingEstimator
 
-    task_estimator = TaskTrajectoryEstimator(model)
-    traj_timing_est = TrajectoryTimingEstimator(model)
+#     task_estimator = TaskTrajectoryEstimator(model)
+#     traj_timing_est = TrajectoryTimingEstimator(model)
 
-    origin0 = task_config[0]["ORIGIN"]
-    target0 = task_config[0]["TARGET"]
-    origin1 = task_config[1]["ORIGIN"]
-    target1 = task_config[1]["TARGET"]
-    HOME = model.compute_joint_positions_xy(11, -2)
-    BGP0, GP0, BTP0, TP0 = model.compute_joint_positions_origin_target(origin0, target0)
-    BGP1, GP1, BTP1, TP1 = model.compute_joint_positions_origin_target(origin1, target1)
-    BTP1[-1] -= np.pi/2
-    TP1[-1] -= np.pi/2
-    v_none = [16] * 6
+#     origin0 = task_config[0]["ORIGIN"]
+#     target0 = task_config[0]["TARGET"]
+#     origin1 = task_config[1]["ORIGIN"]
+#     target1 = task_config[1]["TARGET"]
+#     HOME = model.compute_joint_positions_xy(11, -2)
+#     BGP0, GP0, BTP0, TP0 = model.compute_joint_positions_origin_target(origin0, target0)
+#     BGP1, GP1, BTP1, TP1 = model.compute_joint_positions_origin_target(origin1, target1)
+#     BTP1[-1] -= np.pi/2
+#     TP1[-1] -= np.pi/2
+#     v_none = [16] * 6
 
-    # Create a task with timings
-    task_with_timings = [
-        np.concatenate((v_none, v_none, [.6])),
-        np.concatenate((HOME, BGP0, [1.3])),
-        np.concatenate((BGP0, GP0, [0.8])),
-        np.concatenate((v_none, v_none, [0.8])),
-        np.concatenate((GP0, BGP0, [0.8])),
-        np.concatenate((BGP0, BTP0, [2.4])),
-        np.concatenate((BTP0, TP0, [0.8])),
-        np.concatenate((v_none, v_none, [0.6])),
-        np.concatenate((TP0, BTP0, [0.8])),
-        np.concatenate((v_none, v_none, [1.5])),
-        np.concatenate((BTP0, BGP1, [2.5])),
-        np.concatenate((BGP1, GP1, [.8])),
-        np.concatenate((v_none, v_none, [0.8])),
-        np.concatenate((GP1, BGP1, [0.8])),
-        np.concatenate((BGP1, BTP1, [3.7])),
-        np.concatenate((BTP1, TP1, [0.8])),
-        np.concatenate((v_none, v_none, [0.6])),
-        np.concatenate((TP1, BTP1, [1.0])),
-        np.concatenate((v_none, v_none, [.8])),
-        np.concatenate((BTP1, HOME, [2.3])),
-    ]
+#     # Create a task with timings
+#     task_with_timings = [
+#         np.concatenate((v_none, v_none, [.6])),
+#         np.concatenate((HOME, BGP0, [1.3])),
+#         np.concatenate((BGP0, GP0, [0.8])),
+#         np.concatenate((v_none, v_none, [0.8])),
+#         np.concatenate((GP0, BGP0, [0.8])),
+#         np.concatenate((BGP0, BTP0, [2.4])),
+#         np.concatenate((BTP0, TP0, [0.8])),
+#         np.concatenate((v_none, v_none, [0.6])),
+#         np.concatenate((TP0, BTP0, [0.8])),
+#         np.concatenate((v_none, v_none, [1.5])),
+#         np.concatenate((BTP0, BGP1, [2.5])),
+#         np.concatenate((BGP1, GP1, [.8])),
+#         np.concatenate((v_none, v_none, [0.8])),
+#         np.concatenate((GP1, BGP1, [0.8])),
+#         np.concatenate((BGP1, BTP1, [3.7])),
+#         np.concatenate((BTP1, TP1, [0.8])),
+#         np.concatenate((v_none, v_none, [0.6])),
+#         np.concatenate((TP1, BTP1, [1.0])),
+#         np.concatenate((v_none, v_none, [.8])),
+#         np.concatenate((BTP1, HOME, [2.3])),
+#     ]
 
-    task_with_timings2 = traj_timing_est.get_traj_timings(task_config)
+#     task_with_timings2 = traj_timing_est.get_traj_timings(task_config)
 
-    trajq, trajqd, trajqdd, time = task_estimator.estimate_trajectory(
-        task_with_timings2, start_time=100, save_to_file=True, file_name="dt_traj_2_blocks.csv"
-    )
+#     trajq, trajqd, trajqdd, time = task_estimator.estimate_trajectory(
+#         task_with_timings2, start_time=100, save_to_file=True, file_name="dt_traj_2_blocks.csv"
+#     )
 
-    model.plot_trajectory(trajq)
+#     model.plot_trajectory(trajq)
     

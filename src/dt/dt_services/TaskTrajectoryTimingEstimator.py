@@ -4,7 +4,7 @@ path.append("../..")
 from ur3e.ur3e import UR3e
 import numpy as np
 from config.grid_config import GRID_CONFIG
-from TimingModel import TimingModel
+from dt_services.TimingModel import TimingModel
 from dataclasses import dataclass
 
 @dataclass 
@@ -66,7 +66,7 @@ class TaskTrajectoryTimingEstimator(TimingModel):
         return subtask_with_timings
     
     
-    def get_task_trajectory_timings (self, task_config):
+    def get_task_trajectory_timings (self, task_config, current_block = 0):
             """Computes the thresholds corresponding to block movements
             see compute_ik_solutions for input format
             """
@@ -77,7 +77,7 @@ class TaskTrajectoryTimingEstimator(TimingModel):
             task_with_timings = np.array([])
         
             # Calculate thresholds for blocks, if there is more than one block to move
-            for block_number in range(number_of_blocks+1):
+            for block_number in range(current_block, number_of_blocks+1):
                 # Get positions which matters for the timing calculations
                 # That is: All subtasks jp of the first task, and the first subtask jp of the next task
                 timing_essential_positions = self.get_timing_essential_positions(ik_solutions, block_number, number_of_blocks, -1)
@@ -142,40 +142,40 @@ class TaskTrajectoryTimingEstimator(TimingModel):
         return timing_essential_positions
 
 
-if __name__ == "__main__":
-    import sys
-    import yaml
+# if __name__ == "__main__":
+#     import sys
+#     import yaml
 
-    sys.path.append("../..")
-    from ur3e.ur3e import UR3e
+#     sys.path.append("../..")
+#     from ur3e.ur3e import UR3e
 
-    with open(f"../../config/tasks/2_blocks.yaml", "r") as file:
-        task_config = yaml.safe_load(file)
+#     with open(f"../../config/tasks/2_blocks.yaml", "r") as file:
+#         task_config = yaml.safe_load(file)
 
-    test = "get_traj_timings"
-    model = UR3e()
-    trajtimingestimator = TrajectoryTimingEstimator(model)
-    ik_solutions = trajtimingestimator.compute_ik_solutions(task_config)
+#     test = "get_traj_timings"
+#     model = UR3e()
+#     trajtimingestimator = TrajectoryTimingEstimator(model)
+#     ik_solutions = trajtimingestimator.compute_ik_solutions(task_config)
     
-    if test == "format_task_with_timings":
-        e = ik_solutions[0]
-        timings = np.array([1, 2, 3])
-        print(timings)
-        print(e)
-        new_format = trajtimingestimator.format_task_with_timings(e, timings)
-        print(new_format)
-        print(new_format.shape)
+#     if test == "format_task_with_timings":
+#         e = ik_solutions[0]
+#         timings = np.array([1, 2, 3])
+#         print(timings)
+#         print(e)
+#         new_format = trajtimingestimator.format_task_with_timings(e, timings)
+#         print(new_format)
+#         print(new_format.shape)
     
-    elif test == "get_duration_between_positions":
-        e = ik_solutions[0]
-        combined_duration, ti_s, spdpf_and_dels = trajtimingestimator.get_duration_between_positions(e, -1)
-        print(combined_duration)
-        print(ti_s)
-        print(spdpf_and_dels)
+#     elif test == "get_duration_between_positions":
+#         e = ik_solutions[0]
+#         combined_duration, ti_s, spdpf_and_dels = trajtimingestimator.get_duration_between_positions(e, -1)
+#         print(combined_duration)
+#         print(ti_s)
+#         print(spdpf_and_dels)
     
-    elif test == "get_traj_timings":
-        timingss = trajtimingestimator.get_traj_timings(task_config)
-        print(timingss)
+#     elif test == "get_traj_timings":
+#         timingss = trajtimingestimator.get_traj_timings(task_config)
+#         print(timingss)
 
 
 
