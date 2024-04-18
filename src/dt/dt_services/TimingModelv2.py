@@ -1,7 +1,6 @@
 # Imports
 import numpy as np
 from sys import path
-from dataclasses import dataclass
 path.append("../..")
 from ur3e.ur3e import UR3e # for testing!
 from config.timing_config import ROBOT_PHYSICS
@@ -28,14 +27,12 @@ class TimingModel:
         self.timing_essential_joint_positions = []
         self.move_TIs = []
         self.from_to_matrix = []
-
+        self.ik_solution_tensor = []
+        self.number_of_blocks = -1
     
-    # ---- GETTER METHODS ----
-    def get_timing_intervals (self) -> np.ndarray:
-        return self.timing_intervals
     
     # ---- INTERNAL METHODS ----
-    def _get_distances_of_leading_axis(self) -> np.ndarray:
+    def _get_distances_of_leading_axes(self) -> np.ndarray:
         """
         Get sliding windows differences
         If input is NxM, then output is (N-1)xM and the leading axis of N-1 x 1
@@ -59,7 +56,7 @@ class TimingModel:
         # Get contants
         ACCELERATION_DIST = ROBOT_PHYSICS.ACCELERATION_DIST
         JOINT_ACCELERATION_RAD = ROBOT_PHYSICS.JOINT_ACCELERATION_RAD
-        JOINT_SPEED_MAX_RAD = ROBOT_PHYSICS.JOINT_ACCELERATION_RAD
+        JOINT_SPEED_MAX_RAD = ROBOT_PHYSICS.JOINT_SPEED_MAX_RAD
         ACCELERATION_TRAP_TIME = ROBOT_PHYSICS.ACCELERATION_TRAP_TIME
         
         # For every distance the robot have to travel it does:
@@ -81,7 +78,7 @@ class TimingModel:
             
             # Reaches max speed
             else: 
-                TRAP_CON_TI = ((distance-ACCELERATION_DIST*2) / JOINT_SPEED_MAX_RAD)
+                TRAP_CON_TI = ((distance-ACCELERATION_DIST*2) / JOINT_SPEED_MAX_RAD) 
                 TRAP_TI = 2*ACCELERATION_TRAP_TIME + TRAP_CON_TI
                 # Add data
                 durations.extend([TRAP_TI])
@@ -96,7 +93,7 @@ class TimingModel:
         Outputs the combined duration between each joint position and the individual durations
         """ 
         # Get the distances of the leading axis
-        distances_of_leading_axis = self._get_distances_of_leading_axis()
+        distances_of_leading_axis = self._get_distances_of_leading_axes()
         
         # Get timing intervals and speedprofiles/delays + descriptions
         durations = self._get_durations_of_leading_axis(distances_of_leading_axis) 
@@ -176,7 +173,20 @@ class TimingModel:
         else:
             return TI_SEQUENCE_TYPES.BLOCK_TO_BLOCK
         
-    # ---- MAIN METHODS ----
+    # ---- PUBLIC METHODS ----
+    def get_duration_between_positions (self, joint_positions: np.ndarray) -> np.ndarray:
+        """Get durations between joint positions"""
+        # Set from_to_matrix
+        self.from_to_matrix = np.hstack((joint_positions[:-1,:], joint_positions[1:, :]))
+        
+        # Get the distances of the leading axis
+        distances_of_leading_axis = self._get_distances_of_leading_axes()
+        
+        # Get timing intervals and speedprofiles/delays + descriptions
+        durations = self._get_durations_of_leading_axis(distances_of_leading_axis) 
+
+        return durations
+    
     def set_ik_solution_tensor (self, ik_solution_tensor):
         """Sets ik solutions tensor"""
         self.ik_solution_tensor = ik_solution_tensor
@@ -206,7 +216,6 @@ class TimingModel:
             
             # Compute all TIs from TI Sequence
             self._compute_TIs_by_TI_sequence_and_move_TIs(TI_sequence_type, block_number)
-            
 
 if __name__ == "__main__":
     import yaml

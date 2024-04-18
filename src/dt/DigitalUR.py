@@ -21,7 +21,7 @@ from dt_services.FaultResolver import FaultResolver
 from dt_services.TaskValidator import TaskValidator
 from dt_services.TaskTrajectoryEstimator import TaskTrajectoryEstimator
 from dt_services.TimingThresholdEstimator import TimingThresholdEstimator
-from dt.dt_services.TaskTrajectoryTimingEstimator import TaskTrajectoryTimingEstimator
+from dt_services.TaskTrajectoryTimingEstimatorv2 import TaskTrajectoryTimingEstimator
 
 @dataclass
 class MitigationStrategy:
@@ -355,8 +355,9 @@ class DigitalUR:
                     first_pos = elem[0:6]
                     break
 
-            duration, _, _, _ = self.timing_estimator.get_duration_between_positions(np.vstack((self.last_pt_q, first_pos)), 0)
-            self.timed_task = np.vstack((np.concatenate((self.last_pt_q, first_pos, [duration])), 
+            duration = self.trajectory_timing_estimator.get_duration_between_positions(np.vstack((self.last_pt_q, first_pos)))
+            print(duration)
+            self.timed_task = np.vstack((np.concatenate((self.last_pt_q, first_pos, duration, [0])), 
                                             self.timed_task))
 
             print(f'Timed task: {self.timed_task}')
@@ -408,7 +409,7 @@ class DigitalUR:
             if self.current_block != self.task_config[GRID_CONFIG.NO_BLOCKS] - 1:
                 self.timed_task = self.trajectory_timing_estimator.get_task_trajectory_timings(
                     self.task_config,
-                    current_block=self.current_block + 1,
+                    start_block=self.current_block + 1,
                 )
 
     def __plan_fault_resolution(self) -> None:

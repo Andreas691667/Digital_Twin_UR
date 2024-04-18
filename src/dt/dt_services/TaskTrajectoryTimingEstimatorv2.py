@@ -1,4 +1,4 @@
-from TimingModelv2 import TimingModel
+from dt_services.TimingModelv2 import TimingModel
 from sys import path
 path.append("../..")
 from ur3e.ur3e import UR3e # for testing!
