@@ -262,7 +262,7 @@ class DigitalUR:
 
     # region ---- STATE MACHINE FUNCTIONS ----
     def __wait_for_task_to_start(self):
-        msg_type, msg_data = self.__get_message(self.monitor_msg_queue)
+        _, msg_data = self.__get_message(self.monitor_msg_queue)
         if msg_data:
             # check the digital bit 0 of the data
             # if set go to monitoring state
@@ -277,7 +277,7 @@ class DigitalUR:
                 self.time_of_last_message = time.time()
 
     def __receive_task(self):
-        # wait for new task from controller
+        """Try to receive a new task from the controller"""
         msg_type, msg_data = self.__get_message(self.controller_msg_queue)
         if msg_data:
             if msg_type == MSG_TYPES_CONTROLLER_TO_DT.NEW_TASK:
@@ -286,6 +286,7 @@ class DigitalUR:
                 print("State transition -> PROCESSING_AND_VALIDATING_TASK")
 
     def __initialize(self):
+        """Initialize the digital twin"""
         self.__configure_rmq_clients()
         time.sleep(0.5) # wait for the RMQ clients to be configured
         self.__start_consuming()
@@ -293,6 +294,7 @@ class DigitalUR:
         print("State transition -> WAITING_TO_RECEIVE_TASK")
 
     def __resolve_fault(self):
+        """Try to resolve the current fault"""
         # tell controller to wait
         self.__send_message_to_controller(
             f"{MSG_TYPES_DT_TO_CONTROLLER.WAIT} None"
@@ -320,71 +322,67 @@ class DigitalUR:
             print("State transition -> WAITING_TO_RECEIVE_TASK")
 
     def __process_and_validate_task(self):
+        """Process and validate the task"""
         # validate the task (task_config is updated also)
         valid, validate_msg = self.__validate_task()
 
-        # compute timing thresholds
-        if self.approach == FaultDetectionApproach.TIMING_THRESHOLDS:
-            self.task_config, _, _, _ = self.timing_estimator.compute_thresholds(
-                self.task_config
-            )
-
-        elif self.approach == FaultDetectionApproach.MODEL_BASED:
-            # estimate the task trajectory timings if there are still blocks
-            if self.current_block != self.task_config[GRID_CONFIG.NO_BLOCKS] - 1:
-                self.timed_task = self.trajectory_timing_estimator.get_task_trajectory_timings(
-                    self.task_config,
-                    current_block=self.current_block + 1,
-                )
+        # if task is valid, process it and estimate the trajectory
+        # go to waiting for task to start state
+        if valid:
+            self.__process_task() # process the task
+            self.__estimate_trajectory() # estimate the trajectory
+            self.monitor_msg_queue.queue.clear()   # clear the monitor queue
+            self.current_fault = None # reset fault
+            self.state = DTState.WAITING_FOR_TASK_TO_START
+            print("State transition -> WAITING_FOR_TASK_TO_START")
+        
+        # if task is not valid, go to waiting to receive task state
+        else:
+            self.state = DTState.WAITING_TO_RECEIVE_TASK
+            print("State transition -> WAITING_TO_RECEIVE_TASK")
 
         # send validated task (not containing thresholds) to controller
         self.rmq_client_out.send_message(validate_msg, RMQ_CONFIG.DT_EXCHANGE)
 
-        if valid:
-            # if last_pt_q is not empty, estimate the trajectory from there to the first position in timed_task
-            if self.current_fault:
-                # find first position in timed_task that is not equal to [16]*6
-                for _, elem in enumerate(self.timed_task):
-                    if not np.array_equal(elem[0:6], [16] * 6):
-                        first_pos = elem[0:6]
-                        break
-
-                duration, _, _, _ = self.timing_estimator.get_duration_between_positions(np.vstack((self.last_pt_q, first_pos)), 0)
-                self.timed_task = np.vstack((np.concatenate((self.last_pt_q, first_pos, [duration])), 
-                                             self.timed_task))
-
-                print(f'Timed task: {self.timed_task}')
-                print(f'first pos: {first_pos} last pt q: {self.last_pt_q} duration: {duration}')           
-
-            # if task is valid, estimate the trajectory,
-            # and go to waiting for task to start state
-            expected_q, _, _, expected_t = (
-                self.trajectory_estimator.estimate_trajectory(
-                    self.timed_task,
-                    start_time=0,
-                    save_to_file=False,
-                )
-            )
-
-            if self.expected_trajectory_q.size == 0:
-                self.expected_trajectory_q = expected_q
-                self.expected_trajectory_time = expected_t
-
-            else:
-                self.expected_trajectory_q = np.append(
-                    self.expected_trajectory_q[0:self.last_expected_traj_index], expected_q, axis=0
-                )
-                self.expected_trajectory_time = np.append(
-                    self.expected_trajectory_time[0:self.last_expected_traj_index], expected_t, axis=0
-                )
-
-            self.monitor_msg_queue.queue.clear()  # clear the monitor queue
-            self.current_fault = None
-
-            self.state = DTState.WAITING_FOR_TASK_TO_START
-            print("State transition -> WAITING_FOR_TASK_TO_START")
-
     # endregion
+
+    def __estimate_trajectory(self):
+        """Estimate the trajectory based on the timed task"""
+        if self.current_fault:
+            # find first position in timed_task that is not equal to [16]*6
+            for _, elem in enumerate(self.timed_task):
+                if not np.array_equal(elem[0:6], [16] * 6):
+                    first_pos = elem[0:6]
+                    break
+
+            duration, _, _, _ = self.timing_estimator.get_duration_between_positions(np.vstack((self.last_pt_q, first_pos)), 0)
+            self.timed_task = np.vstack((np.concatenate((self.last_pt_q, first_pos, [duration])), 
+                                            self.timed_task))
+
+            print(f'Timed task: {self.timed_task}')
+            print(f'first pos: {first_pos} last pt q: {self.last_pt_q} duration: {duration}')           
+
+        # if task is valid, estimate the trajectory,
+        # and go to waiting for task to start state
+        expected_q, _, _, expected_t = (
+            self.trajectory_estimator.estimate_trajectory(
+                self.timed_task,
+                start_time=0,
+                save_to_file=False,
+            )
+        )
+
+        if self.expected_trajectory_q.size == 0:
+            self.expected_trajectory_q = expected_q
+            self.expected_trajectory_time = expected_t
+
+        else:
+            self.expected_trajectory_q = np.append(
+                self.expected_trajectory_q[0:self.last_expected_traj_index], expected_q, axis=0
+            )
+            self.expected_trajectory_time = np.append(
+                self.expected_trajectory_time[0:self.last_expected_traj_index], expected_t, axis=0
+            )
 
     def __validate_task(self):
         """Validate the task using the task validator"""
@@ -396,6 +394,22 @@ class DigitalUR:
         else:
             msg = f"{MSG_TYPES_DT_TO_CONTROLLER.TASK_NOT_VALIDATED} None"
         return valid, msg
+    
+    def __process_task(self):
+        """Process the task depending on the fault detection approach"""
+        # compute timing thresholds if using timing thresholds approach
+        if self.approach == FaultDetectionApproach.TIMING_THRESHOLDS:
+            self.task_config, _, _, _ = self.timing_estimator.compute_thresholds(
+                self.task_config
+            )
+            
+        # compute task trajectory timings if using model-based approach
+        elif self.approach == FaultDetectionApproach.MODEL_BASED:
+            if self.current_block != self.task_config[GRID_CONFIG.NO_BLOCKS] - 1:
+                self.timed_task = self.trajectory_timing_estimator.get_task_trajectory_timings(
+                    self.task_config,
+                    current_block=self.current_block + 1,
+                )
 
     def __plan_fault_resolution(self) -> None:
         """Resolve the current fault using the FaultResolver"""
