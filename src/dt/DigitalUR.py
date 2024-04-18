@@ -351,7 +351,7 @@ class DigitalUR:
         if self.current_fault:
             # find first position in timed_task that is not equal to [16]*6
             for _, elem in enumerate(self.timed_task):
-                if not np.array_equal(elem[0:6], [16] * 6):
+                if not np.array_equal(elem[0:6], [None] * 6):
                     first_pos = elem[0:6]
                     break
 

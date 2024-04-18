@@ -107,7 +107,7 @@ class TaskTrajectoryEstimator:
         # get first start in task_with_timings that is not None
         start = None
         for elem in task_with_timings:
-            if (elem[0:6] != [16] * 6).all():
+            if (elem[0:6] != [None] * 6).all():
                 start = elem[0:6]
                 break
 
@@ -123,8 +123,8 @@ class TaskTrajectoryEstimator:
 
         for elem in task_with_timings:
             # Get the start, target and motion time
-            start = None if (elem[0:6] == [16] * 6).all() else elem[0:6]
-            target = None if (elem[6:12] == [16] * 6).all() else elem[6:12]
+            start = None if (elem[0:6] == [None] * 6).all() else elem[0:6]
+            target = None if (elem[6:12] == [None] * 6).all() else elem[6:12]
             motion_time = elem[12]
 
             # Calculate the trajectory
