@@ -21,7 +21,7 @@ from dt_services.FaultResolver import FaultResolver
 from dt_services.TaskValidator import TaskValidator
 from dt_services.TaskTrajectoryEstimator import TaskTrajectoryEstimator
 from dt_services.TimingThresholdEstimator import TimingThresholdEstimator
-from dt_services.TrajectoryTimingEstimator import TrajectoryTimingEstimator
+from dt_services.TrajectoryTimingEstimator import TaskTrajectoryTimingEstimator
 
 @dataclass
 class MitigationStrategy:
@@ -93,7 +93,7 @@ class DigitalUR:
         self.task_validator = TaskValidator()
         self.timing_estimator = TimingThresholdEstimator(self.robot_model)
         self.trajectory_estimator = TaskTrajectoryEstimator(self.robot_model)
-        self.trajectory_timing_estimator = TrajectoryTimingEstimator(self.robot_model)
+        self.trajectory_timing_estimator = TaskTrajectoryTimingEstimator(self.robot_model)
 
         self.mitigation_strategy = None
         self.__set_mitigation_strategy(mitigation_strategy)
@@ -116,7 +116,7 @@ class DigitalUR:
         self.last_pt_time = 0  # last time the PT was monitored
         self.expected_trajectory_q = []
         self.expected_trajectory_time = []
-        self.pos_epsilon = 0.7  # allowed error for each joint [rad]
+        self.pos_epsilon = 100  # allowed error for each joint [rad]
         # log files
         self.traj_file_name = file_name_key + "_dt_trajectory.csv"
         self.error_file_name = file_name_key + "_dt_error_log.csv"
@@ -315,7 +315,7 @@ class DigitalUR:
 
         elif self.approach == FaultDetectionApproach.MODEL_BASED:
             # estimate the task trajectory timings
-            self.timed_task = self.trajectory_timing_estimator.get_traj_timings(
+            self.timed_task = self.trajectory_timing_estimator.get_task_trajectory_timings(
                 self.task_config
             )
 
