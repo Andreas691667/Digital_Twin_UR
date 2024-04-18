@@ -141,6 +141,13 @@ class UR3e(rtb.DHRobot):
             target_q[-1] -= pi / 2
 
         return origin_q_start, origin_q, target_q_start, target_q
+    
+    def get_home_ik_solution(self):
+        """Compute IK solution for home position"""
+        HOME_X = GRID_CONFIG.HOME_POSITION[GRID_CONFIG.x]
+        HOME_Y = GRID_CONFIG.HOME_POSITION[GRID_CONFIG.y]
+        home_sol = self.compute_joint_positions_xy(HOME_X, HOME_Y)
+        return home_sol
 
     def check_joint_validity(self, q):
         """Check if the joint positions are valid"""

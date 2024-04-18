@@ -117,7 +117,7 @@ class TimingThresholdEstimator:
         if block_number != 0:
             all_durations.insert(-1, 0.3)
             des.append("HALF RELEASE")
-            all_durations.append(0.5)
+            all_durations.append(1.1)
             des.append("FULL RELEASE")
             all_durations.append(0.5)
             des.append("DELAY")
@@ -202,6 +202,7 @@ class TimingThresholdEstimatorNew(TimingModel):
     def __init__(self, model) -> None:
         super().__init__(model)
         self.is_in_home_position = True
+        self.missing_block = -1
 
     def set_missing_block(self, missing_block: int) -> None:
         self.missing_block = missing_block
@@ -212,13 +213,13 @@ class TimingThresholdEstimatorNew(TimingModel):
         for i in range(len(thresholds)):
             task[i].update({GRID_CONFIG.TIMING_THRESHOLD: thresholds[i]})
 
-    def get_timing_essential_positions (self, ik_solutions, block_number, number_of_blocks, missing_block):
+    def get_timing_essential_positions (self, ik_solutions, block_number):
         """Get timing essential joint positions"""
         # TODO: store ik_solutions in an attribute
         timing_essential_positions = []
         
         # missing block
-        if block_number == missing_block:
+        if block_number == self.missing_block:
             # Set threshold[block_number/missing_block] = <time from last origin to new origin>
             old_origin_grip_pos = self.last_ik_solutions[block_number, 1, :]
             current_origins = ik_solutions[block_number, :2, :]
@@ -244,7 +245,7 @@ class TimingThresholdEstimatorNew(TimingModel):
         
         return timing_essential_positions
 
-    def compute_thresholds (self, task_config,  missing_block = -1):
+    def compute_thresholds (self, task_config):
         """Computes the thresholds corresponding to block movements
         see __compute_ik_solutions for input format
         """
@@ -260,13 +261,13 @@ class TimingThresholdEstimatorNew(TimingModel):
         for block_number in range(number_of_blocks):
             # Get positions which matters for the timing calculations
             # That is: All subtasks jp of the first task, and the first subtask jp of the next task
-            timing_essential_positions = self.get_timing_essential_positions(ik_solutions, block_number, number_of_blocks, missing_block)
+            timing_essential_positions = self.get_timing_essential_positions(ik_solutions, block_number)
             
             # Get durations in between positions
             _, speed_profiles_ti_extended, speed_profiles_ti = self.get_duration_between_positions(timing_essential_positions, block_number)
             
              # Add additional ties
-            _, speed_profiles_ti_with_delays = self.add_additional_ti(speed_profiles_ti_extended, speed_profiles_ti, block_number, number_of_blocks, -1)
+            _, speed_profiles_ti_with_delays = self.add_additional_ti(speed_profiles_ti_extended, speed_profiles_ti, block_number, number_of_blocks, self.missing_block)
             
             durations = self.strl2floatl(speed_profiles_ti_with_delays[0, :])
             des = speed_profiles_ti_with_delays[1, :]
@@ -291,10 +292,14 @@ if __name__ == "__main__":
 
     model = UR3e()
     timing_threshold_estimator = TimingThresholdEstimator(model)
-    new_task, thresholds, _, _ =  timing_threshold_estimator.compute_thresholds(task_config)
+    new_task, thresholds, des, _ =  timing_threshold_estimator.compute_thresholds(task_config)
     timing_threshold_estimator_new = TimingThresholdEstimatorNew(model)
-    new_task_new, thresholds_new, _, _ = timing_threshold_estimator_new.compute_thresholds(task_config)
+    new_task_new, thresholds_new, _, des2 = timing_threshold_estimator_new.compute_thresholds(task_config)
     
+    print("old thresholds")
     print(thresholds)
+    print(des)
+    print("new thresholds")
     print(thresholds_new)
+    print(des2)
     print(np.array_equal(thresholds, thresholds_new))

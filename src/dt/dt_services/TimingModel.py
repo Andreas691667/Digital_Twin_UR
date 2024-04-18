@@ -5,35 +5,37 @@ import numpy as np
 from config.grid_config import GRID_CONFIG
 from dataclasses import dataclass
 
-@dataclass 
-class TIMING_INTERVALS:
-    JOINT_SPEED_MAX_DEG = 60 # deg/s
-    JOINT_ACCELERATION_DEG = 80 # deg/s^2
-    GRAP_TIME = 0.7 # TODO: 2 seconds might need to be added
-    GRAP_TIME_STR = str(GRAP_TIME) # TODO: 2 seconds might need to be added
-    JOINT_SPEED_MAX_RAD = np.deg2rad(JOINT_SPEED_MAX_DEG) # rad/s
-    JOINT_ACCELERATION_RAD = np.deg2rad(JOINT_ACCELERATION_DEG) # rad/s^2
-    ACCELERATION_TIME = JOINT_SPEED_MAX_RAD / JOINT_ACCELERATION_RAD # Time it takes to reach maximun velocity
-    ACCELERATION_DIST = 1/2 * JOINT_ACCELERATION_RAD * ACCELERATION_TIME**2
-    PARTLY_OPEN_GRIPPER = 0.3
-    PARTLY_OPEN_GRIPPER_STR = str(PARTLY_OPEN_GRIPPER)
-    FULLY_OPEN_GRIPPER = 1.1
-    FULLY_OPEN_GRIPPER_STR = str(FULLY_OPEN_GRIPPER)
-    INITALIZATION_DELAY = 0.5
-    INITALIZATION_DELAY_STR = str(INITALIZATION_DELAY)
-    
-    class TYPES:
-        ACC = "ACCELERATION"
-        DEC = "DEC"
-        CON = "CON"
-        PO = "PO"
-        FO = "FO"
-        DEL = "INITALIZATION_DELAY"
-        TRI = "TRIP"
-        TRAP = "TRAP" 
-        DEL_ALL = "DEL_ALL"
 
 class TimingModel:
+    @dataclass 
+    class TIMING_INTERVALS:
+        JOINT_SPEED_MAX_DEG = 60 # deg/s
+        JOINT_ACCELERATION_DEG = 80 # deg/s^2
+        GRAP_TIME = 0.7 # TODO: 2 seconds might need to be added
+        GRAP_TIME_STR = str(GRAP_TIME) # TODO: 2 seconds might need to be added
+        JOINT_SPEED_MAX_RAD = np.deg2rad(JOINT_SPEED_MAX_DEG) # rad/s
+        JOINT_ACCELERATION_RAD = np.deg2rad(JOINT_ACCELERATION_DEG) # rad/s^2
+        ACCELERATION_TIME = JOINT_SPEED_MAX_RAD / JOINT_ACCELERATION_RAD # Time it takes to reach maximun velocity
+        ACCELERATION_DIST = 1/2 * JOINT_ACCELERATION_RAD * ACCELERATION_TIME**2
+        PARTLY_OPEN_GRIPPER = 0.3
+        PARTLY_OPEN_GRIPPER_STR = str(PARTLY_OPEN_GRIPPER)
+        FULLY_OPEN_GRIPPER = 1.1
+        FULLY_OPEN_GRIPPER_STR = str(FULLY_OPEN_GRIPPER)
+        INITALIZATION_DELAY = 0.5
+        INITALIZATION_DELAY_STR = str(INITALIZATION_DELAY)
+        
+        @dataclass
+        class TYPES:
+            ACC = "ACCELERATION"
+            DEC = "DEC"
+            CON = "CON"
+            PO = "PO"
+            FO = "FO"
+            DEL = "INITALIZATION_DELAY"
+            TRI = "TRIP"
+            TRAP = "TRAP" 
+            DEL_ALL = "DEL_ALL"
+    
     def __init__(self, model) -> None:
         self.robot_model = model
         self.last_ik_solutions = None
@@ -85,21 +87,16 @@ class TimingModel:
         Output: Time it takes to traverse those distances
         Note: This may be calculated differently for shorter movement, i.e. if it does not reach max speed
         """
-        JOINT_SPEED_MAX_RAD = TIMING_INTERVALS.JOINT_SPEED_MAX_RAD
-        JOINT_ACCELERATION_RAD = TIMING_INTERVALS.JOINT_ACCELERATION_RAD
-        ACCELERATION_TIME = TIMING_INTERVALS.ACCELERATION_TIME
-        ACCELERATION_DIST = TIMING_INTERVALS.ACCELERATION_DIST
+        JOINT_SPEED_MAX_RAD = self.TIMING_INTERVALS.JOINT_SPEED_MAX_RAD
+        JOINT_ACCELERATION_RAD = self.TIMING_INTERVALS.JOINT_ACCELERATION_RAD
+        ACCELERATION_TIME = self.TIMING_INTERVALS.ACCELERATION_TIME
+        ACCELERATION_DIST = self.TIMING_INTERVALS.ACCELERATION_DIST
         
         # For every distance the robot have to travel it does:
         # 1) Move with constant acceleration
         # 2) Move with with constant max speed
         # 3) Move with constant decceleration
         # If the movement is short in distance, it might skip step 2.
-
-        ti_s = []
-        ti_s_des = []
-        spd_pf_and_dels = []
-        spd_pf_and_dels_des = []
 
         for _, distance in enumerate(distances_leading_axis):
             # Check if movement reaches max speed
@@ -112,9 +109,6 @@ class TimingModel:
                 # Add data
                 ti_s.extend([duration_half_distance, duration_half_distance])
                 ti_s_des.extend(["ACC", "DEC"])
-
-                spd_pf_and_dels.extend([duration_half_distance + duration_half_distance])
-                spd_pf_and_dels_des.extend(["MOVE"])
             
             # Reaches max speed
             else: 
@@ -124,8 +118,6 @@ class TimingModel:
                 ti_s.extend([ACCELERATION_TIME, duration_of_constant_speed, ACCELERATION_TIME])
                 ti_s_des.extend(["ACC", "CON", "DEC"])
 
-                spd_pf_and_dels.extend([ACCELERATION_TIME + duration_of_constant_speed + ACCELERATION_TIME])
-                spd_pf_and_dels_des.extend(["MOVE"])
 
         
         # Format
@@ -157,7 +149,7 @@ class TimingModel:
         home_sol = self.robot_model.compute_joint_positions_xy(HOME_X, HOME_Y)
         return home_sol
 
-    def add_additional_ti (self, speed_profiles_ti_extended, speed_profiles_ti, block_number, number_of_blocks,missing_block):
+    def add_additional_ti (self, speed_profiles_ti_extended, speed_profiles_ti, block_number, number_of_blocks, missing_block):
         """To be implemented"""
         speed_profiles_ti_extended = np.copy(speed_profiles_ti_extended)
         speed_profiles_ti = np.copy(speed_profiles_ti)
@@ -172,22 +164,22 @@ class TimingModel:
         # First block
         elif block_number == 0:
             indexes = [-2, number_of_speed_profiles_ti]
-            elements = np.array([[str(TIMING_INTERVALS.FULLY_OPEN_GRIPPER-(0.4)-(0.1)), TIMING_INTERVALS.TYPES.DEL_ALL], 
-                                 [TIMING_INTERVALS.GRAP_TIME_STR, TIMING_INTERVALS.TYPES.DEL_ALL]])
+            elements = np.array([[str(self.TIMING_INTERVALS.FULLY_OPEN_GRIPPER-(0.4)-(0.1)), self.TIMING_INTERVALS.TYPES.DEL_ALL], 
+                                 [self.TIMING_INTERVALS.GRAP_TIME_STR, self.TIMING_INTERVALS.TYPES.DEL_ALL]])
         
         # Middle block
         elif block_number != number_of_blocks:
             indexes = [-3, -2, number_of_speed_profiles_ti]
             elements = np.array([
-                                [TIMING_INTERVALS.PARTLY_OPEN_GRIPPER_STR, TIMING_INTERVALS.TYPES.DEL_ALL],
-                                [str(TIMING_INTERVALS.FULLY_OPEN_GRIPPER + TIMING_INTERVALS.INITALIZATION_DELAY), TIMING_INTERVALS.TYPES.DEL_ALL],
-                                [TIMING_INTERVALS.GRAP_TIME_STR, TIMING_INTERVALS.TYPES.DEL_ALL]
+                                [self.TIMING_INTERVALS.PARTLY_OPEN_GRIPPER_STR, self.TIMING_INTERVALS.TYPES.DEL_ALL],
+                                [str(self.TIMING_INTERVALS.FULLY_OPEN_GRIPPER + self.TIMING_INTERVALS.INITALIZATION_DELAY), self.TIMING_INTERVALS.TYPES.DEL_ALL],
+                                [self.TIMING_INTERVALS.GRAP_TIME_STR, self.TIMING_INTERVALS.TYPES.DEL_ALL]
                                 ])
         # Last move
         else:
             indexes = [-2]
             elements = np.array([
-                                [str(TIMING_INTERVALS.PARTLY_OPEN_GRIPPER+0.3), TIMING_INTERVALS.TYPES.DEL_ALL]
+                                [str(self.TIMING_INTERVALS.PARTLY_OPEN_GRIPPER+0.3), self.TIMING_INTERVALS.TYPES.DEL_ALL]
                                 ])
 
         speed_profiles_ti = self.insert_at_indexes(speed_profiles_ti, elements, indexes)
@@ -216,6 +208,14 @@ class TimingModel:
         """
         return [float(e) for e in str_list]
 
+    def compute_timing_intervals (ik_solution_tensor) -> np.ndarray:
+        """Computes matrix M (N-1, 6) where N is the number of joint positions
+            M = [SUBTASK, FROM, TO, DIST_LEADING, TI_VALUE, TI_TYPE]
+        """
+        fields = 6
+
+        pass
+        
 
 
 
