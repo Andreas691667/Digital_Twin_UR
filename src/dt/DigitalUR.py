@@ -113,11 +113,14 @@ class DigitalUR:
         # ----- MODEL-BASED FAULT DETECTION -----
         self.timed_task = []  # list of timed tasks, row: [start, target, time]
         self.last_pt_time = 0  # last time the PT was monitored
+        self.last_pt_q = [] # last joint positions of the PT
+        self.first_error_time = 0  # time of the first error
         self.last_expected_traj_index = 0  # 'counter' for the expected trajectory
         self.expected_trajectory_q = np.array([])
         self.expected_trajectory_time = np.array([])
-        self.pos_epsilon = 100  # allowed error for each joint [rad]
-        self.time_epsilon = 0.2 # allowed time for error to sustain [s]
+
+        self.pos_epsilon = 0.6  # allowed error for each joint [rad]
+        self.time_epsilon = 1 # allowed time for error to sustain [s]
 
         # log files
         self.traj_file_name = file_name_key + "_dt_trajectory.csv"
@@ -220,6 +223,14 @@ class DigitalUR:
             }
             self.monitor_msg_queue.put((msg_type, data_dict))
             self.last_pt_time = data_dict["timestamp"]
+            self.last_pt_q = [
+                data_dict["actual_q0"],
+                data_dict["actual_q1"],
+                data_dict["actual_q2"],
+                data_dict["actual_q3"],
+                data_dict["actual_q4"],
+                data_dict["actual_q5"],
+            ]
 
         except ValueError:
             pass
@@ -296,6 +307,7 @@ class DigitalUR:
 
         # if fault resolved, go to validating task state
         if fault_resolved:
+            self.first_error_time = 0
             self.state = DTState.PROCESSING_AND_VALIDATING_TASK
             print("State transition -> PROCESSING_AND_VALIDATING_TASK")
 
@@ -329,6 +341,21 @@ class DigitalUR:
         self.rmq_client_out.send_message(validate_msg, RMQ_CONFIG.DT_EXCHANGE)
 
         if valid:
+            # if last_pt_q is not empty, estimate the trajectory from there to the first position in timed_task
+            if self.current_fault:
+                # find first position in timed_task that is not equal to [16]*6
+                for _, elem in enumerate(self.timed_task):
+                    if not np.array_equal(elem[0:6], [16] * 6):
+                        first_pos = elem[0:6]
+                        break
+
+                duration, _, _, _ = self.timing_estimator.get_duration_between_positions(np.vstack((self.last_pt_q, first_pos)), 0)
+                self.timed_task = np.vstack((np.concatenate((self.last_pt_q, first_pos, [duration])), 
+                                             self.timed_task))
+
+                print(f'Timed task: {self.timed_task}')
+                print(f'first pos: {first_pos} last pt q: {self.last_pt_q} duration: {duration}')           
+
             # if task is valid, estimate the trajectory,
             # and go to waiting for task to start state
             expected_q, _, _, expected_t = (
@@ -345,13 +372,15 @@ class DigitalUR:
 
             else:
                 self.expected_trajectory_q = np.append(
-                    self.expected_trajectory_q, expected_q, axis=0
+                    self.expected_trajectory_q[0:self.last_expected_traj_index], expected_q, axis=0
                 )
                 self.expected_trajectory_time = np.append(
-                    self.expected_trajectory_time, expected_t, axis=0
+                    self.expected_trajectory_time[0:self.last_expected_traj_index], expected_t, axis=0
                 )
 
             self.monitor_msg_queue.queue.clear()  # clear the monitor queue
+            self.current_fault = None
+
             self.state = DTState.WAITING_FOR_TASK_TO_START
             print("State transition -> WAITING_FOR_TASK_TO_START")
 
@@ -382,7 +411,6 @@ class DigitalUR:
                     shift_thresholds = True if self.approach == FaultDetectionApproach.TIMING_THRESHOLDS else False
                     fault_resolved, self.task_config = self.fault_resolver.shift_origins(self.task_config, self.current_block, shift_thresholds)
                     self.time_of_last_message = time.time() # Reset timer
-                    print(self.task_config)
                     return fault_resolved
 
                 elif self.mitigation_strategy == MitigationStrategy.TRY_PICK_STOCK:
@@ -456,8 +484,8 @@ class DigitalUR:
         faults = [False, False, False, False, False, False]
         for i in range(6):
             if error[i] > self.pos_epsilon:
-                print(f"Model diverged at time {pt_time} in joint {i}")
                 faults[i] = True
+                self.first_error_time = pt_time if self.first_error_time == 0 else self.first_error_time
 
         # log error to csv
         with open(f"error_logs/{self.error_file_name}", "a") as f:
@@ -470,21 +498,23 @@ class DigitalUR:
         if time_idx == len(self.expected_trajectory_q) - 1:
             print("Task done")
             self.monitor_msg_queue.queue.clear()
+            self.last_pt_q = np.array([])
             self.state = DTState.WAITING_TO_RECEIVE_TASK
             print("State transition -> WAITING_TO_RECEIVE_TASK")
             return False, FaultType.NO_FAULT
 
         self.__analyse_object_grip(data)
 
+        self.last_pt_q = pt_q
+        self.last_expected_traj_index = time_idx
+
         # if any of the joints diverge, return fault
         # TODO: We shouldn't always return the same type of fault
-        if any(faults):
-            self.last_pt_q = pt_q
-            self.last_expected_traj_index = time_idx
+        if any(faults) and pt_time - self.first_error_time > self.time_epsilon:
+            print(f"Model diverged from PT at time {pt_time}")
             return True, FaultType.MISSING_OBJECT
         else:
             return False, FaultType.NO_FAULT
-        # return False, FaultType.NO_FAULT
 
     def __analyse_object_grip(self, data: str):
         """Check if an object is gripped"""

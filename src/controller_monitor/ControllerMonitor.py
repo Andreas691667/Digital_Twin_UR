@@ -367,6 +367,7 @@ class ControllerMonitor:
                     self.stop_program()
 
                 elif msg_type == MSG_TYPES_DT_TO_CONTROLLER.TASK_VALIDATED:
+                    print("Task validated")
                     self.__reconfigure_task(msg_body, decr=False)
                     # task validated as part of fault resolution
                     if self.STATE == CMState.WAITING_FOR_FAULT_RESOLUTION:

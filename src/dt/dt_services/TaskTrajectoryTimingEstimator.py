@@ -77,7 +77,7 @@ class TaskTrajectoryTimingEstimator(TimingModel):
             task_with_timings = np.array([])
         
             # Calculate thresholds for blocks, if there is more than one block to move
-            for block_number in range(number_of_blocks+1):
+            for block_number in range(current_block, number_of_blocks+1):
                 # Get positions which matters for the timing calculations
                 # That is: All subtasks jp of the first task, and the first subtask jp of the next task
                 timing_essential_positions = self.get_timing_essential_positions(ik_solutions, block_number, number_of_blocks, -1)

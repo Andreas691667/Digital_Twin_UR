@@ -103,7 +103,7 @@ class TimingThresholdEstimator:
         return all_durations, all_durations_des
 
 
-    def __get_duration_between_positions (self, joint_positions: np.ndarray, block_number: int) -> np.ndarray:
+    def get_duration_between_positions (self, joint_positions: np.ndarray, block_number: int) -> np.ndarray:
         """
         Input is joins_positions of NxM, where N are the number of positions and M are DOF
         Outputs the combined duration between each joint position and the individual durations
@@ -189,7 +189,7 @@ class TimingThresholdEstimator:
             # Get durations in between positions
             # combined_duration: total time between timing_essential_positions
             # durations: durations between all moves
-            combined_duration, durations, des, leading_axis = self.__get_duration_between_positions(timing_essential_positions, block_number)
+            combined_duration, durations, des, leading_axis = self.get_duration_between_positions(timing_essential_positions, block_number)
             thresholds.append(combined_duration)
             all_durations.extend(durations)
             all_durations_des.extend(des)
