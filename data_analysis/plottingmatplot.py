@@ -75,7 +75,7 @@ if __name__ == "__main__":
     # r_pt = pd.read_csv(f"../src/controller_monitor/robot_output/{file_name_key}_robot_output.csv", delimiter=' ')
 
     # simulation data file
-    r_pt = pd.read_csv("../src/controller_monitor/simulation_data/robot_output_heart.csv", delimiter=' ')
+    r_pt = pd.read_csv("../src/controller_monitor/simulation_data/case1_robot_output.csv", delimiter=' ')
     
 
     # ----- WITHOUT KEY AND NAME (MANUAL) -----

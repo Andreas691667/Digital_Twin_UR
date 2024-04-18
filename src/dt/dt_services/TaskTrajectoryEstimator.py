@@ -86,8 +86,9 @@ class TaskTrajectoryEstimator:
         time_vec[index] = start_time
         for i in range(index + 1, len(time_vec)):
             time_vec[i] = time_vec[i - 1] + self.dt
+        self.time = time_vec
         return time_vec
-    
+
     def estimate_trajectory(
         self, task_with_timings, start_time = 0, save_to_file=False, file_name=None
     ):
