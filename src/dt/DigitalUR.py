@@ -20,8 +20,8 @@ from ur3e.ur3e import UR3e
 from dt_services.FaultResolver import FaultResolver
 from dt_services.TaskValidator import TaskValidator
 from dt_services.TaskTrajectoryEstimator import TaskTrajectoryEstimator
-from dt_services.TimingThresholdEstimator import TimingThresholdEstimator
-from dt_services.TaskTrajectoryTimingEstimatorv2 import TaskTrajectoryTimingEstimator
+from dt_services.timing_model.TimingThresholdEstimator import TimingThresholdEstimator
+from dt_services.timing_model.TaskTrajectoryTimingEstimatorv2 import TaskTrajectoryTimingEstimator
 
 @dataclass
 class MitigationStrategy:
@@ -362,7 +362,7 @@ class DigitalUR:
             self.timed_task = np.vstack((np.concatenate((self.last_pt_q, first_pos, duration, [-1])), 
                                             self.timed_task))
 
-            print(f'Timed task: {self.timed_task}')
+            # print(f'Timed task: {self.timed_task}')
             print(f'first pos: {first_pos} last pt q: {self.last_pt_q} duration: {duration}')           
 
         # if task is valid, estimate the trajectory for the timed task,
@@ -411,10 +411,13 @@ class DigitalUR:
             
         # compute task trajectory timings if using model-based approach
         elif self.approach == FaultDetectionApproach.MODEL_BASED:
+            init = True if not self.current_fault else False
+            print(f'init: {init}')
             if self.current_block != self.task_config[GRID_CONFIG.NO_BLOCKS] - 1:
                 self.timed_task = self.trajectory_timing_estimator.get_task_trajectory_timings(
                     self.task_config,
                     start_block=self.current_block + 1,
+                    initializing = init
                 )
 
     def __plan_fault_resolution(self) -> None:

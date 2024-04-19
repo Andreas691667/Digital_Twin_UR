@@ -4,7 +4,7 @@ path.append("../..")
 from ur3e.ur3e import UR3e
 import numpy as np
 from config.grid_config import GRID_CONFIG
-from dt_services.TimingModel import TimingModel
+from TimingModel import TimingModel
 from dataclasses import dataclass
 
 @dataclass 

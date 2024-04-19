@@ -159,11 +159,11 @@ class TimingModel:
                 entry = [block_number, *[None]*12, TI_CONSTANT_VALUES[TI_TYPE], TI_TYPE]
                 self.TI_matrix.append(entry)
 
-    def _block_number_to_TI_sequence_type(self, block_number) -> list:
+    def _block_number_to_TI_sequence_type(self, block_number, initializing=True) -> list:
         """Maps a block_number to a timing interval sequence""" 
         # HOME_TO_BLOCK_TO_BLOCK
-        if block_number == 0:
-            return TI_SEQUENCE_TYPES.HOME_TO_BLOCK_TO_BLOCK
+        if block_number == 0 and initializing:
+                return TI_SEQUENCE_TYPES.HOME_TO_BLOCK_TO_BLOCK
             
         # BLOCK_TO_BLOCK_TO_HOME
         elif block_number == self.number_of_blocks - 1:
@@ -196,7 +196,7 @@ class TimingModel:
         """Returns TI matrix"""
         return self.TI_matrix
     
-    def compute_timing_intervals (self, start_block=0) -> np.ndarray:
+    def compute_timing_intervals (self, start_block=0, initializing=True) -> np.ndarray:
         """Computes matrix M (N-1, 6) where N is the number of joint positions
             TI_matrix = [SUBTASK, FROM, TO, TI_VALUE, TI_TYPE]
         """
@@ -206,7 +206,7 @@ class TimingModel:
         # Add all Task entries
         for block_number in range(start_block, NUMBER_OF_BLOCKS):
             # Get TI_sequence
-            TI_sequence_type = self._block_number_to_TI_sequence_type(block_number)
+            TI_sequence_type = self._block_number_to_TI_sequence_type(block_number, initializing)
 
             # Get Timing Essential Joint Positions
             self._compute_timing_essential_positions(TI_sequence_type, block_number)

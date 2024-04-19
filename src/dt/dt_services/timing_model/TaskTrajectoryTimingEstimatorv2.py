@@ -1,4 +1,4 @@
-from dt_services.TimingModelv2 import TimingModel
+from dt_services.timing_model.TimingModelv2 import TimingModel
 from sys import path
 path.append("../..")
 from ur3e.ur3e import UR3e # for testing!
@@ -8,13 +8,13 @@ class TaskTrajectoryTimingEstimator(TimingModel):
     def __init__(self, robot_model) -> None:
         super().__init__(robot_model)
 
-    def get_task_trajectory_timings (self, task_config, start_block=0):
+    def get_task_trajectory_timings (self, task_config, start_block=0, initializing=True):
         """Returns task trajectory timings in format:
             [FROM, TO, TI_VALUE, TI_TYPE]
         """
         ik_task_tensor = self.robot_model.compute_ik_task_tensor(task_config)
         self.set_ik_solution_tensor(ik_task_tensor)
-        self.compute_timing_intervals(start_block)
+        self.compute_timing_intervals(start_block, initializing)
         NUMBER_OF_TOTAL_TIs, _ = np.shape(self.TI_matrix)
         TI_matrix_without_block_number = [self.TI_matrix[i][1:] for i in range(NUMBER_OF_TOTAL_TIs)]
         return TI_matrix_without_block_number
