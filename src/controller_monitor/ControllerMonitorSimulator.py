@@ -61,3 +61,4 @@ if __name__ == "__main__":
     sleep(2)
     print("Starting data publisher")
     simulator.start_publishing()
+    

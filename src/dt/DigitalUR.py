@@ -129,8 +129,8 @@ class DigitalUR:
 
     def __create_log_files(self):
         """Create the log files. Overwrite if they already exist"""
-        open(f"error_logs/{self.error_file_name}", "w").close()
-        open(f"dt_trajectories/{self.traj_file_name}", "w").close()
+        open(f"error_logs/{self.error_file_name}", "w", encoding="UTF-8").close()
+        open(f"dt_trajectories/{self.traj_file_name}", "w", encoding="UTF-8").close()
 
     def __set_fault_detection_approach(self, approach: int) -> None:
         """Set the fault detection approach"""
@@ -511,7 +511,7 @@ class DigitalUR:
                 self.first_error_time = pt_time if self.first_error_time == 0 else self.first_error_time
 
         # log error to csv
-        with open(f"error_logs/{self.error_file_name}", "a") as f:
+        with open(f"error_logs/{self.error_file_name}", "a", encoding="UTF-8") as f:
             f.write(
                 f"{pt_time} {error[0]} {error[1]} {error[2]} {error[3]} {error[4]} {error[5]} {faults[0]} {faults[1]} {faults[2]} {faults[3]} {faults[4]} {faults[5]}\n"
             )
