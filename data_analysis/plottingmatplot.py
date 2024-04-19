@@ -65,17 +65,17 @@ def read_ts(r:pd.DataFrame, start_time=0):
 
 if __name__ == "__main__":
    
-    file_name_key = "DUM"
+    file_name_key = "DUMSIM"
 
     # ----- WITH KEY AND NAME -----
     r_dt = pd.read_csv(f"../src/dt/dt_trajectories/{file_name_key}_dt_trajectory.csv", delimiter=' ')
     error = pd.read_csv(f"../src/dt/error_logs/{file_name_key}_dt_error_log.csv", delimiter=' ')
 
     # robot data file
-    r_pt = pd.read_csv(f"../src/controller_monitor/robot_output/{file_name_key}_robot_output.csv", delimiter=' ')
+    # r_pt = pd.read_csv(f"../src/controller_monitor/robot_output/{file_name_key}_robot_output.csv", delimiter=' ')
 
     # simulation data file
-    # r_pt = pd.read_csv("../src/controller_monitor/simulation_data/case1_robot_output.csv", delimiter=' ')
+    r_pt = pd.read_csv("../src/controller_monitor/simulation_data/case1_robot_output.csv", delimiter=' ')
     
 
     # ----- WITHOUT KEY AND NAME (MANUAL) -----
@@ -135,8 +135,9 @@ if __name__ == "__main__":
         max_q = max(max(dt_qs[i]), max(pt_qs[i]))
         # get min q value
         min_q = min(min(dt_qs[i]), min(pt_qs[i]))
-        axs[0].plot(timestamp_floats_dt, dt_qs[i], label="DT", color='blue', linestyle='dashed')
-        axs[0].plot(timestamp_floats_pt, pt_qs[i], label="PT", color='red')
+        axs[0].plot(timestamp_floats_dt, dt_qs[i], label="DT", color='blue', linestyle='dotted')
+
+        axs[0].plot(timestamp_floats_pt, pt_qs[i], label="PT", color='red', linewidth=2, alpha=0.5)
 
         # diff_err = abs(dt_qs[i] - pt_qs[i])
 
@@ -149,11 +150,14 @@ if __name__ == "__main__":
         # for all True values in faults_qi, plot a vertical line at that time
         for j in range(len(faults[i])):
             if faults[i][j]:
-                axs[0].axvline(x=error_ts[j], color='green', linestyle='dotted', label=f"Fault {j}")
-                axs[1].axvline(x=error_ts[j], color='green', linestyle='dotted', label=f"Fault {j}")
+                axs[0].axvline(x=error_ts[j], color='green', linestyle='dotted')
+                axs[1].axvline(x=error_ts[j], color='green', linestyle='dotted')
 
         # add legend to all subplots and align to the right
         for ax in axs:
+            # set axes granularity
+            max_time = max(timestamp_floats_dt[-1], timestamp_floats_pt[-1])
+            ax.set_xticks(np.arange(0, max_time, 5))
             ax.legend(loc='upper right')
             ax.grid()
 
