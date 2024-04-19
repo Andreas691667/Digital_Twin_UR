@@ -1,5 +1,4 @@
 import sys
-
 sys.path.append("../..")
 from config.grid_config import GRID_CONFIG
 import numpy as np
@@ -9,16 +8,11 @@ class TaskValidator:
     """Class to validate a task a specified in GRID_CONFIG"""
 
     def __init__(self) -> None:
-        # self.rectangle_packer = rp.RectanglePacker(
-        #     GRID_CONFIG.PLACE_WIDTH, GRID_CONFIG.PLACE_HEIGHT
-        # )
-
         self.block_origin_map = None
         self.block_target_map = None
         self.no_blocks = None
         self.task = None
-
-        self.validating_threshold = 2 # should handle new task in 2 second
+        self.validating_threshold = 2 # should handle new task in 2 seconds
     
     def validate_task(self, task: dict):
         """Validate the task
@@ -48,11 +42,6 @@ class TaskValidator:
             self.task[i][GRID_CONFIG.TARGET][GRID_CONFIG.y] = int(self.block_target_map[1, i])
             self.task[i][GRID_CONFIG.TARGET].update({GRID_CONFIG.ROTATE_WRIST: bool(self.block_target_map[2, i])})
 
-            # Update thresholds
-
-            # if (len(self.estimated_thresholds) != 0):
-            #     self.task[i].update({GRID_CONFIG.TIMING_THRESHOLD: self.estimated_thresholds[i]})
-
     def __create_maps(self):
         """Create matrices of block positions from task"""
         # get number of blocks
@@ -66,11 +55,9 @@ class TaskValidator:
             self.block_origin_map[0, i] = self.task[i][GRID_CONFIG.ORIGIN][GRID_CONFIG.x]
             self.block_origin_map[1, i] = self.task[i][GRID_CONFIG.ORIGIN][GRID_CONFIG.y]
             self.block_origin_map[2, i] = False
-            # self.block_origin_map[2, i] = self.task[i][GRID_CONFIG.ORIGIN][GRID_CONFIG.ROTATE_WRIST]
             self.block_target_map[0, i] = self.task[i][GRID_CONFIG.TARGET][GRID_CONFIG.x]
             self.block_target_map[1, i] = self.task[i][GRID_CONFIG.TARGET][GRID_CONFIG.y]
             self.block_target_map[2, i] = False
-            # self.block_target_map[2, i] = self.task[i][GRID_CONFIG.TARGET][GRID_CONFIG.ROTATE_WRIST]
 
     def __validate_task(self):
         """Validate the task by checking if the gripper can reach the target positions"""
@@ -81,8 +68,6 @@ class TaskValidator:
         while (not task_valid) and (time() - start_time < self.validating_threshold):
             # check if grip position is possible for targets
             task_valid = True
-            # print(self.block_target_map)
-            # print(self.block_origin_map)
 
             # check all blocks
             for i in range(self.no_blocks):
@@ -91,7 +76,6 @@ class TaskValidator:
                 grip_possible = self.__is_grip_possible(
                     self.block_target_map[:, i], self.block_target_map, 0, i, GRID_CONFIG.GRIPPER_WIDTH_TARGET
                 )
-                # print(f"Grip possible: {grip_possible}")
 
                 # if not possible, change wrist rotation
                 if not grip_possible:
@@ -103,7 +87,7 @@ class TaskValidator:
                 grip_possible = self.__is_grip_possible(
                     self.block_origin_map[:, i], self.block_origin_map, i+1, self.no_blocks, GRID_CONFIG.GRIPPER_WIDTH_ORIGIN
                 )
-                # print(f"Grip possible: {grip_possible}")
+
                 # if not possible, change wrist rotation
                 if not grip_possible:
                     task_valid = False
@@ -112,12 +96,12 @@ class TaskValidator:
             
         return task_valid
 
-    def __is_grip_possible(self, block_pos, map, start, stop, threshold):
+    def __is_grip_possible(self, block_pos, block_map, start, stop, threshold):
         """Check if a grip position is possible in given coordinate map"""
 
         grip_possible = True
         for block in range(start, stop):
-            current_block_pos = map[:, block]
+            current_block_pos = block_map[:, block]
             if not np.equal(block_pos, current_block_pos).all(): # skip if same block
                 # true distance between block and current block
                 dist = (block_pos - current_block_pos) * GRID_CONFIG.GRID_PARAMETERS[GRID_CONFIG.HOLE_DIST]
@@ -128,7 +112,6 @@ class TaskValidator:
 
                 elif not block_pos[2] and dist[1] == 0:
                     if np.abs(dist[0]/2) <= threshold/2:
-                        # print(f'not possible for block {block} and {block_pos}, dist: {dist}, threshold: {threshold}')
                         grip_possible = False
             
         return grip_possible
