@@ -190,15 +190,32 @@ class UR3e(rtb.DHRobot):
         self.traj = rtb.jtraj(start, target, t=self.n_steps_motion)
         return self.traj
         # self.plot_trajectory()
+    
+    def compute_and_print_task_joint_positions (self):
+        for i in range(task_config[GRID_CONFIG.NO_BLOCKS]):
+            origin = task_config[i][GRID_CONFIG.ORIGIN]
+            origin_x = origin[GRID_CONFIG.x]
+            origin_y = origin[GRID_CONFIG.y]
+            target = task_config[i][GRID_CONFIG.TARGET]
+            target_x = target[GRID_CONFIG.x]
+            target_y = target[GRID_CONFIG.y]
+            BGP = self.compute_joint_positions_xy(origin_x, origin_y)        
+            GP = self.compute_joint_positions_xy(origin_x, origin_y, True)
+            BTP = self.compute_joint_positions_xy(target_x, target_y)         
+            TP = self.compute_joint_positions_xy(target_x, target_y, True)
+            print(f"Block {i}")
+            print(f"BGP \n {BGP}")         
+            print(f"GP \n {GP}")         
+            print(f"BTP \n {BTP}")         
+            print(f"TP \n {TP}")       
 
 if __name__ == "__main__":
     import yaml
 
     # load task
-    with open(f"../config/tasks/2_blocks.yaml", "r") as file:
+    with open(f"../config/tasks/case1_close_blocks.yaml", "r") as file:
         task_config = yaml.safe_load(file)
 
-    ur = UR3e()
     final_traj = []
     final_time = []
 
