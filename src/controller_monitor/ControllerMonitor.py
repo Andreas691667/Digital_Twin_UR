@@ -47,42 +47,36 @@ class ControllerMonitor:
     """Class responsible for all robot interaction"""
 
     def __init__(self, task_name, go_to_home=False, file_name_key="") -> None:
-
-        # Attributes
         self.STATE = CMState.INITIALIZING  # flag to check if main program is running
         self.block_number = 0  # current block number being processed
-        # self.task_config = (
-        #     GRID_CONFIG.block_config_close_blocks.copy()
-        # )  # get own local copy of task config
 
-        self.dt_timer_finished: bool = (
-            False  # flag to check if overall task is finished
-        )
         self.task_finished: bool = False  # flag to check if overall task is finished
         self.task_validated: bool = False  # flag to check if task is validated
-        self.task_config = None
+        self.task_config = None             # task configuration
         self.program_running_name: str = ""
-        self.conf_file = "record_configuration.xml"
-        self.log_file = (
+
+        self.conf_file = "record_configuration.xml" # configuration file for RTDE
+        self.log_file = (                           # log file for robot output
             file_name_key + "_robot_output.csv"
             if file_name_key != ""
             else f"{task_name}_robot_output.csv"
         )
         self.log_file_path = Path("robot_output") / Path(self.log_file)
 
-        # model of the robot
+        # kinematic model of the robot
         self.robot_model = UR3e()
 
         # Robot connection
         # Used for monitoring and dashboard service, e.g. load and play program
         self.robot_connection = RobotConnection(ROBOT_CONFIG.ROBOT_HOST)
 
+        # Go to home position if flag is set and exit
         if go_to_home:
             self.__go_to_home()
             exit(0)
 
         # RTDE
-        # Used for writing to the robot controller directly
+        # Used for writing to the robot registers controller directly
         self.rtde_connection = RTDEConnect(ROBOT_CONFIG.ROBOT_HOST, self.conf_file)
 
         # RMQ connection
