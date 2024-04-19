@@ -342,7 +342,6 @@ class DigitalUR:
             self.state = DTState.WAITING_TO_RECEIVE_TASK
             print("State transition -> WAITING_TO_RECEIVE_TASK")
 
-        print(self.task_config)
         # send validated task (not containing thresholds) to controller
         self.rmq_client_out.send_message(validate_msg, RMQ_CONFIG.DT_EXCHANGE)
 
@@ -363,9 +362,7 @@ class DigitalUR:
             # update timed_task with new task segment, TODO: [-1] is a placeholder for the TI.Type
             self.timed_task = np.vstack((np.concatenate((self.last_pt_q, first_pos, duration, [-1])), 
                                         self.timed_task))
-
-            # print(f'Timed task: {self.timed_task}')
-            print(f'first pos: {first_pos} last pt q: {self.last_pt_q} duration: {duration}')           
+        
 
         # if task is valid, estimate the trajectory for the timed task,
         # and go to waiting for task to start state

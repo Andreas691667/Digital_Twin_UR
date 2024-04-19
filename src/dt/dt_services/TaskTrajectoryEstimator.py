@@ -177,9 +177,6 @@ class TaskTrajectoryEstimator:
         if len(final_traj_qdd) % 6 != 0:
             final_traj_qdd = np.append(final_traj_qdd, np.zeros((6-len(final_traj_qdd)%6)))
 
-
-        print(final_traj_q.shape, final_traj_qd.shape, final_traj_qdd.shape, len(final_time))
-
         self.traj_q = np.reshape(final_traj_q, (-1, 6))
         self.traj_qd = np.reshape(final_traj_qd, (-1, 6))
         self.traj_qdd = np.reshape(final_traj_qdd, (-1, 6))
