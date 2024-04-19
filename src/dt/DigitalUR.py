@@ -268,6 +268,7 @@ class DigitalUR:
             # if set go to monitoring state
             if self.__check_start_bit(msg_data):
                 # update the time vector to align with pt's time
+                print(self.last_expected_traj_index)
                 self.expected_trajectory_time = self.trajectory_estimator.update_time_vector(self.last_pt_time, 
                                                                                              self.expected_trajectory_time, 
                                                                                              self.last_expected_traj_index)
@@ -341,6 +342,7 @@ class DigitalUR:
             self.state = DTState.WAITING_TO_RECEIVE_TASK
             print("State transition -> WAITING_TO_RECEIVE_TASK")
 
+        print(self.task_config)
         # send validated task (not containing thresholds) to controller
         self.rmq_client_out.send_message(validate_msg, RMQ_CONFIG.DT_EXCHANGE)
 
@@ -359,8 +361,6 @@ class DigitalUR:
             # get duration between last_pt_q and first_pos
             duration = self.trajectory_timing_estimator.get_duration_between_positions(np.vstack((self.last_pt_q, first_pos)))
             # update timed_task with new task segment, TODO: [-1] is a placeholder for the TI.Type
-
-
             self.timed_task = np.vstack((np.concatenate((self.last_pt_q, first_pos, duration, [-1])), 
                                         self.timed_task))
 

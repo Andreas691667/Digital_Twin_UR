@@ -64,7 +64,7 @@ class TI_SEQUENCES:
     VALUES = {
         TYPES.HOME_TO_BLOCK_TO_BLOCK: [TIs.TYPES.START_DELAY, TIs.TYPES.HOME_TO_BGP, *_block_to_block],
         TYPES.BLOCK_TO_BLOCK: _block_to_block,
-        TYPES.BLOCK_TO_BLOCK_TO_HOME: [*_block_to_block[:-2], TIs.TYPES.BTP_TO_HOME],
+        TYPES.BLOCK_TO_BLOCK_TO_HOME: [*_block_to_block[:-3], TIs.TYPES.BTP_TO_HOME],
     }
 
 if __name__ == "__main__":
