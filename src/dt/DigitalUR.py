@@ -526,6 +526,7 @@ class DigitalUR:
             print("State transition -> WAITING_TO_RECEIVE_TASK")
             return False, FaultType.NO_FAULT
 
+        # Check if object was gripped, increment current_block
         self.__analyse_object_grip(data)
 
         self.last_pt_q = pt_q
