@@ -10,4 +10,4 @@
 __pycache__/
 src/controller_monitor/test_results/robot_output.csv
 *.pyc
-dt_trajectories/
+# dt_trajectories/
