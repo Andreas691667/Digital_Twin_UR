@@ -163,6 +163,7 @@ class TimingModel:
         """Maps a block_number to a timing interval sequence""" 
         # HOME_TO_BLOCK_TO_BLOCK
         if block_number == 0 and initializing:
+            print(f"Block number: {block_number} and initializing: {initializing}")
             return TI_SEQUENCE_TYPES.HOME_TO_BLOCK_TO_BLOCK
             
         # BLOCK_TO_BLOCK_TO_HOME
@@ -202,6 +203,8 @@ class TimingModel:
         """
         # Get number of blocks to move
         NUMBER_OF_BLOCKS = self.number_of_blocks 
+        # reset TI matrix
+        self.TI_matrix = []
         
         # Add all Task entries
         for block_number in range(start_block, NUMBER_OF_BLOCKS):

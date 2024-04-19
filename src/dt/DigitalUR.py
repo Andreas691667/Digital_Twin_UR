@@ -329,10 +329,10 @@ class DigitalUR:
         # if task is valid, process it and estimate the trajectory
         # go to waiting for task to start state
         if valid:
-            self.__process_task() # process the task
-            self.__estimate_trajectory() # estimate the trajectory
-            self.monitor_msg_queue.queue.clear()   # clear the monitor queue
-            self.current_fault = None # reset fault
+            self.__process_task()                   # process the task
+            self.__estimate_trajectory()            # estimate the trajectory
+            self.monitor_msg_queue.queue.clear()    # clear the monitor queue
+            self.current_fault = None               # reset fault
             self.state = DTState.WAITING_FOR_TASK_TO_START
             print("State transition -> WAITING_FOR_TASK_TO_START")
         
@@ -359,8 +359,10 @@ class DigitalUR:
             # get duration between last_pt_q and first_pos
             duration = self.trajectory_timing_estimator.get_duration_between_positions(np.vstack((self.last_pt_q, first_pos)))
             # update timed_task with new task segment, TODO: [-1] is a placeholder for the TI.Type
+
+
             self.timed_task = np.vstack((np.concatenate((self.last_pt_q, first_pos, duration, [-1])), 
-                                            self.timed_task))
+                                        self.timed_task))
 
             # print(f'Timed task: {self.timed_task}')
             print(f'first pos: {first_pos} last pt q: {self.last_pt_q} duration: {duration}')           
@@ -412,7 +414,6 @@ class DigitalUR:
         # compute task trajectory timings if using model-based approach
         elif self.approach == FaultDetectionApproach.MODEL_BASED:
             init = True if not self.current_fault else False
-            print(f'init: {init}')
             if self.current_block != self.task_config[GRID_CONFIG.NO_BLOCKS] - 1:
                 self.timed_task = self.trajectory_timing_estimator.get_task_trajectory_timings(
                     self.task_config,
@@ -534,7 +535,7 @@ class DigitalUR:
         # if any of the joints diverge, return fault
         # TODO: We shouldn't always return the same type of fault
         if any(faults) and pt_time - self.first_error_time > self.time_epsilon:
-            print(f"Model diverged from PT at time {pt_time}")
+            print(f"\t [FAULT] Model diverged from PT at time {pt_time} for {pt_time - self.first_error_time} seconds")
             return True, FaultType.MISSING_OBJECT
         else:
             return False, FaultType.NO_FAULT

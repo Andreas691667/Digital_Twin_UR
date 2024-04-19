@@ -1,0 +1,23 @@
+NO_BLOCKS: 3
+0:
+  ORIGIN:
+    x: 0
+    y: 0
+  TARGET:
+    x: 13
+    y: -5
+1:
+  ORIGIN:
+    x: 2
+    y: 0
+  TARGET:
+    x: 11
+    y: -5
+2:
+  ORIGIN:
+    x: 4
+    y: 0
+  TARGET:
+    x: 9
+    y: -5
+
