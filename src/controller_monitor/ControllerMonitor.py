@@ -381,13 +381,14 @@ class ControllerMonitor:
 
                 elif msg_type == MSG_TYPES_DT_TO_CONTROLLER.TASK_VALIDATED:
                     print("Task validated")
-                    self.__reconfigure_task(msg_body, decr=False)
                     # task validated as part of fault resolution
                     if self.STATE == CMState.WAITING_FOR_FAULT_RESOLUTION:
+                        self.__reconfigure_task(msg_body, decr=True)
                         self.STATE = CMState.NORMAL_OPERATION
                         print("\t [STATE] NORMAL_OPERATION")
                     # task validated as part of initialization
                     else:
+                        self.__reconfigure_task(msg_body, decr=False)
                         self.task_validated = True
 
                 elif msg_type == MSG_TYPES_DT_TO_CONTROLLER.TASK_NOT_VALIDATED:
