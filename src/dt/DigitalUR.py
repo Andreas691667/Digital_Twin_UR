@@ -349,21 +349,23 @@ class DigitalUR:
     def __estimate_trajectory(self):
         """Estimate the trajectory based on the timed task"""
         if self.current_fault:
-            # find first position in timed_task that is not equal to [16]*6
+            # find first position in timed_task that is not equal to [None]*6
+            first_pos = None
             for _, elem in enumerate(self.timed_task):
                 if not np.array_equal(elem[0:6], [None] * 6):
                     first_pos = elem[0:6]
                     break
 
+            # get duration between last_pt_q and first_pos
             duration = self.trajectory_timing_estimator.get_duration_between_positions(np.vstack((self.last_pt_q, first_pos)))
-            print(duration)
-            self.timed_task = np.vstack((np.concatenate((self.last_pt_q, first_pos, duration, [0])), 
+            # update timed_task with new task segment, TODO: [-1] is a placeholder for the TI.Type
+            self.timed_task = np.vstack((np.concatenate((self.last_pt_q, first_pos, duration, [-1])), 
                                             self.timed_task))
 
             print(f'Timed task: {self.timed_task}')
             print(f'first pos: {first_pos} last pt q: {self.last_pt_q} duration: {duration}')           
 
-        # if task is valid, estimate the trajectory,
+        # if task is valid, estimate the trajectory for the timed task,
         # and go to waiting for task to start state
         expected_q, _, _, expected_t = (
             self.trajectory_estimator.estimate_trajectory(
@@ -373,10 +375,13 @@ class DigitalUR:
             )
         )
 
+        # if expected_trajectory_q is empty, set it to expected_q
         if self.expected_trajectory_q.size == 0:
             self.expected_trajectory_q = expected_q
             self.expected_trajectory_time = expected_t
 
+        # else append expected_q to expected_trajectory_q
+        # discard the everything after last_expected_traj_index
         else:
             self.expected_trajectory_q = np.append(
                 self.expected_trajectory_q[0:self.last_expected_traj_index], expected_q, axis=0
