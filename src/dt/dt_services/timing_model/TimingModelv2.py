@@ -2,7 +2,6 @@
 import numpy as np
 from sys import path
 path.append("../..")
-from ur3e.ur3e import UR3e # for testing!
 from config.timing_config import ROBOT_PHYSICS
 from config.timing_config import TIs
 TI_TYPES = TIs.TYPES
@@ -13,6 +12,7 @@ TI_SEQUENCE_VALUES = TI_SEQUENCES.VALUES
 
 # TimingModel
 class TimingModel:
+    """TODO: Add description"""
     def __init__(self, robot_model) -> None:
         # TI_matrix = [SUBTASK, FROM, TO, TI_VALUE, TI_TYPE], TI: "Timing Interval"
         # SUBTASK: The move of a block from its origin to a target
@@ -78,7 +78,7 @@ class TimingModel:
             
             # Reaches max speed
             else: 
-                TRAP_CON_TI = ((distance-ACCELERATION_DIST*2) / JOINT_SPEED_MAX_RAD) 
+                TRAP_CON_TI = (distance-ACCELERATION_DIST*2) / JOINT_SPEED_MAX_RAD
                 TRAP_TI = 2*ACCELERATION_TRAP_TIME + TRAP_CON_TI
                 # Add data
                 durations.extend([TRAP_TI])
@@ -163,7 +163,7 @@ class TimingModel:
         """Maps a block_number to a timing interval sequence""" 
         # HOME_TO_BLOCK_TO_BLOCK
         if block_number == 0 and initializing:
-                return TI_SEQUENCE_TYPES.HOME_TO_BLOCK_TO_BLOCK
+            return TI_SEQUENCE_TYPES.HOME_TO_BLOCK_TO_BLOCK
             
         # BLOCK_TO_BLOCK_TO_HOME
         elif block_number == self.number_of_blocks - 1:
@@ -217,15 +217,17 @@ class TimingModel:
             # Compute all TIs from TI Sequence
             self._compute_TIs_by_TI_sequence_and_move_TIs(TI_sequence_type, block_number)
 
-if __name__ == "__main__":
-    import yaml
+# if __name__ == "__main__":
+#     import yaml
+    # from ur3e.ur3e import UR3e # for testing!
 
-    with open(f"../../config/tasks/2_blocks.yaml", "r") as file:
-        task_config = yaml.safe_load(file)
 
-    robot_model = UR3e()
-    task_ik_solutions = robot_model.compute_ik_task_tensor(task_config)
-    timing_model = TimingModel(robot_model)
-    timing_model.set_ik_solution_tensor(task_ik_solutions)
-    timing_model.compute_timing_intervals(1)
-    print(timing_model.TI_matrix)
+#     with open(f"../../config/tasks/2_blocks.yaml", "r") as file:
+#         task_config = yaml.safe_load(file)
+
+#     robot_model = UR3e()
+#     task_ik_solutions = robot_model.compute_ik_task_tensor(task_config)
+#     timing_model = TimingModel(robot_model)
+#     timing_model.set_ik_solution_tensor(task_ik_solutions)
+#     timing_model.compute_timing_intervals(1)
+#     print(timing_model.TI_matrix)
