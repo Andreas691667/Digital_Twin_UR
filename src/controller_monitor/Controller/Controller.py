@@ -66,22 +66,23 @@ class Controller:
 
         # shutdown thread
         self.shutdown_event = Event()
-        self.shutdown_thread = Thread(target=self.shutdown)
-
+        self.shutdown_thread = Thread(target=self.__shutdown)
 
         # Controller thread
-        self.controller_thread = Thread(target=self.controller_worker)
+        self.controller_thread = Thread(target=self.__controller_worker)
         self.controller_thread_event = Event()
         self.controller_queue = Queue()
 
         # load task
-        self.load_task(task_name)
+        self.__load_task(task_name)
+
+        # start threads
         self.shutdown_thread.start()
         self.controller_thread.start()
 
     def __configure_rmq_clients(self):
         self.rmq_client_in.configure_incoming_channel(
-            self.on_rmq_message_cb,
+            self.__on_rmq_message_cb,
             RMQ_CONFIG.DT_EXCHANGE,
             RMQ_CONFIG.FANOUT,
             RMQ_CONFIG.CONTROLLER_QUEUE,
@@ -94,16 +95,16 @@ class Controller:
         self.rmq_client_in.start_consumer_thread()
         print("\t [INFO] Controller RMQ clients configured")
 
-    def load_task(self, task_name):
+    def __load_task(self, task_name):
         """Load task from yaml file"""
         try:
             with open(f"../config/tasks/{task_name}.yaml", "r", encoding="UTF-8") as file:
                 self.task_config = yaml.safe_load(file)
         except FileNotFoundError:
             print(f"Task {task_name} not found")
-            self.shutdown()
+            self.shutdown_event.set()
 
-    def recieve_user_input(self) -> None:
+    def __recieve_user_input(self) -> None:
         """Listen for user input"""
         try:
             k = msvcrt.getwche()
@@ -118,7 +119,7 @@ class Controller:
 
             elif k == "i" and self.task_finished:
                 print(f"\t [INFO] User inputted: {k}")
-                self.invert_task()
+                self.__invert_task()
             # reset k
             k = "a"
         except KeyboardInterrupt:
@@ -126,7 +127,7 @@ class Controller:
             self.STATE = ControllerStates.SHUTTING_DOWN
             print("State transition -> SHUTTING_DOWN")
 
-    def invert_task(self):
+    def __invert_task(self):
         """Invert the task"""
         # invert task
         # set block number to 0
@@ -156,17 +157,17 @@ class Controller:
         detectionbit (bool 66) = False
         activates gripper
         """
-        self.load_program("/move-block-init.urp")
-        self.play_program()
+        self.__load_program("/move-block-init.urp")
+        self.__play_program()
         sleep(0.01)
-        self.load_program("/move_registers.urp")
+        self.__load_program("/move_registers.urp")
 
     def __initialize_task_registers(self, values) -> None:
         """initialize the task registers"""
         print(f"\t [INFO] Task registers initialized for block: {self.block_number}")
         self.rtde_connection.sendall("in", values)
 
-    def on_rmq_message_cb(self, ch, method, properties, body):
+    def __on_rmq_message_cb(self, ch, method, properties, body):
         """Callback function for when a message is received
         ch: The channel object
         method: The method object
@@ -185,12 +186,12 @@ class Controller:
         except ValueError:
             print("Invalid message format")
 
-    def load_program(self, program_name: str) -> None:
+    def __load_program(self, program_name: str) -> None:
         """Load program"""
         self.robot_connection.load_program(program_name)
         self.program_running_name = program_name
 
-    def play_program(self, main_program=False) -> None:
+    def __play_program(self, main_program=False) -> None:
         """Start loaded program"""
         self.robot_connection.play_program()
 
@@ -198,7 +199,7 @@ class Controller:
             sleep(1)
             self.STATE = ControllerStates.NORMAL_OPERATION
 
-    def stop_program(self) -> None:
+    def __stop_program(self) -> None:
         """stop current exection"""
         self.robot_connection.stop_program()
         print("\t [INFO] Program execution stopped")
@@ -218,16 +219,16 @@ class Controller:
         # Check if any is nan
         if np.isnan(origin_q_start).any():
             print("Origin_q_start is nan")
-            self.shutdown()
+            self.shutdown_event.set()
         if np.isnan(origin_q).any():
             print("Origin_q is nan")
-            self.shutdown()
+            self.shutdown_event.set()
         if np.isnan(target_q_start).any():
             print("Target_q_start is nan")
-            self.shutdown()
+            self.shutdown_event.set()
         if np.isnan(target_q).any():
             print("Target_q is nan")
-            self.shutdown()
+            self.shutdown_event.set()
 
         # Combine and cast to list
         values = np.hstack((origin_q_start, origin_q, target_q_start, target_q))
@@ -240,7 +241,7 @@ class Controller:
         msg = f"{MSG_TYPES_CONTROLLER_TO_DT.NEW_TASK} {self.task_config}"
         self.rmq_client_out_controller.send_message(msg, RMQ_CONFIG.CONTROLLER_EXCHANGE)
 
-    def controller_worker(self):
+    def __controller_worker(self):
         """worker for the controller thread.
         Listens for new control signals from the DT"""
         while not self.controller_thread_event.is_set():
@@ -260,7 +261,7 @@ class Controller:
                     self.__wait_for_task_validation()
 
                 elif self.STATE == ControllerStates.WAITING_FOR_USER_INPUT:
-                    self.recieve_user_input()
+                    self.__recieve_user_input()
 
                 elif self.STATE == ControllerStates.NORMAL_OPERATION:
                     self.__execute_task()
@@ -321,7 +322,7 @@ class Controller:
             sleep(0.5)
 
             # 3) play the program
-            self.play_program(main_program=True)
+            self.__play_program(main_program=True)
 
             # 4) Increment block number to next
             self.block_number += 1
@@ -353,7 +354,7 @@ class Controller:
         if msg_type == MSG_TYPES_DT_TO_CONTROLLER.WAIT:
             self.STATE = ControllerStates.WAITING_FOR_FAULT_RESOLUTION
             print("State transition -> WAITING_FOR_FAULT_RESOLUTION")
-            self.stop_program()
+            self.__stop_program()
 
         # DT has planned a solution
         elif msg_type == MSG_TYPES_DT_TO_CONTROLLER.TASK_VALIDATED:
@@ -400,13 +401,13 @@ class Controller:
         else:
             pass
     
-    def shutdown(self):
+    def __shutdown(self):
         """Shut down everything local to controller and set shutdown event from CM"""
         while not self.shutdown_event.is_set():
             sleep(0.01)
 
         print("Shutting down controller...")
-        self.stop_program()
+        self.__stop_program()
         self.controller_thread_event.set()
         self.controller_thread.join()
         self.rmq_client_in.stop_consuming()

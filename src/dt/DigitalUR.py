@@ -501,12 +501,12 @@ class DigitalUR:
 
     def __reset_task(self):
         """Resets the task, to be called when task is done"""
-            print("Task done")
-            self.current_block = -1
-            self.monitor_msg_queue.queue.clear()
-            self.last_pt_q = np.array([])
-            self.state = DTState.WAITING_TO_RECEIVE_TASK
-            print("State transition -> WAITING_TO_RECEIVE_TASK")
+        print("Task done")
+        self.current_block = -1
+        self.monitor_msg_queue.queue.clear()
+        self.last_pt_q = np.array([])
+        self.state = DTState.WAITING_TO_RECEIVE_TASK
+        print("State transition -> WAITING_TO_RECEIVE_TASK")
         
     def __analyse_data(self, data):
         """Check for faults in the data"""
