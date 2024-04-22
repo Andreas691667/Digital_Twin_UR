@@ -6,12 +6,12 @@ path.append("../urinterface/src")
 from urinterface.robot_connection import RobotConnection
 from urinterface.RTDEConnect import RTDEConnect
 from config.robot_config import ROBOT_CONFIG
-from threading import Thread, Event
+from threading import Event
 from pathlib import Path
 from time import sleep
 
-from Controller import Controller
-from Monitor import Monitor
+from controller_monitor.Controller.Controller import Controller
+from controller_monitor.Monitor.Monitor import Monitor
 
 
 class ControllerMonitor:

@@ -1,5 +1,4 @@
 import sys
-import subprocess
 import json
 import threading
 from queue import Queue, Empty
@@ -123,7 +122,7 @@ class DigitalUR:
         self.pick_stock_tried = 1
 
         # ----- MODEL-BASED FAULT DETECTION -----
-        self.timed_task = []  # list of timed tasks, row: [start, target, time]
+        self.timed_task = []  # list of timed tasks, row: [start, target, time, description]
         self.last_pt_time = 0  # last time the PT was monitored
         self.last_pt_q = []  # last joint positions of the PT
         self.first_error_time = 0  # time of the first error
@@ -494,12 +493,21 @@ class DigitalUR:
         elif self.current_fault == FaultType.UNKOWN_FAULT:
             pass
 
-    def __send_message_to_controller(self, fault_msg) -> None:
+    def __send_message_to_controller(self, msg) -> None:
         """Send a message to the controller
         fault_msg: The message to send to the controller
         FORMAT: 'MSG_TYPE DATA'"""
-        self.rmq_client_out.send_message(fault_msg, RMQ_CONFIG.DT_EXCHANGE)
+        self.rmq_client_out.send_message(msg, RMQ_CONFIG.DT_EXCHANGE)
 
+    def __reset_task(self):
+        """Resets the task, to be called when task is done"""
+            print("Task done")
+            self.current_block = -1
+            self.monitor_msg_queue.queue.clear()
+            self.last_pt_q = np.array([])
+            self.state = DTState.WAITING_TO_RECEIVE_TASK
+            print("State transition -> WAITING_TO_RECEIVE_TASK")
+        
     def __analyse_data(self, data):
         """Check for faults in the data"""
         # if fault present return True, fault_type
@@ -572,11 +580,7 @@ class DigitalUR:
         # if expected_q is last element in expected_trajectory_q, we are done
         # go to waiting to receive task state
         if time_idx == len(self.expected_trajectory_q) - 1:
-            print("Task done")
-            self.monitor_msg_queue.queue.clear()
-            self.last_pt_q = np.array([])
-            self.state = DTState.WAITING_TO_RECEIVE_TASK
-            print("State transition -> WAITING_TO_RECEIVE_TASK")
+            self.__reset_task()
             return False, FaultType.NO_FAULT
 
         # Check if object was gripped, increment current_block
@@ -587,7 +591,7 @@ class DigitalUR:
 
         # if any faults are present and the time since the first error is above epsilon, there is a fault
         fault_duration = pt_time - self.first_error_time
-        if any(faults) and fault_duration > self.time_epsilon:
+        if any(faults) and fault_duration >= self.time_epsilon:
             print(
                 f"\t [FAULT] Model diverged from PT for {round(fault_duration, 2)} seconds"
             )
@@ -625,12 +629,7 @@ class DigitalUR:
             # If we have grapped the last object, we are done
             # go to waiting to receive task state
             if self.current_block == self.task_config[GRID_CONFIG.NO_BLOCKS] - 1:
-                print("Task done")
-                # print(f'Task done for timestamp: {data["timestamp"]}')
-                self.current_block = -1
-                self.monitor_msg_queue.queue.clear()
-                self.state = DTState.WAITING_TO_RECEIVE_TASK
-                print("State transition -> WAITING_TO_RECEIVE_TASK")
+                self.__reset_task()
 
             return (
                 False,

@@ -334,7 +334,7 @@ class Controller:
             sleep(1)
             print("\t [INFO] Task done")
             self.__reset_robot_registers()
-            self.rtde_connection.shutdown()
+            # self.rtde_connection.shutdown()
             self.task_finished = True
 
             self.STATE = ControllerStates.WAITING_FOR_USER_INPUT
