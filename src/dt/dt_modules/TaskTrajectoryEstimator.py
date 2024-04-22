@@ -209,7 +209,7 @@ class TaskTrajectoryEstimator:
 #         task_config = yaml.safe_load(file)
 
 #     model = UR3e()
-#     from dt.dt_services.TaskTrajectoryTimingEstimator import TrajectoryTimingEstimator
+#     from dt.dt_modules.TaskTrajectoryTimingEstimator import TrajectoryTimingEstimator
 
 #     task_estimator = TaskTrajectoryEstimator(model)
 #     traj_timing_est = TrajectoryTimingEstimator(model)

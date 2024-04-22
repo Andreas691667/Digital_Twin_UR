@@ -18,14 +18,14 @@ from config.timing_config import TIs
 
 from ur3e.ur3e import UR3e
 
-from dt_services.FaultResolver import FaultResolver
-from dt_services.TaskValidator import TaskValidator
-from dt_services.TaskTrajectoryEstimator import TaskTrajectoryEstimator
-from dt_services.timing_model.TimingThresholdEstimator import TimingThresholdEstimator
-from dt_services.timing_model.TaskTrajectoryTimingEstimatorv2 import (
+from dt_modules.FaultResolver import FaultResolver
+from dt_modules.TaskValidator import TaskValidator
+from dt_modules.TaskTrajectoryEstimator import TaskTrajectoryEstimator
+from dt_modules.timing_model.TimingThresholdEstimator import TimingThresholdEstimator
+from dt_modules.timing_model.TaskTrajectoryTimingEstimatorv2 import (
     TaskTrajectoryTimingEstimator,
 )
-from dt.dt_services.Visualisation.URVisualiser import Visualiser
+from dt.dt_modules.Visualisation.URVisualiser import Visualiser
 
 
 @dataclass
@@ -103,7 +103,7 @@ class DigitalUR:
         )
         self.URVisualiser = Visualiser(
             port=5556,
-            app_path="dt_services/Visualisation/Application/DigitalShadowsUR.exe",
+            app_path="dt_modules/Visualisation/Application/DigitalShadowsUR.exe",
         )
 
         self.mitigation_strategy = None

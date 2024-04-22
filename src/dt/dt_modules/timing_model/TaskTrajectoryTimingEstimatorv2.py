@@ -1,7 +1,7 @@
 from sys import path
 path.append("../..")
 import numpy as np
-from dt_services.timing_model.TimingModelv2 import TimingModel
+from dt_modules.timing_model.TimingModelv2 import TimingModel
 
 
 class TaskTrajectoryTimingEstimator(TimingModel):
