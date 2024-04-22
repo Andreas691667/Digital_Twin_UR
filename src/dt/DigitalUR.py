@@ -586,9 +586,10 @@ class DigitalUR:
         self.last_expected_traj_index = time_idx
 
         # if any faults are present and the time since the first error is above epsilon, there is a fault
-        if any(faults) and pt_time - self.first_error_time > self.time_epsilon:
+        fault_duration = pt_time - self.first_error_time
+        if any(faults) and fault_duration > self.time_epsilon:
             print(
-                f"\t [FAULT] Model diverged from PT at time {pt_time} for {pt_time - self.first_error_time} seconds"
+                f"\t [FAULT] Model diverged from PT for {round(fault_duration, 2)} seconds"
             )
             if expected_q_des == TIs.TYPES.MOVE_WITH_OBJECT:
                 return True, FaultType.MISSING_OBJECT
@@ -668,7 +669,7 @@ class DigitalUR:
         if monitor_data:
             fault_present, fault_type = self.__analyse_data(monitor_data)
             if fault_present:
-                print(f"Fault present: {fault_type}")
+                print(f"Analysis result: {fault_type}")
                 self.current_fault = fault_type
                 self.state = DTState.FAULT_RESOLUTION
                 print("State transition -> FAULT_RESOLUTION")
@@ -688,4 +689,4 @@ class DigitalUR:
         self.state_machine_stop_event.set()
         self.state_machine_thread.join()
         self.rmq_client_in.stop_consuming()
-        print("Digital UR shutdown finished gracefully:)")
+        print("Digital UR shutdown finished successfully!")
