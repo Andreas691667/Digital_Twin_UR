@@ -163,7 +163,6 @@ class TimingModel:
         """Maps a block_number to a timing interval sequence""" 
         # HOME_TO_BLOCK_TO_BLOCK
         if block_number == 0 and initializing:
-            print(f"Block number: {block_number} and initializing: {initializing}")
             return TI_SEQUENCE_TYPES.HOME_TO_BLOCK_TO_BLOCK
             
         # BLOCK_TO_BLOCK_TO_HOME
