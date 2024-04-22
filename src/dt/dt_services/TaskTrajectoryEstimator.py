@@ -94,9 +94,9 @@ class TaskTrajectoryEstimator:
     ):
         """Estimate the trajectory of a task.
         params:
-            :param Mx13 ndarray task_with_timings: Array with all starts and ends of the task and the timing intervals.
+            :param Mx14 ndarray task_with_timings: Array with all starts and ends of the task and the timing intervals.
                                                    Mx13 array where M=N+D, N is the number of start-target-waypoints and D is the number delays
-                                                   For a row r, r[0:6] is the start, r[6:12] is the target and r[12] is the motion time.
+                                                   For a row r, r[0:6] is the start, r[6:12] is the target, r[12] is the motion time, r[13] are the descriptions for each move.
             :param float start_time: The start time of the trajectory.
             :param bool save_to_file: If True, save the trajectory to a file.
             :param str file_name: The name of the file to save the trajectory.
@@ -115,6 +115,7 @@ class TaskTrajectoryEstimator:
         final_traj_q = []
         final_traj_qd = []
         final_traj_qdd = []
+        final_traj_des = []
         final_time = [start_time]
 
         last_traj_q = [start]
@@ -122,10 +123,11 @@ class TaskTrajectoryEstimator:
         last_traj_qdd = [0] * 6
 
         for elem in task_with_timings:
-            # Get the start, target and motion time
+            # Get the start, target and motion time and description
             start = None if not all(elem[0:6]) else elem[0:6]
             target = None if not all(elem[6:12]) else elem[6:12]
             motion_time = elem[12]
+            description = elem[13]
 
             # Calculate the trajectory
             self.robot_model.set_motion_time(motion_time)
@@ -144,7 +146,9 @@ class TaskTrajectoryEstimator:
                 time_vector = np.linspace(
                     final_time[-1] + 0.05, motion_time + final_time[-1], n_steps
                 )
+
                 final_time = np.append(final_time, time_vector, axis=0)
+
                 last_traj_q = traj.q
                 last_traj_qd = traj.qd
                 last_traj_qdd = traj.qdd
@@ -168,6 +172,9 @@ class TaskTrajectoryEstimator:
                 )
                 final_time = np.append(final_time, time_vector, axis=0)
 
+            # update the description vector. Should repeat the description for each time step
+            final_traj_des = np.append(final_traj_des, np.tile(description, n_steps))
+
         # Reshape the final trajectory
         # pad with zeros to make the length of the trajectories multiple of 6
         if len(final_traj_q) % 6 != 0:
@@ -186,7 +193,7 @@ class TaskTrajectoryEstimator:
         if save_to_file:
             self.save_traj_to_file(file_name)
 
-        return self.traj_q, self.traj_qd, self.traj_qdd, self.time
+        return self.traj_q, self.traj_qd, self.traj_qdd, self.time, final_traj_des
 
 
 # # Example of usage

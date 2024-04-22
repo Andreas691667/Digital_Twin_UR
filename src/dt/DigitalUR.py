@@ -513,6 +513,7 @@ class DigitalUR:
 
         # get expected joint positions
         expected_q = self.expected_trajectory_q[time_idx]
+        expected_q_des = self.expected_trajectory_des[time_idx]
 
         # publish the dt joint positions to the visualiser
         self.URVisualiser.publish_joint_positions(expected_q)
@@ -549,11 +550,14 @@ class DigitalUR:
         self.last_pt_q = pt_q
         self.last_expected_traj_index = time_idx
 
-        # if any of the joints diverge, return fault
-        # TODO: We shouldn't always return the same type of fault
+        # if any faults are present and the time since the first error is above epsilon, there is a fault
         if any(faults) and pt_time - self.first_error_time > self.time_epsilon:
             print(f"\t [FAULT] Model diverged from PT at time {pt_time} for {pt_time - self.first_error_time} seconds")
-            return True, FaultType.MISSING_OBJECT
+            if expected_q_des == TIs.TYPES.MOVE_WITH_OBJECT:
+               print("\t [INFO] Expected to move with object")
+               return True, FaultType.MISSING_OBJECT
+            else:
+                return True, FaultType.UNKOWN_FAULT
         else:
             return False, FaultType.NO_FAULT
 
