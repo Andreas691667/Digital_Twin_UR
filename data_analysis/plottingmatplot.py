@@ -65,7 +65,7 @@ def read_ts(r:pd.DataFrame, start_time=0):
 
 if __name__ == "__main__":
    
-    file_name_key = "case1_13_miss_stock"
+    file_name_key = "vis"
 
     # ----- WITH KEY AND NAME -----
     r_dt = pd.read_csv(f"../src/dt/dt_trajectories/{file_name_key}_dt_trajectory.csv", delimiter=' ')
@@ -135,7 +135,9 @@ if __name__ == "__main__":
         max_q = max(max(dt_qs[i]), max(pt_qs[i]))
         # get min q value
         min_q = min(min(dt_qs[i]), min(pt_qs[i]))
-        axs[0].plot(timestamp_floats_dt, dt_qs[i], label="DT", color='blue', linewidth=3, linestyle='dotted')
+        # axs[0].plot(timestamp_floats_dt, dt_qs[i], label="DT", color='blue', linewidth=3, linestyle='dotted')
+        axs[0].scatter(timestamp_floats_dt, dt_qs[i], label="DT", color='blue', s=4)
+
 
         axs[0].plot(timestamp_floats_pt, pt_qs[i], label="PT", color='red', linewidth=3, alpha=0.4)
 
