@@ -1,9 +1,7 @@
 class MSG_TYPES_DT_TO_CONTROLLER:
     """Types of messages to be sent from DT to Controller"""
-    MONITOR = "MONITOR"             # Used for monitor messages
     WAIT = "WAIT"                # Used for DT->PT messages before fault have been resolved
     COULD_NOT_RESOLVE = "COULD_NOT_RESOLVE"   # Used to send message where fault could not be resolved
-    FINISHED_TIMING = "FINISHED_TIMING"
     TASK_VALIDATED = "TASK_VALIDATED"
     TASK_NOT_VALIDATED = "TASK_NOT_VALIDATED"
 
