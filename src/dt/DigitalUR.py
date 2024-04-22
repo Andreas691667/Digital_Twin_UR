@@ -15,6 +15,7 @@ from rmq.RMQClient import Client
 from config.rmq_config import RMQ_CONFIG
 from config.msg_config import MSG_TYPES_CONTROLLER_TO_DT, MSG_TYPES_DT_TO_CONTROLLER
 from config.grid_config import GRID_CONFIG
+from config.timing_config import TIs
 
 from ur3e.ur3e import UR3e
 
@@ -122,9 +123,10 @@ class DigitalUR:
         self.last_expected_traj_index = 0  # 'counter' for the expected trajectory
         self.expected_trajectory_q = np.array([])
         self.expected_trajectory_time = np.array([])
+        self.expected_trajectory_des = np.array([])
 
         self.pos_epsilon = 0.6  # allowed error for each joint [rad]
-        self.time_epsilon = 1 # allowed time for error to sustain [s]
+        self.time_epsilon = 1   # allowed time for error to sustain [s]
 
         # log files
         self.traj_file_name = file_name_key + "_dt_trajectory.csv"
@@ -376,7 +378,7 @@ class DigitalUR:
 
         # if task is valid, estimate the trajectory for the timed task,
         # and go to waiting for task to start state
-        expected_q, _, _, expected_t = (
+        expected_q, _, _, expected_t, expected_des = (
             self.trajectory_estimator.estimate_trajectory(
                 self.timed_task,
                 start_time=0,
@@ -388,6 +390,7 @@ class DigitalUR:
         if self.expected_trajectory_q.size == 0:
             self.expected_trajectory_q = expected_q
             self.expected_trajectory_time = expected_t
+            self.expected_trajectory_des = expected_des
 
         # else append expected_q to expected_trajectory_q
         # discard the everything after last_expected_traj_index
@@ -397,6 +400,9 @@ class DigitalUR:
             )
             self.expected_trajectory_time = np.append(
                 self.expected_trajectory_time[0:self.last_expected_traj_index], expected_t, axis=0
+            )
+            self.expected_trajectory_des = np.append(
+                self.expected_trajectory_des[0:self.last_expected_traj_index], expected_des, axis=0
             )
 
     def __validate_task(self):
@@ -508,10 +514,8 @@ class DigitalUR:
         # get expected joint positions
         expected_q = self.expected_trajectory_q[time_idx]
 
-        # publish the actual joint positions to the visualiser
-        topic_names = ["actual_q_0", "actual_q_1", "actual_q_2", "actual_q_3", "actual_q_4", "actual_q_5"]
-        for i in range(6):
-            self.URVisualiser.publish_on_topic(topic_names[i], pt_q[i])
+        # publish the dt joint positions to the visualiser
+        self.URVisualiser.publish_joint_positions(expected_q)
 
         # calculate the error
         error = np.abs(np.array(pt_q) - np.array(expected_q))
