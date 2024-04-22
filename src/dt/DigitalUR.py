@@ -23,7 +23,9 @@ from dt_services.FaultResolver import FaultResolver
 from dt_services.TaskValidator import TaskValidator
 from dt_services.TaskTrajectoryEstimator import TaskTrajectoryEstimator
 from dt_services.timing_model.TimingThresholdEstimator import TimingThresholdEstimator
-from dt_services.timing_model.TaskTrajectoryTimingEstimatorv2 import TaskTrajectoryTimingEstimator
+from dt_services.timing_model.TaskTrajectoryTimingEstimatorv2 import (
+    TaskTrajectoryTimingEstimator,
+)
 from dt.dt_services.Visualisation.URVisualiser import Visualiser
 
 
@@ -97,8 +99,13 @@ class DigitalUR:
         self.task_validator = TaskValidator()
         self.timing_estimator = TimingThresholdEstimator(self.robot_model)
         self.trajectory_estimator = TaskTrajectoryEstimator(self.robot_model)
-        self.trajectory_timing_estimator = TaskTrajectoryTimingEstimator(self.robot_model)
-        self.URVisualiser = Visualiser(port=5556, app_path = "dt_services/Visualisation/Application/DigitalShadowsUR.exe")
+        self.trajectory_timing_estimator = TaskTrajectoryTimingEstimator(
+            self.robot_model
+        )
+        self.URVisualiser = Visualiser(
+            port=5556,
+            app_path="dt_services/Visualisation/Application/DigitalShadowsUR.exe",
+        )
 
         self.mitigation_strategy = None
         self.__set_mitigation_strategy(mitigation_strategy)
@@ -118,7 +125,7 @@ class DigitalUR:
         # ----- MODEL-BASED FAULT DETECTION -----
         self.timed_task = []  # list of timed tasks, row: [start, target, time]
         self.last_pt_time = 0  # last time the PT was monitored
-        self.last_pt_q = [] # last joint positions of the PT
+        self.last_pt_q = []  # last joint positions of the PT
         self.first_error_time = 0  # time of the first error
         self.last_expected_traj_index = 0  # 'counter' for the expected trajectory
         self.expected_trajectory_q = np.array([])
@@ -126,7 +133,7 @@ class DigitalUR:
         self.expected_trajectory_des = np.array([])
 
         self.pos_epsilon = 0.6  # allowed error for each joint [rad]
-        self.time_epsilon = 1   # allowed time for error to sustain [s]
+        self.time_epsilon = 1  # allowed time for error to sustain [s]
 
         # log files
         self.traj_file_name = file_name_key + "_dt_trajectory.csv"
@@ -274,10 +281,13 @@ class DigitalUR:
             # if set go to monitoring state
             if self.__check_start_bit(msg_data):
                 # update the time vector to align with pt's time
-                print(self.last_expected_traj_index)
-                self.expected_trajectory_time = self.trajectory_estimator.update_time_vector(self.last_pt_time, 
-                                                                                             self.expected_trajectory_time, 
-                                                                                             self.last_expected_traj_index)
+                self.expected_trajectory_time = (
+                    self.trajectory_estimator.update_time_vector(
+                        self.last_pt_time,
+                        self.expected_trajectory_time,
+                        self.last_expected_traj_index,
+                    )
+                )
                 self.state = DTState.NORMAL_OPERATION
                 print("State transition -> NORMAL_OPERATION")
                 # Start timer
@@ -295,7 +305,7 @@ class DigitalUR:
     def __initialize(self):
         """Initialize the digital twin"""
         self.__configure_rmq_clients()
-        time.sleep(0.5) # wait for the RMQ clients to be configured
+        time.sleep(0.5)  # wait for the RMQ clients to be configured
         self.__start_consuming()
         if self.approach == FaultDetectionApproach.MODEL_BASED:
             self.__start_visualisation()
@@ -305,9 +315,7 @@ class DigitalUR:
     def __resolve_fault(self):
         """Try to resolve the current fault"""
         # tell controller to wait
-        self.__send_message_to_controller(
-            f"{MSG_TYPES_DT_TO_CONTROLLER.WAIT} None"
-        )
+        self.__send_message_to_controller(f"{MSG_TYPES_DT_TO_CONTROLLER.WAIT} None")
 
         # resolve the fault and update the task_config
         fault_resolved = self.__plan_fault_resolution()
@@ -338,13 +346,13 @@ class DigitalUR:
         # if task is valid, process it and estimate the trajectory
         # go to waiting for task to start state
         if valid:
-            self.__process_task()                   # process the task
-            self.__estimate_trajectory()            # estimate the trajectory
-            self.monitor_msg_queue.queue.clear()    # clear the monitor queue
-            self.current_fault = None               # reset fault
+            self.__process_task()  # process the task
+            self.__estimate_trajectory()  # estimate the trajectory
+            self.monitor_msg_queue.queue.clear()  # clear the monitor queue
+            self.current_fault = None  # reset fault
             self.state = DTState.WAITING_FOR_TASK_TO_START
             print("State transition -> WAITING_FOR_TASK_TO_START")
-        
+
         # if task is not valid, go to waiting to receive task state
         else:
             self.state = DTState.WAITING_TO_RECEIVE_TASK
@@ -370,11 +378,16 @@ class DigitalUR:
                     break
 
             # get duration between last_pt_q and first_pos
-            duration = self.trajectory_timing_estimator.get_duration_between_positions(np.vstack((self.last_pt_q, first_pos)))
+            duration = self.trajectory_timing_estimator.get_duration_between_positions(
+                np.vstack((self.last_pt_q, first_pos))
+            )
             # update timed_task with new task segment, TODO: [-1] is a placeholder for the TI.Type
-            self.timed_task = np.vstack((np.concatenate((self.last_pt_q, first_pos, duration, [-1])), 
-                                        self.timed_task))
-        
+            self.timed_task = np.vstack(
+                (
+                    np.concatenate((self.last_pt_q, first_pos, duration, [-1])),
+                    self.timed_task,
+                )
+            )
 
         # if task is valid, estimate the trajectory for the timed task,
         # and go to waiting for task to start state
@@ -396,13 +409,19 @@ class DigitalUR:
         # discard the everything after last_expected_traj_index
         else:
             self.expected_trajectory_q = np.append(
-                self.expected_trajectory_q[0:self.last_expected_traj_index], expected_q, axis=0
+                self.expected_trajectory_q[0 : self.last_expected_traj_index],
+                expected_q,
+                axis=0,
             )
             self.expected_trajectory_time = np.append(
-                self.expected_trajectory_time[0:self.last_expected_traj_index], expected_t, axis=0
+                self.expected_trajectory_time[0 : self.last_expected_traj_index],
+                expected_t,
+                axis=0,
             )
             self.expected_trajectory_des = np.append(
-                self.expected_trajectory_des[0:self.last_expected_traj_index], expected_des, axis=0
+                self.expected_trajectory_des[0 : self.last_expected_traj_index],
+                expected_des,
+                axis=0,
             )
 
     def __validate_task(self):
@@ -415,7 +434,7 @@ class DigitalUR:
         else:
             msg = f"{MSG_TYPES_DT_TO_CONTROLLER.TASK_NOT_VALIDATED} None"
         return valid, msg
-    
+
     def __process_task(self):
         """Process the task depending on the fault detection approach"""
         # compute timing thresholds if using timing thresholds approach
@@ -423,15 +442,17 @@ class DigitalUR:
             self.task_config, _, _, _ = self.timing_estimator.compute_thresholds(
                 self.task_config
             )
-            
+
         # compute task trajectory timings if using model-based approach
         elif self.approach == FaultDetectionApproach.MODEL_BASED:
             init = True if not self.current_fault else False
             if self.current_block != self.task_config[GRID_CONFIG.NO_BLOCKS] - 1:
-                self.timed_task = self.trajectory_timing_estimator.get_task_trajectory_timings(
-                    self.task_config,
-                    start_block=self.current_block + 1,
-                    initializing = init
+                self.timed_task = (
+                    self.trajectory_timing_estimator.get_task_trajectory_timings(
+                        self.task_config,
+                        start_block=self.current_block + 1,
+                        initializing=init,
+                    )
                 )
 
     def __plan_fault_resolution(self) -> None:
@@ -445,13 +466,25 @@ class DigitalUR:
             # only if there are still blocks
             if self.current_block + 1 < self.task_config[GRID_CONFIG.NO_BLOCKS]:
                 if self.mitigation_strategy == MitigationStrategy.SHIFT_ORIGIN:
-                    shift_thresholds = True if self.approach == FaultDetectionApproach.TIMING_THRESHOLDS else False
-                    fault_resolved, self.task_config = self.fault_resolver.shift_origins(self.task_config, self.current_block, shift_thresholds)
-                    self.time_of_last_message = time.time() # Reset timer
+                    shift_thresholds = (
+                        True
+                        if self.approach == FaultDetectionApproach.TIMING_THRESHOLDS
+                        else False
+                    )
+                    fault_resolved, self.task_config = (
+                        self.fault_resolver.shift_origins(
+                            self.task_config, self.current_block, shift_thresholds
+                        )
+                    )
+                    self.time_of_last_message = time.time()  # Reset timer
                     return fault_resolved
 
                 elif self.mitigation_strategy == MitigationStrategy.TRY_PICK_STOCK:
-                    fault_resolved, self.task_config, self.pick_stock_tried = self.fault_resolver.use_stock(self.task_config, self.current_block, self.pick_stock_tried)
+                    fault_resolved, self.task_config, self.pick_stock_tried = (
+                        self.fault_resolver.use_stock(
+                            self.task_config, self.current_block, self.pick_stock_tried
+                        )
+                    )
                     self.time_of_last_message = time.time()  # Reset timer
                     return fault_resolved
 
@@ -526,7 +559,9 @@ class DigitalUR:
         for i in range(6):
             if error[i] > self.pos_epsilon:
                 faults[i] = True
-                self.first_error_time = pt_time if self.first_error_time == 0 else self.first_error_time
+                self.first_error_time = (
+                    pt_time if self.first_error_time == 0 else self.first_error_time
+                )
 
         # log error to csv
         with open(f"error_logs/{self.error_file_name}", "a", encoding="UTF-8") as f:
@@ -552,10 +587,11 @@ class DigitalUR:
 
         # if any faults are present and the time since the first error is above epsilon, there is a fault
         if any(faults) and pt_time - self.first_error_time > self.time_epsilon:
-            print(f"\t [FAULT] Model diverged from PT at time {pt_time} for {pt_time - self.first_error_time} seconds")
+            print(
+                f"\t [FAULT] Model diverged from PT at time {pt_time} for {pt_time - self.first_error_time} seconds"
+            )
             if expected_q_des == TIs.TYPES.MOVE_WITH_OBJECT:
-               print("\t [INFO] Expected to move with object")
-               return True, FaultType.MISSING_OBJECT
+                return True, FaultType.MISSING_OBJECT
             else:
                 return True, FaultType.UNKOWN_FAULT
         else:
@@ -643,9 +679,13 @@ class DigitalUR:
         if self.approach == FaultDetectionApproach.MODEL_BASED:
             self.URVisualiser.stop_visualisation()
             if self.expected_trajectory_q.size > 0:
-                self.trajectory_estimator.save_traj_to_file(self.traj_file_name, trajectory_q=self.expected_trajectory_q, time=self.expected_trajectory_time)
+                self.trajectory_estimator.save_traj_to_file(
+                    self.traj_file_name,
+                    trajectory_q=self.expected_trajectory_q,
+                    time=self.expected_trajectory_time,
+                )
 
         self.state_machine_stop_event.set()
         self.state_machine_thread.join()
         self.rmq_client_in.stop_consuming()
-        print("Digital UR shutdown")
+        print("Digital UR shutdown finished gracefully:)")

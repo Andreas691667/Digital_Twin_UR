@@ -24,7 +24,7 @@ class Visualiser():
 
     def stop_visualisation(self):
         """Stops the visualisation application and the zmq socket"""
-        print("STOPPING ZMQ SOCKET")
+        print("Stopping Visualisation")
         self.socket.send_string("stop stop")
         if self.app_process is not None:
             self.app_process.kill()
