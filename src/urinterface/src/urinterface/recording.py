@@ -6,9 +6,9 @@ from queue import Queue
 from third_party.rtde import rtde_config, csv_writer, rtde
 
 # ADDED
-from urinterface.zmq_publisher import ZMQPublisher 
+# from urinterface.zmq_publisher import ZMQPublisher 
 # ADDED
-zmq_pub = ZMQPublisher(port=5556)
+# zmq_pub = ZMQPublisher(port=5556)
 
 
 STOP_REQUEST = 1
@@ -41,20 +41,20 @@ def _start_recording(rtde_con, config_file, frequency, log):
 
     return rtde_con, output_names, output_types
 
-def pub_topic(topic, state):
-    msg_data = state.__dict__[topic]
-    if isinstance(msg_data, list):
-        for i in range(len(msg_data)):
-            zmq_pub.publish_on_topic(f"{topic}_{i}", msg_data[i])
-    else:
-        zmq_pub.publish_on_topic(f"{topic}", msg_data)
+# def pub_topic(topic, state):
+#     msg_data = state.__dict__[topic]
+#     if isinstance(msg_data, list):
+#         for i in range(len(msg_data)):
+#             zmq_pub.publish_on_topic(f"{topic}_{i}", msg_data[i])
+#     else:
+#         zmq_pub.publish_on_topic(f"{topic}", msg_data)
 
-def publish_topics(topics, state):
-    if isinstance(topics,list):
-        for i in range(len(topics)):
-            pub_topic(topics[i], state)
-    else:
-        pub_topic(topics, state)
+# def publish_topics(topics, state):
+#     if isinstance(topics,list):
+#         for i in range(len(topics)):
+#             pub_topic(topics[i], state)
+#     else:
+#         pub_topic(topics, state)
 
 def _read_csv_stream(filename, samples, output_names, output_types, publish_topic, read_row_function, _thread_log, rmq_client=None, publish_topic_rmq=None):
     write_mode = 'w'
@@ -76,10 +76,10 @@ def _read_csv_stream(filename, samples, output_names, output_types, publish_topi
             state, should_continue = read_row_function()
             _thread_log.debug(f"Sample received: {state}")
 
-            # ADDED ######
-            if publish_topic != None:
-                publish_topics(publish_topic, state)
-            ##############
+            # # ADDED ######
+            # if publish_topic != None:
+            #     publish_topics(publish_topic, state)
+            # ##############
 
             if samples>0:
                 keep_running = i < samples
@@ -115,7 +115,7 @@ def _recording_thread(rtde_con, config_file, filename, frequency, samples, commu
 
         if not keep_running:
             signal = communication_queue.get_nowait()
-            zmq_pub.send_stop()
+            # zmq_pub.send_stop()
             assert signal == STOP_REQUEST, f"Strange signal received: {signal}."
             _thread_log.info("Stop record signal received.")
 

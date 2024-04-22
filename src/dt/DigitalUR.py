@@ -1,4 +1,5 @@
 import sys
+import subprocess
 import json
 import threading
 from queue import Queue, Empty
@@ -22,6 +23,8 @@ from dt_services.TaskValidator import TaskValidator
 from dt_services.TaskTrajectoryEstimator import TaskTrajectoryEstimator
 from dt_services.timing_model.TimingThresholdEstimator import TimingThresholdEstimator
 from dt_services.timing_model.TaskTrajectoryTimingEstimatorv2 import TaskTrajectoryTimingEstimator
+from dt.dt_services.Visualisation.URVisualiser import Visualiser
+
 
 @dataclass
 class MitigationStrategy:
@@ -94,6 +97,7 @@ class DigitalUR:
         self.timing_estimator = TimingThresholdEstimator(self.robot_model)
         self.trajectory_estimator = TaskTrajectoryEstimator(self.robot_model)
         self.trajectory_timing_estimator = TaskTrajectoryTimingEstimator(self.robot_model)
+        self.URVisualiser = Visualiser(port=5556, app_path = "dt_services/Visualisation/Application/DigitalShadowsUR.exe")
 
         self.mitigation_strategy = None
         self.__set_mitigation_strategy(mitigation_strategy)
@@ -291,6 +295,8 @@ class DigitalUR:
         self.__configure_rmq_clients()
         time.sleep(0.5) # wait for the RMQ clients to be configured
         self.__start_consuming()
+        if self.approach == FaultDetectionApproach.MODEL_BASED:
+            self.__start_visualisation()
         self.state = DTState.WAITING_TO_RECEIVE_TASK
         print("State transition -> WAITING_TO_RECEIVE_TASK")
 
@@ -346,6 +352,10 @@ class DigitalUR:
         self.rmq_client_out.send_message(validate_msg, RMQ_CONFIG.DT_EXCHANGE)
 
     # endregion
+
+    def __start_visualisation(self):
+        """Start the Visualisation application"""
+        self.URVisualiser.start_application()
 
     def __estimate_trajectory(self):
         """Estimate the trajectory based on the timed task"""
@@ -498,6 +508,11 @@ class DigitalUR:
         # get expected joint positions
         expected_q = self.expected_trajectory_q[time_idx]
 
+        # publish the actual joint positions to the visualiser
+        topic_names = ["actual_q_0", "actual_q_1", "actual_q_2", "actual_q_3", "actual_q_4", "actual_q_5"]
+        for i in range(6):
+            self.URVisualiser.publish_on_topic(topic_names[i], pt_q[i])
+
         # calculate the error
         error = np.abs(np.array(pt_q) - np.array(expected_q))
 
@@ -617,7 +632,10 @@ class DigitalUR:
     def shutdown(self):
         """Shutdown the digital twin"""
         # save
-        self.trajectory_estimator.save_traj_to_file(self.traj_file_name, trajectory_q=self.expected_trajectory_q, time=self.expected_trajectory_time)
+        if self.approach == FaultDetectionApproach.MODEL_BASED:
+            self.URVisualiser.stop_visualisation()
+            if self.expected_trajectory_q.size > 0:
+                self.trajectory_estimator.save_traj_to_file(self.traj_file_name, trajectory_q=self.expected_trajectory_q, time=self.expected_trajectory_time)
 
         self.state_machine_stop_event.set()
         self.state_machine_thread.join()

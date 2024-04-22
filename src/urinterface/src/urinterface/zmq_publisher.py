@@ -1,4 +1,5 @@
 import zmq
+import pandas as pd
 
 class ZMQPublisher():
 
@@ -9,6 +10,10 @@ class ZMQPublisher():
         self.socket.bind("tcp://*:%s" % port)
 
     def publish_on_topic(self, topic, msg_data):
+        # # log topic and msg_data to csv file 'zmq_publisher_log.csv'7
+        # log = pd.DataFrame(data={'topic': [topic], 'msg_data': [msg_data]})
+        # log.to_csv('zmq_publisher_log.csv', mode='a', header=False, index=False)
+
         self.socket.send_string(f"{topic} {msg_data}")
 
     def send_stop(self):
