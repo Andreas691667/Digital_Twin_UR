@@ -7,9 +7,10 @@ from dt_modules.timing_model.TimingModelv2 import TimingModel
 class TaskTrajectoryTimingEstimator(TimingModel):
     """TODO: Add description"""
 
-    # TODO: Not needed to override __init__ if it does the same as the parent class??
     def __init__(self, robot_model) -> None:
-        super().__init__(robot_model)
+        self.robot_model = robot_model
+        home_pos = self.robot_model.get_home_ik_solution()
+        super().__init__(home_pos)
 
     def get_task_trajectory_timings (self, task_config, start_block=0, initializing=True):
         """Returns task trajectory timings in format:
