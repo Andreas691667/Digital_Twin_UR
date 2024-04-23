@@ -10,11 +10,11 @@ from threading import Event
 from pathlib import Path
 from time import sleep
 
-from controller_monitor.Controller.Controller import Controller
-from controller_monitor.Monitor.Monitor import Monitor
+from robot_connection_manager.Controller.Controller import Controller
+from robot_connection_manager.Monitor.Monitor import Monitor
 
 
-class ControllerMonitor:
+class RobotConnectionManager:
     """Class responsible for all robot interaction"""
 
     def __init__(self, task_name, go_to_home=False, file_name_key="") -> None:

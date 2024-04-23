@@ -6,10 +6,10 @@ from config.rmq_config import RMQ_CONFIG
 from config.msg_config import MSG_TYPES_MONITOR_TO_DT
 import pandas as pd
 from time import sleep
-from ControllerMonitor import ControllerMonitor
+from robot_connection_manager.RobotConnectionManager import ControllerMonitor
 from queue import Queue
 
-class ControllerMonitorSimulator(ControllerMonitor):
+class RCMSimulator(ControllerMonitor):
     """Class to publish data to RabbitMQ server. 
      It will read data from a simulation file and publish it to the RabbitMQ server. 
      It will publish data to the specified topic"""
@@ -57,7 +57,7 @@ class ControllerMonitorSimulator(ControllerMonitor):
 
 # main
 if __name__ == "__main__":
-    simulator = ControllerMonitorSimulator("case1_robot_output.csv", "case1_close_blocks", frequency=250)
+    simulator = RCMSimulator("case1_robot_output.csv", "case1_close_blocks", frequency=250)
     sleep(2)
     print("Starting data publisher")
     simulator.start_publishing()
