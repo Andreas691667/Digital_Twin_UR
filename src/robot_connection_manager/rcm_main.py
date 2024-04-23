@@ -1,6 +1,5 @@
 from robot_connection_manager.RobotConnectionManager import ControllerMonitor
 import argparse
-import msvcrt
 
 if __name__ == "__main__":
 
