@@ -13,7 +13,7 @@ TI_SEQUENCE_VALUES = TI_SEQUENCES.VALUES
 # TimingModel
 class TimingModel:
     """TODO: Add description"""
-    def __init__(self, robot_model) -> None:
+    def __init__(self, home_position) -> None:
         # TI_matrix = [SUBTASK, FROM, TO, TI_VALUE, TI_TYPE], TI: "Timing Interval"
         # SUBTASK: The move of a block from its origin to a target
         # FROM: The joint position to move from
@@ -23,7 +23,7 @@ class TimingModel:
         self.TI_matrix = []
 
         # Other attributes
-        self.robot_model = robot_model
+        self.home_position = home_position
         self.timing_essential_joint_positions = []
         self.move_TIs = []
         self.from_to_matrix = []
@@ -108,7 +108,7 @@ class TimingModel:
 
         # Retrieve common variables
         joint_positions_current_block = self.ik_solution_tensor[block_number, :, :]
-        HOME = self.robot_model.get_home_ik_solution()
+        HOME = self.home_position
         BGP = joint_positions_current_block[0, :]
         GP = joint_positions_current_block[1, :] 
         BTP = joint_positions_current_block[2, :] 
