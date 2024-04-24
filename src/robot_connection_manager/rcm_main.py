@@ -1,4 +1,4 @@
-from robot_connection_manager.RobotConnectionManager import ControllerMonitor
+from robot_connection_manager.RobotConnectionManager import RobotConnectionManager
 import argparse
 import msvcrt
 
@@ -10,4 +10,4 @@ if __name__ == "__main__":
     parser.add_argument('-key', type=str, required=False, help='Optional prefix to log files', default="")
     args = parser.parse_args()
 
-    cm = ControllerMonitor(args.t, args.home, args.key)
+    cm = RobotConnectionManager(args.t, args.home, args.key)
