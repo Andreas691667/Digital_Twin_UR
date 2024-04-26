@@ -1,4 +1,4 @@
-from robot_connection_manager.RobotConnectionManager import RobotConnectionManager
+from RobotConnectionManager import RobotConnectionManager
 import argparse
 
 if __name__ == "__main__":

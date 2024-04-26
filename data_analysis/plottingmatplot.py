@@ -65,7 +65,7 @@ def read_ts(r:pd.DataFrame, start_time=0):
 
 if __name__ == "__main__":
    
-    file_name_key = "case1_1_3_miss"
+    file_name_key = "test"
 
     # ----- WITH KEY AND NAME -----
     r_dt = pd.read_csv(f"../src/dt/dt_trajectories/{file_name_key}_dt_trajectory.csv", delimiter=' ')

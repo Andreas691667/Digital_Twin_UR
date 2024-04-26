@@ -1,26 +1,25 @@
 from sys import path
 path.append("../..")
 import numpy as np
-from dt_modules.timing_model.TimingModelv2 import TimingModel
+# from dt_modules.timing_model.TimingModelv2 import TimingModel
 
 
-class TaskTrajectoryTimingEstimator(TimingModel):
+class TaskTrajectoryTimingEstimator():
     """TODO: Add description"""
 
-    def __init__(self, robot_model) -> None:
+    def __init__(self, robot_model, timing_model) -> None:
         self.robot_model = robot_model
-        home_pos = self.robot_model.get_home_ik_solution()
-        super().__init__(home_pos)
+        self.timing_model = timing_model
 
     def get_task_trajectory_timings (self, task_config, start_block=0, initializing=True):
         """Returns task trajectory timings in format:
             [FROM, TO, TI_VALUE, TI_TYPE]
         """
         ik_task_tensor = self.robot_model.compute_ik_task_tensor(task_config)
-        self.set_ik_solution_tensor(ik_task_tensor)
-        self.compute_timing_intervals(start_block, initializing)
-        NUMBER_OF_TOTAL_TIs, _ = np.shape(self.TI_matrix)
-        TI_matrix_without_block_number = [self.TI_matrix[i][1:] for i in range(NUMBER_OF_TOTAL_TIs)]
+        self.timing_model.set_ik_solution_tensor(ik_task_tensor)
+        self.timing_model.compute_timing_intervals(start_block, initializing)
+        NUMBER_OF_TOTAL_TIs, _ = np.shape(self.timing_model.TI_matrix)
+        TI_matrix_without_block_number = [self.timing_model.TI_matrix[i][1:] for i in range(NUMBER_OF_TOTAL_TIs)]
         return TI_matrix_without_block_number
 
 # if __name__ == "__main__":

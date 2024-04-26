@@ -1,4 +1,4 @@
-from DigitalUR import DigitalUR
+from DigitalTwin import DigitalTwin
 import cli_arguments
 import msvcrt
 import argparse
@@ -18,12 +18,12 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description='Digital UR', formatter_class=RawTextHelpFormatter)
     parser.add_argument("-ms", type=str, required=True, help=ms_help)
-    parser.add_argument("-a", type=int, required=True, help=a_help)
+    parser.add_argument("-a", type=int, required=False, help=a_help, default=2)
     parser.add_argument("-key", type=str, required=False, help=key_help, default="")
 
     args = parser.parse_args()
 
-    digital_ur = DigitalUR(args.ms, args.a, args.key)
+    digital_ur = DigitalTwin(args.ms, args.a, args.key)
 
 # while until keyboard interrupt
     while True:

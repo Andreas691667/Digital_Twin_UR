@@ -16,7 +16,8 @@ from config.msg_config import MSG_TYPES_CONTROLLER_TO_DT, MSG_TYPES_DT_TO_CONTRO
 from config.grid_config import GRID_CONFIG
 from config.timing_config import TIs
 
-from ur3e.ur3e import UR3e
+from models.robot_model.ur3e import UR3e
+from models.timing_model.TimingModel import TimingModel
 
 from dt_modules.FaultResolver import FaultResolver
 from dt_modules.TaskValidator import TaskValidator
@@ -66,7 +67,7 @@ class DTState:
     FAULT_RESOLUTION = 5
 
 
-class DigitalUR:
+class DigitalTwin:
     """Class for the digital twin of the UR3e Robot
     :param mitigation_strategy: The mitigation strategy to use
     :param approach: The fault detection approach to use
@@ -90,17 +91,17 @@ class DigitalUR:
         self.state_machine_stop_event = threading.Event()
         self.state_machine_thread = threading.Thread(target=self.__state_machine)
 
-        # kinematic model of the UR3e robot
+        # models
         self.robot_model = UR3e()
+        home_pos = self.robot_model.get_home_ik_solution()
+        self.timing_model = TimingModel(home_pos)
 
         # dt services
         self.fault_resolver = FaultResolver()
         self.task_validator = TaskValidator()
-        self.timing_estimator = TimingThresholdEstimator(self.robot_model)
-        self.trajectory_estimator = TaskTrajectoryEstimator(self.robot_model)
-        self.trajectory_timing_estimator = TaskTrajectoryTimingEstimator(
-            self.robot_model
-        )
+        self.timing_threshold_estimator = TimingThresholdEstimator(self.robot_model)
+        self.task_trajectory_estimator = TaskTrajectoryEstimator(self.robot_model)
+        self.task_trajectory_timing_threshold_estimator = TaskTrajectoryTimingEstimator(self.robot_model, self.timing_model)
         self.URVisualiser = Visualiser(
             port=5556,
             app_path="dt_modules/Visualisation/Application/DigitalShadowsUR.exe",
@@ -281,7 +282,7 @@ class DigitalUR:
             if self.__check_start_bit(msg_data):
                 # update the time vector to align with pt's time
                 self.expected_trajectory_time = (
-                    self.trajectory_estimator.update_time_vector(
+                    self.task_trajectory_estimator.update_time_vector(
                         self.last_pt_time,
                         self.expected_trajectory_time,
                         self.last_expected_traj_index,
@@ -321,7 +322,7 @@ class DigitalUR:
 
         # tell task_validator what object is missing if that is the case
         if self.current_fault == FaultType.MISSING_OBJECT:
-            self.timing_estimator.set_missing_block(self.current_block + 1)
+            self.timing_threshold_estimator.set_missing_block(self.current_block + 1)
 
         # if fault resolved, go to validating task state
         if fault_resolved:
@@ -377,7 +378,7 @@ class DigitalUR:
                     break
 
             # get duration between last_pt_q and first_pos
-            duration = self.trajectory_timing_estimator.get_duration_between_positions(
+            duration = self.timing_model.get_duration_between_positions(
                 np.vstack((self.last_pt_q, first_pos))
             )
             # update timed_task with new task segment, TODO: [-1] is a placeholder for the TI.Type
@@ -391,7 +392,7 @@ class DigitalUR:
         # if task is valid, estimate the trajectory for the timed task,
         # and go to waiting for task to start state
         expected_q, _, _, expected_t, expected_des = (
-            self.trajectory_estimator.estimate_trajectory(
+            self.task_trajectory_estimator.estimate_trajectory(
                 self.timed_task,
                 start_time=0,
                 save_to_file=False,
@@ -438,7 +439,7 @@ class DigitalUR:
         """Process the task depending on the fault detection approach"""
         # compute timing thresholds if using timing thresholds approach
         if self.approach == FaultDetectionApproach.TIMING_THRESHOLDS:
-            self.task_config, _, _, _ = self.timing_estimator.compute_thresholds(
+            self.task_config, _, _, _ = self.timing_threshold_estimator.compute_thresholds(
                 self.task_config
             )
 
@@ -447,7 +448,7 @@ class DigitalUR:
             init = True if not self.current_fault else False
             if self.current_block != self.task_config[GRID_CONFIG.NO_BLOCKS] - 1:
                 self.timed_task = (
-                    self.trajectory_timing_estimator.get_task_trajectory_timings(
+                    self.task_trajectory_timing_threshold_estimator.get_task_trajectory_timings(
                         self.task_config,
                         start_block=self.current_block + 1,
                         initializing=init,
@@ -679,7 +680,7 @@ class DigitalUR:
         if self.approach == FaultDetectionApproach.MODEL_BASED:
             self.URVisualiser.stop_visualisation()
             if self.expected_trajectory_q.size > 0:
-                self.trajectory_estimator.save_traj_to_file(
+                self.task_trajectory_estimator.save_traj_to_file(
                     self.traj_file_name,
                     trajectory_q=self.expected_trajectory_q,
                     time=self.expected_trajectory_time,

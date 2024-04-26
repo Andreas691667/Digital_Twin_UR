@@ -12,7 +12,7 @@ from threading import Thread, Event
 
 path.append("..")
 from config.grid_config import GRID_CONFIG
-from ur3e.ur3e import UR3e
+from models.robot_model.ur3e import UR3e
 from config.msg_config import (
     MSG_TYPES_DT_TO_CONTROLLER,
     MSG_TYPES_CONTROLLER_TO_DT,
@@ -293,7 +293,7 @@ class Controller:
         """Wait for task validation from DT"""
         # Wait for DT to validate task
         if self.task_validated:
-            self.load_program("/move_registers.urp")
+            self.__load_program("/move_registers.urp")
             self.STATE = ControllerStates.WAITING_FOR_USER_INPUT
             print("State transition -> WAITING_FOR_USER_INPUT")
             print(
