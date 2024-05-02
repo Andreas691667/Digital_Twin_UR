@@ -41,9 +41,9 @@ class TimingModel:
         joint_positions_differences = np.abs(self.from_to_matrix[:, :6] - self.from_to_matrix[:, 6:])
         leading_axis = np.argmax(joint_positions_differences, axis=1)
         differences_leading_axis = joint_positions_differences[np.arange(len(joint_positions_differences)), leading_axis]
-        return differences_leading_axis
+        return differences_leading_axis, leading_axis
 
-    def _get_durations_of_leading_axis(self, distances_leading_axis: np.ndarray) -> np.ndarray:
+    def _get_durations_of_leading_axis(self, distances_leading_axis: np.ndarray, leading_axes) -> np.ndarray:
         """
         Calculates the durations of the leading axis's
         Input: Distances of the leading axes between each position
@@ -58,13 +58,16 @@ class TimingModel:
         JOINT_ACCELERATION_RAD = ROBOT_PHYSICS.JOINT_ACCELERATION_RAD
         JOINT_SPEED_MAX_RAD = ROBOT_PHYSICS.JOINT_SPEED_MAX_RAD
         ACCELERATION_TRAP_TIME = ROBOT_PHYSICS.ACCELERATION_TRAP_TIME
+        ADJUSTMENT_EPSILON_JOINT_0_TO_4 = ROBOT_PHYSICS.ADJUSTMENT_EPSILON_JOINT_0_TO_4
+        ADJUSTMENT_EPSILON_JOINT_5 = ROBOT_PHYSICS.ADJUSTMENT_EPSILON_JOINT_5
         
         # For every distance the robot have to travel it does:
         # 1) Move with constant acceleration
         # 2) Move with with constant max speed
         # 3) Move with constant decceleration
         # If the movement is short in distance, it might skip step 2.
-        for _, distance in enumerate(distances_leading_axis):
+        for i, distance in enumerate(distances_leading_axis):
+            leading_axis = leading_axes[i]
             # Check if movement reaches max speed
             # Does not reach max speed
             if ACCELERATION_DIST >= distance/2: # If the acceleration distance is greater than half of the distance, then it does not reach max speed
@@ -80,6 +83,14 @@ class TimingModel:
             else: 
                 TRAP_CON_TI = (distance-ACCELERATION_DIST*2) / JOINT_SPEED_MAX_RAD
                 TRAP_TI = 2*ACCELERATION_TRAP_TIME + TRAP_CON_TI
+
+                # compensate for drift if joint is joint 5
+                if leading_axis == 5:
+                    TRAP_TI += ADJUSTMENT_EPSILON_JOINT_5
+
+                else:
+                    TRAP_TI += ADJUSTMENT_EPSILON_JOINT_0_TO_4
+
                 # Add data
                 durations.extend([TRAP_TI])
 
@@ -93,10 +104,10 @@ class TimingModel:
         Outputs the combined duration between each joint position and the individual durations
         """ 
         # Get the distances of the leading axis
-        distances_of_leading_axis = self._get_distances_of_leading_axes()
+        distances_of_leading_axis, leading_axes = self._get_distances_of_leading_axes()
         
         # Get timing intervals and speedprofiles/delays + descriptions
-        durations = self._get_durations_of_leading_axis(distances_of_leading_axis) 
+        durations = self._get_durations_of_leading_axis(distances_of_leading_axis, leading_axes) 
 
         self.move_TIs = durations
 
@@ -180,7 +191,7 @@ class TimingModel:
         self.from_to_matrix = np.hstack((joint_positions[:-1,:], joint_positions[1:, :]))
         
         # Get the distances of the leading axis
-        distances_of_leading_axis = self._get_distances_of_leading_axes()
+        distances_of_leading_axis, _ = self._get_distances_of_leading_axes()
         
         # Get timing intervals and speedprofiles/delays + descriptions
         durations = self._get_durations_of_leading_axis(distances_of_leading_axis) 
