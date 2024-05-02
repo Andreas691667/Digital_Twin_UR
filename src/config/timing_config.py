@@ -5,11 +5,12 @@ import numpy as np
 class ROBOT_PHYSICS:
     JOINT_SPEED_MAX_DEG = 60 # deg/s
     JOINT_ACCELERATION_DEG = 80 # deg/s^2
-    ACCELERATION_DRIFT = - 0.09
     JOINT_SPEED_MAX_RAD = np.deg2rad(JOINT_SPEED_MAX_DEG) # rad/s
     JOINT_ACCELERATION_RAD = np.deg2rad(JOINT_ACCELERATION_DEG) # rad/s^2
-    ACCELERATION_TRAP_TIME = JOINT_SPEED_MAX_RAD / JOINT_ACCELERATION_RAD  # Time it takes to reach maximun velocity
-    ACCELERATION_DIST = 1/2 * JOINT_ACCELERATION_RAD * ACCELERATION_TRAP_TIME**2 -0.09
+    ACCELERATION_TRAP_TIME = JOINT_SPEED_MAX_RAD / JOINT_ACCELERATION_RAD   # Time it takes to reach maximun velocity
+    ACCELERATION_DIST = 1/2 * JOINT_ACCELERATION_RAD * ACCELERATION_TRAP_TIME**2
+    ADJUSTMENT_EPSILON_JOINT_0_TO_4 = 0.09 # Epsilon for adjusting the timing interval
+    ADJUSTMENT_EPSILON_JOINT_5 = 0.18 # Epsilon for adjusting the timing interval
 
 
 @dataclass
