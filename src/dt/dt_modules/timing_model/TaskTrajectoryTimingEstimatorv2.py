@@ -22,14 +22,17 @@ class TaskTrajectoryTimingEstimator():
         TI_matrix_without_block_number = [self.timing_model.TI_matrix[i][1:] for i in range(NUMBER_OF_TOTAL_TIs)]
         return TI_matrix_without_block_number
 
-# if __name__ == "__main__":
-#     import yaml
-#     from ur3e.ur3e import UR3e # for testing!
+if __name__ == "__main__":
+    import yaml
+    path.append("../../..")
+    from models.robot_model.ur3e import UR3e # for testing!
+    from models.timing_model.TimingModel import TimingModel
 
-#     with open(f"../../config/tasks/2_blocks.yaml", "r") as file:
-#         task_config = yaml.safe_load(file)
+    with open(f"../../../config/tasks/2_blocks.yaml", "r") as file:
+        task_config = yaml.safe_load(file)
 
-#     robot_model = UR3e()
-#     task_trajectory_timing_estimator = TaskTrajectoryTimingEstimator(robot_model)
-#     M = task_trajectory_timing_estimator.get_task_trajectory_timings(task_config)
-#     print(M)
+    robot_model = UR3e()
+    timing_model = TimingModel(robot_model.get_home_ik_solution())
+    task_trajectory_timing_estimator = TaskTrajectoryTimingEstimator(robot_model, timing_model)
+    M = task_trajectory_timing_estimator.get_task_trajectory_timings(task_config)
+    # print(M)
