@@ -93,7 +93,7 @@ class TaskValidator:
                     task_valid = False
                     self.block_origin_map[2, i] = 1 - self.block_origin_map[2, i]
                     break
-            
+
         return task_valid
 
     def __is_grip_possible(self, block_pos, block_map, start, stop, threshold):
@@ -113,22 +113,22 @@ class TaskValidator:
                 elif not block_pos[2] and dist[1] == 0:
                     if np.abs(dist[0]/2) <= threshold/2:
                         grip_possible = False
-            
+
         return grip_possible
 
 # main
-# if __name__ == "__main__":
-#     import yaml
-#     import json
-#     # task = GRID_CONFIG.block_config_close_blocks
+if __name__ == "__main__":
+    import yaml
+    import json
+    # task = GRID_CONFIG.block_config_close_blocks
 
-#     with open("../../config/tasks/close_blocks.yaml", "r") as file:
-#         task = yaml.safe_load(file)
+    with open("../../config/tasks/square.yaml", "r") as file:
+        task = yaml.safe_load(file)
 
-#     print(task)
+    print(task)
 
-#     task_validator = TaskValidator()
-#     valid, task_new = task_validator.validate_task(task)
+    task_validator = TaskValidator()
+    valid, task_new = task_validator.validate_task(task)
 
-#     print(f"Task valid: {valid}")
-#     print(json.dumps(task_new, indent=4))
+    print(f"Task valid: {valid}")
+    print(json.dumps(task_new, indent=4))
