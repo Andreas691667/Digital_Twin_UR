@@ -14,7 +14,7 @@ class TaskValidator:
         self.task = None
         self.validating_threshold = 2 # should handle new task in 2 seconds
     
-    def validate_task(self, task: dict):
+    def validate_task(self, task: dict, start_block: int = 0):
         """Validate the task
         params: task: <dict> - The task to validate
         returns: bool, dict - Whether the task is valid and the task
@@ -25,7 +25,7 @@ class TaskValidator:
         self.__create_maps()
 
         # validate task
-        valid = self.__validate_task()
+        valid = self.__validate_task(start_block)
 
         if valid: 
             # parse matrices to task again
@@ -59,7 +59,7 @@ class TaskValidator:
             self.block_target_map[1, i] = self.task[i][GRID_CONFIG.TARGET][GRID_CONFIG.y]
             self.block_target_map[2, i] = False
 
-    def __validate_task(self):
+    def __validate_task(self, start_block):
         """Validate the task by checking if the gripper can reach the target positions"""
         task_valid = False
         start_time = time()
@@ -70,7 +70,7 @@ class TaskValidator:
             task_valid = True
 
             # check all blocks
-            for i in range(self.no_blocks):
+            for i in range(start_block, self.no_blocks):
 
                 # check if grip position is possible for targets
                 grip_possible = self.__is_grip_possible(
@@ -119,16 +119,14 @@ class TaskValidator:
 # main
 if __name__ == "__main__":
     import yaml
-    import json
     # task = GRID_CONFIG.block_config_close_blocks
 
-    with open("../../config/tasks/square.yaml", "r") as file:
+    with open("../../config/tasks/square_stock.yaml", "r") as file:
         task = yaml.safe_load(file)
 
-    print(task)
 
     task_validator = TaskValidator()
-    valid, task_new = task_validator.validate_task(task)
+    valid, task_new = task_validator.validate_task(task, 2)
 
     print(f"Task valid: {valid}")
-    print(json.dumps(task_new, indent=4))
+    # print(json.dumps(task_new, indent=4))

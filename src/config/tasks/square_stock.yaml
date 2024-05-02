@@ -1,0 +1,57 @@
+NO_BLOCKS: 8
+0:
+  ORIGIN:
+    x: -1
+    y: 1
+  TARGET:
+    x: 12
+    y: -7
+1:
+  ORIGIN:
+    x: -3
+    y: 1
+  TARGET:
+    x: 12
+    y: -6
+2:
+  ORIGIN:
+    x: 2
+    y: 1
+  TARGET:
+    x: 12
+    y: -5
+3:
+  ORIGIN:
+    x: -5
+    y: 1
+  TARGET:
+    x: 13
+    y: -5
+4:
+  ORIGIN:
+    x: 5
+    y: 1
+  TARGET:
+    x: 14
+    y: -5
+5:
+  ORIGIN:
+    x: -3
+    y: 1
+  TARGET:
+    x: 14
+    y: -6
+6:
+  ORIGIN:
+    x: 8
+    y: 1
+  TARGET:
+    x: 14
+    y: -7
+7:
+  ORIGIN:
+    x: 8
+    y: 2
+  TARGET:
+    x: 13
+    y: -7

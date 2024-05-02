@@ -191,10 +191,10 @@ class TimingModel:
         self.from_to_matrix = np.hstack((joint_positions[:-1,:], joint_positions[1:, :]))
         
         # Get the distances of the leading axis
-        distances_of_leading_axis, _ = self._get_distances_of_leading_axes()
+        distances_of_leading_axis, leading_axes = self._get_distances_of_leading_axes()
         
         # Get timing intervals and speedprofiles/delays + descriptions
-        durations = self._get_durations_of_leading_axis(distances_of_leading_axis) 
+        durations = self._get_durations_of_leading_axis(distances_of_leading_axis, leading_axes) 
 
         return durations
     

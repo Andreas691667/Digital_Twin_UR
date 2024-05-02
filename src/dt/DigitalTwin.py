@@ -132,8 +132,8 @@ class DigitalTwin:
         self.expected_trajectory_time = np.array([])
         self.expected_trajectory_des = np.array([])
 
-        self.pos_epsilon = 0.8  # allowed error for each joint [rad]
-        self.time_epsilon = 2  # allowed time for error to sustain [s]
+        self.pos_epsilon = 0.7  # allowed error for each joint [rad]
+        self.time_epsilon = 1  # allowed time for error to sustain [s]
 
         # log files
         self.traj_file_name = file_name_key + "_dt_trajectory.csv"
@@ -427,7 +427,8 @@ class DigitalTwin:
     def __validate_task(self):
         """Validate the task using the task validator"""
         valid, self.task_config = self.task_validator.validate_task(
-            self.task_config.copy()
+            self.task_config.copy(),
+            start_block=self.current_block + 1
         )
         if valid:
             msg = f"{MSG_TYPES_DT_TO_CONTROLLER.TASK_VALIDATED} {self.task_config}"
@@ -521,7 +522,7 @@ class DigitalTwin:
 
         # protective stop
         if safety_status == 3:
-            print("Protective stop")
+            print("!!Protective Stop encountered!!")
             return True, FaultType.PROTECTIVE_STOP
 
         # Normal
