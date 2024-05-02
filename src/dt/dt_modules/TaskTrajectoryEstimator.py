@@ -116,7 +116,7 @@ class TaskTrajectoryEstimator:
         final_traj_qd = []
         final_traj_qdd = []
         final_traj_des = []
-        final_time = [start_time]
+        final_time = []
 
         last_traj_q = [start]
         last_traj_qd = [0] * 6
@@ -143,9 +143,12 @@ class TaskTrajectoryEstimator:
                 final_traj_qdd = np.append(final_traj_qdd, traj.qdd)
 
                 # Compute the time
-                time_vector = np.linspace(
-                    final_time[-1] + 0.05, motion_time + final_time[-1], n_steps
-                )
+                if len(final_time) == 0:
+                    time_vector = np.linspace(start_time, motion_time, n_steps)
+                else:
+                    time_vector = np.linspace(
+                        final_time[-1] + 0.05, motion_time + final_time[-1], n_steps
+                    )
 
                 final_time = np.append(final_time, time_vector, axis=0)
 
@@ -167,9 +170,14 @@ class TaskTrajectoryEstimator:
                     final_traj_qdd, np.tile(last_traj_qdd[-1], n_steps), axis=0
                 )
 
-                time_vector = np.linspace(
-                    final_time[-1] + 0.05, motion_time + final_time[-1], n_steps
-                )
+                # Compute the time
+                if len(final_time) == 0:
+                    time_vector = np.linspace(start_time, motion_time, n_steps)
+                else:
+                    time_vector = np.linspace(
+                        final_time[-1] + 0.05, motion_time + final_time[-1], n_steps
+                    )
+
                 final_time = np.append(final_time, time_vector, axis=0)
 
             # update the description vector. Should repeat the description for each time step
@@ -196,64 +204,32 @@ class TaskTrajectoryEstimator:
         return self.traj_q, self.traj_qd, self.traj_qdd, self.time, final_traj_des
 
 
-# # Example of usage
-# # main
-# if __name__ == "__main__":
-#     import sys
-#     import yaml
+# Example of usage
+# main
+if __name__ == "__main__":
+    import sys
+    import yaml
 
-#     sys.path.append("../..")
-#     from ur3e.ur3e import UR3e
+    sys.path.append("../..")
+    from models.robot_model.ur3e import UR3e
+    from models.timing_model.TimingModel import TimingModel
 
-#     with open(f"../../config/tasks/2_blocks.yaml", "r") as file:
-#         task_config = yaml.safe_load(file)
+    with open(f"../../config/tasks/2_blocks.yaml", "r") as file:
+        task_config = yaml.safe_load(file)
 
-#     model = UR3e()
-#     from dt.dt_modules.TaskTrajectoryTimingEstimator import TrajectoryTimingEstimator
+    model = UR3e()
+    timing_model = TimingModel(model.get_home_ik_solution())
+    from dt.dt_modules.timing_model.TaskTrajectoryTimingEstimatorv2 import TaskTrajectoryTimingEstimator
 
-#     task_estimator = TaskTrajectoryEstimator(model)
-#     traj_timing_est = TrajectoryTimingEstimator(model)
+    task_estimator = TaskTrajectoryEstimator(model)
+    traj_timing_est = TaskTrajectoryTimingEstimator(model, timing_model)
 
-#     origin0 = task_config[0]["ORIGIN"]
-#     target0 = task_config[0]["TARGET"]
-#     origin1 = task_config[1]["ORIGIN"]
-#     target1 = task_config[1]["TARGET"]
-#     HOME = model.compute_joint_positions_xy(11, -2)
-#     BGP0, GP0, BTP0, TP0 = model.compute_joint_positions_origin_target(origin0, target0)
-#     BGP1, GP1, BTP1, TP1 = model.compute_joint_positions_origin_target(origin1, target1)
-#     BTP1[-1] -= np.pi/2
-#     TP1[-1] -= np.pi/2
-#     v_none = [16] * 6
+    task_with_timings2 = traj_timing_est.get_task_trajectory_timings(task_config)
 
-#     # Create a task with timings
-#     task_with_timings = [
-#         np.concatenate((v_none, v_none, [.6])),
-#         np.concatenate((HOME, BGP0, [1.3])),
-#         np.concatenate((BGP0, GP0, [0.8])),
-#         np.concatenate((v_none, v_none, [0.8])),
-#         np.concatenate((GP0, BGP0, [0.8])),
-#         np.concatenate((BGP0, BTP0, [2.4])),
-#         np.concatenate((BTP0, TP0, [0.8])),
-#         np.concatenate((v_none, v_none, [0.6])),
-#         np.concatenate((TP0, BTP0, [0.8])),
-#         np.concatenate((v_none, v_none, [1.5])),
-#         np.concatenate((BTP0, BGP1, [2.5])),
-#         np.concatenate((BGP1, GP1, [.8])),
-#         np.concatenate((v_none, v_none, [0.8])),
-#         np.concatenate((GP1, BGP1, [0.8])),
-#         np.concatenate((BGP1, BTP1, [3.7])),
-#         np.concatenate((BTP1, TP1, [0.8])),
-#         np.concatenate((v_none, v_none, [0.6])),
-#         np.concatenate((TP1, BTP1, [1.0])),
-#         np.concatenate((v_none, v_none, [.8])),
-#         np.concatenate((BTP1, HOME, [2.3])),
-#     ]
+    trajq, trajqd, trajqdd, time, des = task_estimator.estimate_trajectory(
+        task_with_timings2, save_to_file=False)
 
-#     task_with_timings2 = traj_timing_est.get_traj_timings(task_config)
+    print(trajq.shape, time.shape, des.shape)
+    print(time)
 
-#     trajq, trajqd, trajqdd, time = task_estimator.estimate_trajectory(
-#         task_with_timings2, start_time=100, save_to_file=True, file_name="dt_traj_2_blocks.csv"
-#     )
-
-#     model.plot_trajectory(trajq)
     
