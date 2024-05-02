@@ -132,8 +132,8 @@ class DigitalTwin:
         self.expected_trajectory_time = np.array([])
         self.expected_trajectory_des = np.array([])
 
-        self.pos_epsilon = 0.6  # allowed error for each joint [rad]
-        self.time_epsilon = 1  # allowed time for error to sustain [s]
+        self.pos_epsilon = 0.8  # allowed error for each joint [rad]
+        self.time_epsilon = 2  # allowed time for error to sustain [s]
 
         # log files
         self.traj_file_name = file_name_key + "_dt_trajectory.csv"
@@ -571,6 +571,9 @@ class DigitalTwin:
                 self.first_error_time = (
                     pt_time if self.first_error_time == 0 else self.first_error_time
                 )
+        if not any(faults):
+            self.first_error_time = 0
+            
 
         # log error to csv
         with open(f"error_logs/{self.error_file_name}", "a", encoding="UTF-8") as f:
