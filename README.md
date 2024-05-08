@@ -28,6 +28,13 @@ The following arguments are required:
 
 The system will ask for the operator to press '2' to start the task execution when ready. 
 
+### Important note
+The robot must be in the home position before starting the system. This can be done by running the command:
+```bash
+python rcm_main.py -home True
+```
+Also, ensure that the robot is set to Remote Control on the Teach Pendant. Please see this [link](https://robodk.com/doc/en/Robots-Universal-Robots-How-enable-Remote-Control-URe.html) on how to do this.
+
 ## How to plot trajectories
 If approach 2 is used, the DT's planned trajectory is saved to a file and can be plotted along with the PT's trajectory and the real-time-measured error. To plot the trajectories, run the following command in the root of the repo:
 ```bash
