@@ -7,7 +7,7 @@ The repository contains the source code for the Digital Twin of the Universal Ro
 
 ## How to run the system
 To run the system, open two terminals in the root of the repo and run the following commands in each terminal:
-**Terminal 1**
+**Terminal 1 (Digital Twin)**
 ```bash
 cd src/dt
 python digital_ur_main.py -a <approach> -ms <mitigation_strategy> -key <file_key>
@@ -17,7 +17,7 @@ The following arguments are required:
 - -ms: The mitigation strategy to use for handling missing blocks. Options are: 'shift' for shifting the block origins and 'stock' for using the stock.
 - -key (optional): The key to prepend on log files.
 
-**Terminal 2**
+**Terminal 2 (Robot Connection Manager)**
 ```bash
 cd src/robot_connection_manager
 python rcm_main.py -t <task_name> -key <file_key>
