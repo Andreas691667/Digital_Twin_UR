@@ -1,15 +1,17 @@
 import sys
-sys.path.append('..')
-sys.path.append("../urinterface/src")
+sys.path.append('../..')
+sys.path.append("../../urinterface/src")
 from rmq.RMQClient import Client
 from config.rmq_config import RMQ_CONFIG
 from config.msg_config import MSG_TYPES_MONITOR_TO_DT
 import pandas as pd
 from time import sleep
-from robot_connection_manager.RobotConnectionManager import ControllerMonitor
+from robot_connection_manager.RobotConnectionManager import RobotConnectionManager
+from robot_connection_manager.Controller.Controller import Controller
 from queue import Queue
+from threading import Event
 
-class RCMSimulator(ControllerMonitor):
+class RCMSimulator(Controller):
     """Class to publish data to RabbitMQ server. 
      It will read data from a simulation file and publish it to the RabbitMQ server. 
      It will publish data to the specified topic"""
@@ -19,13 +21,13 @@ class RCMSimulator(ControllerMonitor):
         self.rmq_client_in = Client(host=RMQ_CONFIG.RMQ_SERVER_IP)
         self.rmq_client_out_monitor = Client(host=RMQ_CONFIG.RMQ_SERVER_IP)
         self.rmq_client_out_controller = Client(host=RMQ_CONFIG.RMQ_SERVER_IP)
+        self.shutdown_event = Event()
         self.configure_rmq_clients()
         self.controller_queue = Queue()
         self.task_config = None
-        self.load_task(task_config)
+        self.load_task(f"../../config/tasks/{task_config}.yaml")
         self.publish_frequency = frequency # Hz
         self.__read_data()
-
         self.publish_task_to_DT()
         
     def __read_data(self):

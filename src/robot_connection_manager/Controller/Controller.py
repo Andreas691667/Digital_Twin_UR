@@ -62,7 +62,7 @@ class Controller:
         # setup RMQ
         self.rmq_client_in = Client(host=RMQ_CONFIG.RMQ_SERVER_IP)
         self.rmq_client_out_controller = Client(host=RMQ_CONFIG.RMQ_SERVER_IP)
-        self.__configure_rmq_clients()
+        self.configure_rmq_clients()
 
         # shutdown thread
         self.shutdown_event = Event()
@@ -74,13 +74,13 @@ class Controller:
         self.controller_queue = Queue()
 
         # load task
-        self.__load_task(task_name)
+        self.load_task(f"../config/tasks/{task_name}.yaml")
 
         # start threads
         self.shutdown_thread.start()
         self.controller_thread.start()
 
-    def __configure_rmq_clients(self):
+    def configure_rmq_clients(self):
         self.rmq_client_in.configure_incoming_channel(
             self.__on_rmq_message_cb,
             RMQ_CONFIG.DT_EXCHANGE,
@@ -95,13 +95,13 @@ class Controller:
         self.rmq_client_in.start_consumer_thread()
         print("\t [INFO] Controller RMQ clients configured")
 
-    def __load_task(self, task_name):
+    def load_task(self, task_path):
         """Load task from yaml file"""
         try:
-            with open(f"../config/tasks/{task_name}.yaml", "r", encoding="UTF-8") as file:
+            with open(task_path, "r", encoding="UTF-8") as file:
                 self.task_config = yaml.safe_load(file)
         except FileNotFoundError:
-            print(f"Task {task_name} not found")
+            print(f"Task in path: {task_path} not found")
             self.shutdown_event.set()
 
     def __recieve_user_input(self) -> None:
@@ -115,7 +115,7 @@ class Controller:
             elif k == "2":
                 print(f"\t [INFO] User inputted: {k}")
                 self.STATE = ControllerStates.NORMAL_OPERATION
-                print("\t[STATE] NORMAL_OPERATION")
+                print("State transition -> NORMAL_OPERATION")
 
             elif k == "i" and self.task_finished:
                 print(f"\t [INFO] User inputted: {k}")
@@ -370,7 +370,7 @@ class Controller:
 
         # DT could not validate the task
         elif msg_type == MSG_TYPES_DT_TO_CONTROLLER.TASK_NOT_VALIDATED:
-            self.robot_connection.popup("Task not validated. Exiting")
+            self.robot_connection.popup("Task could not be validated. Resolve fault and restart Controller.")
             self.STATE = ControllerStates.SHUTTING_DOWN
             print("State transition -> SHUTTING_DOWN")
 
@@ -378,7 +378,7 @@ class Controller:
         elif msg_type == MSG_TYPES_DT_TO_CONTROLLER.COULD_NOT_RESOLVE:
             print("\t [INFO] DT could not resolve")
             self.robot_connection.popup(
-                "DT could not resolve the fault. Task not possible. Exiting"
+                "DT could not resolve the fault. Resolve fault and restart Controller."
             )
             self.STATE = ControllerStates.SHUTTING_DOWN
             print("State transition -> SHUTTING_DOWN")
