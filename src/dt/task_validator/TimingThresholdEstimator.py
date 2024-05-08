@@ -191,7 +191,6 @@ class TimingThresholdEstimator:
             all_leading_axis.extend(leading_axis)
         
         
-        print(f"Leading axis of movements: {all_leading_axis}")    
         return thresholds, all_durations, all_durations_des
         
 

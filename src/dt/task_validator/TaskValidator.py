@@ -46,9 +46,7 @@ class TaskValidator:
             # parse matrices to task again
             self.__update_task()
             self.__compute_thresholds()
-            print(f"Print here? {self.estimated_thresholds}")
             self.__update_task()
-            print(self.task)
         return valid, self.task
 
     def __compute_thresholds(self):
@@ -58,7 +56,6 @@ class TaskValidator:
 
     def __update_task(self):
         """Update task from matrices"""
-        print(self.no_blocks)
         for i in range(self.no_blocks):
             self.task[i][TASK_CONFIG.ORIGIN][TASK_CONFIG.x] = int(self.block_origin_map[0, i])
             self.task[i][TASK_CONFIG.ORIGIN][TASK_CONFIG.y] = int(self.block_origin_map[1, i])

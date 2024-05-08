@@ -42,6 +42,8 @@ class DigitalUR:
         self.time_of_last_message = 0
         self.last_object_detected = False
 
+        self.last_pt_time = 0
+
         self.current_block = -1  # current block number being processed
         self.task_config = None
         self.pick_stock_tried = 1
@@ -127,6 +129,7 @@ class DigitalUR:
                 "output_bit_register_66": bool(data[15]),  # for object detection
             }
             self.monitor_msg_queue.put((msg_type, data_dict))
+            self.last_pt_time = data_dict["timestamp"]
 
         except ValueError:
             pass
@@ -315,7 +318,7 @@ class DigitalUR:
                 self.current_block += 1                                 # Increment block number
                 self.time_of_last_message = time.time()                 # Reset timer
                 self.pick_stock_tried = 1                               # Reset pick_stock_tried
-                print(f"Object grapped in block {self.current_block}")
+                print(f"\nObject grapped in block {self.current_block}")
 
                 # If we have grapped the last object, we are done
                 # go to waiting to receive task state
@@ -332,11 +335,12 @@ class DigitalUR:
             # If we have not grapped an object, we check for timing constraints
             # it is only when the timer have expired that we report a missing object
             else:
+                print(f'\t\rTime passed for block {self.current_block+1}: [{round(time.time() - self.time_of_last_message, 2)}/{round(self.task_config[self.current_block+1][TASK_CONFIG.TIMING_THRESHOLD], 2)}] ', end='', flush=True)
                 if (self.current_block+1 < self.task_config[TASK_CONFIG.NO_BLOCKS]) and (      # If there are more blocks to move
                     time.time() - self.time_of_last_message                                   # ... time passed since last object was grapped
                     > self.task_config[self.current_block+1][TASK_CONFIG.TIMING_THRESHOLD]  # ... the time has expired for next block's threshold
                 ):
-                    print(f"Missing object {self.current_block + 1}")
+                    print(f"Missing object {self.current_block + 1} at pt time: {self.last_pt_time}")
                     return True, FAULT_TYPES.MISSING_OBJECT                                   # ... a fault present (i.e. missing object)
 
             return False, FAULT_TYPES.NO_FAULT
