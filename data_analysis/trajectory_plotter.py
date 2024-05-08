@@ -23,8 +23,7 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 import matplotlib.pyplot as plt
-from matplotlib.widgets import Cursor, MultiCursor
-
+import argparse
 import numpy as np
 import pandas as pd
 
@@ -65,12 +64,17 @@ def read_ts(r:pd.DataFrame, start_time=0):
 
 if __name__ == "__main__":
    
-    file_name_key = "E8"
+    parser = argparse.ArgumentParser(description='Trajectory Plotter')
+    parser.add_argument('-key', type=str, help='The key prepended to log files')
+    args = parser.parse_args()
+    file_key = args.key
 
-    # ----- WITH KEY AND NAME -----
+    file_name_key = file_key if file_key is not None else "E8"
+    epsilon = 0.4
+
+    # ----- WITH KEY -----
     r_dt = pd.read_csv(f"../src/dt/dt_trajectories/{file_name_key}_dt_trajectory.csv", delimiter=' ')
     error = pd.read_csv(f"../src/dt/error_logs/{file_name_key}_dt_error_log.csv", delimiter=' ')
-
     # robot data file
     r_pt = pd.read_csv(f"../src/robot_connection_manager/robot_output/{file_name_key}_robot_output.csv", delimiter=' ')
 
@@ -114,54 +118,71 @@ if __name__ == "__main__":
     pt_qs = [q0_floats_pt, q1_floats_pt, q2_floats_pt, q3_floats_pt, q4_floats_pt, q5_floats_pt]
     qd0_floats_pt, qd1_floats_pt, qd2_floats_pt, qd3_floats_pt, qd4_floats_pt, qd5_floats_pt = read_qds(r_pt)
     
-    
     # make 1 one large figure with 6 subplots with 3 axes each (q_dt, q_pt, q_error)
     # Create a large figure
     large_fig = plt.figure()
 
     # Create 6 subfigs
-    subfigs = large_fig.subfigures(3, 2)
+    subfigs = large_fig.subfigures(3, 1)
     subfigs = subfigs.ravel()
 
+    # set font to serif
+    plt.rcParams['font.family'] = 'serif'
+
     for i in range(6):
-        subfigs[i].suptitle(f"Joint {i}")
-        axs = subfigs[i].subplots(2, 1, sharex=True)
-        axs = axs.ravel()
-        axs[0].set_ylabel("[rad]")
-        axs[1].set_ylabel("[rad]")
-        axs[1].set_xlabel("Time [s]")
+        if i == 0 or i == 2 or i == 5:
+            j = 0 if i == 0 else 1 if i == 2 else 2
+            i = 0 if i == 0 else 2 if i == 2 else 5
 
-        # get max q value
-        max_q = max(max(dt_qs[i]), max(pt_qs[i]))
-        # get min q value
-        min_q = min(min(dt_qs[i]), min(pt_qs[i]))
-        # axs[0].plot(timestamp_floats_dt, dt_qs[i], label="DT", color='blue', linewidth=3, linestyle='dotted')
-        axs[0].scatter(timestamp_floats_dt, dt_qs[i], label="DT", color='blue', s=4)
+            subfigs[j].suptitle(f"Position and error in joint {i}")
+            axs = subfigs[j].subplots(2, 1, sharex=True)
+            axs = axs.ravel()
+            axs[0].set_ylabel("[rad]")
+            axs[1].set_ylabel("[rad]")
+            axs[1].set_xlabel("Time [s]")
+
+            # get max q value
+            max_q = max(max(dt_qs[i]), max(pt_qs[i]))
+            # get min q value
+            min_q = min(min(dt_qs[i]), min(pt_qs[i]))
+            axs[0].scatter(timestamp_floats_dt, dt_qs[i], label="DT", color='blue', s=4)
 
 
-        axs[0].plot(timestamp_floats_pt, pt_qs[i], label="PT", color='red', linewidth=3, alpha=0.4)
+            axs[0].plot(timestamp_floats_pt, pt_qs[i], label="PT", color='red', linewidth=3, alpha=0.4)
 
-        # diff_err = abs(dt_qs[i] - pt_qs[i])
+            # diff_err = abs(dt_qs[i] - pt_qs[i])
 
-        axs[1].plot(error_ts, erros[i], label="Real-Time Measured Error")
-        # set axs[2] y axis limits
-        axs[0].set_ylim([min_q-0.1, max_q+0.1])
-        # axs[1].set_ylim([min_q-0.1, max_q+0.1])
-        axs[1].set_ylim([-0.01, max_error+0.1])
+            axs[1].scatter(error_ts, erros[i], label="Error", color='black', s=1)
+            # plot red dotted horizontal line at epsilon
+            axs[1].axhline(y=epsilon, color='red', linestyle='--', label="$\epsilon_e$")
 
-        # for all True values in faults_qi, plot a vertical line at that time
-        for j in range(len(faults[i])):
-            if faults[i][j]:
-                axs[0].axvline(x=error_ts[j], color='green', linestyle='dotted')
-                axs[1].axvline(x=error_ts[j], color='green', linestyle='dotted')
+            # set axs[2] y axis limits
+            axs[0].set_ylim([min_q-0.1, max_q+0.1])
+            # axs[1].set_ylim([min_q-0.1, max_q+0.1])
+            axs[1].set_ylim([-0.01, max_error+0.1])
 
-        # add legend to all subplots and align to the right
-        for ax in axs:
-            # set axes granularity
-            max_time = max(timestamp_floats_dt[-1], timestamp_floats_pt[-1])
-            ax.set_xticks(np.arange(0, max_time, 5))
-            ax.legend(loc='upper right')
-            ax.grid()
+            # for all True values in faults_qi, plot a vertical line at that time
+            for j in range(len(faults[i])):
+                if faults[i][j]:
+                    # add vertical line at fault time with opacity
+                    axs[0].axvline(x=error_ts[j], color='green', alpha=0.2, linewidth=0.5)
+                    axs[1].axvline(x=error_ts[j], color='green', alpha=0.2, linewidth=0.5)
+
+                    # axs[0].axvline(x=error_ts[j], color='green', linestyle='dotted')
+                    # axs[1].axvline(x=error_ts[j], color='green', linestyle='dotted')
+
+            # add custom legend to green vertical lines
+            axs[0].plot([], [], color='green', label='Fault', alpha=0.5)
+            axs[1].plot([], [], color='green', label='Fault', alpha=0.5)
+
+
+            # add legend to all subplots and align to the right
+            for ax in axs:
+                # set axes granularity
+                max_time = max(timestamp_floats_dt[-1], timestamp_floats_pt[-1])
+                ax.set_xticks(np.arange(0, max_time, 10))
+                ax.legend(loc='upper right')
+                ax.grid()
 
 
 
@@ -184,14 +205,7 @@ if __name__ == "__main__":
     #     axs[i, 0].plot(timestamp_floats_dt, dt_qs[i], label="DT")
     #     axs[i, 1].plot(timestamp_floats_pt, pt_qs[i], label="PT")
     #     axs[i, 2].plot(error_ts, error_q0, label="Error")
-    #     # axs[i, :].legend()
-
-
-
-
-
-
-    
+    #     # axs[i, :].legend()    
     
     # # # plot positions
     # fig, (ax1, ax2) = plt.subplots(2, 1, sharex=True, sharey=True)
