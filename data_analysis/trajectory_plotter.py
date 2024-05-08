@@ -70,7 +70,7 @@ if __name__ == "__main__":
     file_key = args.key
 
     file_name_key = file_key if file_key is not None else "E8"
-    epsilon = 0.4
+    epsilon = 0.7
 
     # ----- WITH KEY -----
     r_dt = pd.read_csv(f"../src/dt/dt_trajectories/{file_name_key}_dt_trajectory.csv", delimiter=' ')

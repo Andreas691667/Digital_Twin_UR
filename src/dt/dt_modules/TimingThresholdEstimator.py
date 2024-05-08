@@ -4,7 +4,7 @@ path.append("../..")
 from models.robot_model.ur3e import UR3e
 import numpy as np
 from config.grid_config import GRID_CONFIG
-from dt_modules.timing_model.TimingModel import TimingModel
+from models.timing_model.TimingModel import TimingModel
 
 
 class TimingThresholdEstimator:
