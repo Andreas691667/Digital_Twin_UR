@@ -31,17 +31,17 @@ class TaskTrajectoryEstimator:
                 "actual_q_5",
             ],
         )
-        # dfqd = pd.DataFrame(
-        #     trajectory_qd,
-        #     columns=[
-        #         "actual_qd_0",
-        #         "actual_qd_1",
-        #         "actual_qd_2",
-        #         "actual_qd_3",
-        #         "actual_qd_4",
-        #         "actual_qd_5",
-        #     ],
-        # )
+        dfqd = pd.DataFrame(
+            trajectory_qd,
+            columns=[
+                "actual_qd_0",
+                "actual_qd_1",
+                "actual_qd_2",
+                "actual_qd_3",
+                "actual_qd_4",
+                "actual_qd_5",
+            ],
+        )
 
         # dfqdd = pd.DataFrame(
         #     trajectory_qdd,
@@ -58,7 +58,7 @@ class TaskTrajectoryEstimator:
         dft = pd.DataFrame(time, columns=["timestamp"])
 
         # df = pd.concat([dfq, dfqd, dfqdd, dft], axis=1)
-        df = pd.concat([dfq, dft], axis=1)
+        df = pd.concat([dfq, dfqd, dft], axis=1)
 
         # if file already exists in folder dt_trajectories, append a number to the file name
         file_name = (

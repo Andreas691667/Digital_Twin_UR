@@ -127,6 +127,7 @@ class DigitalTwin:
         self.first_error_time = 0  # time of the first error
         self.last_expected_traj_index = 0  # 'counter' for the expected trajectory
         self.expected_trajectory_q = np.array([])
+        self.expected_trajectory_qd = np.array([])
         self.expected_trajectory_time = np.array([])
         self.expected_trajectory_des = np.array([])
 
@@ -389,7 +390,7 @@ class DigitalTwin:
 
         # if task is valid, estimate the trajectory for the timed task,
         # and go to waiting for task to start state
-        expected_q, _, _, expected_t, expected_des = (
+        expected_q, expected_qd, _, expected_t, expected_des = (
             self.task_trajectory_estimator.estimate_trajectory(
                 self.timed_task,
                 start_time=0,
@@ -400,6 +401,7 @@ class DigitalTwin:
         # if expected_trajectory_q is empty, set it to expected_q
         if self.expected_trajectory_q.size == 0:
             self.expected_trajectory_q = expected_q
+            self.expected_trajectory_qd = expected_qd
             self.expected_trajectory_time = expected_t
             self.expected_trajectory_des = expected_des
 
@@ -411,6 +413,13 @@ class DigitalTwin:
                 expected_q,
                 axis=0,
             )
+            
+            self.expected_trajectory_qd = np.append(
+                self.expected_trajectory_qd[0 : self.last_expected_traj_index],
+                expected_qd,
+                axis=0,
+            )
+
             self.expected_trajectory_time = np.append(
                 self.expected_trajectory_time[0 : self.last_expected_traj_index],
                 expected_t,
@@ -685,6 +694,7 @@ class DigitalTwin:
                 self.task_trajectory_estimator.save_traj_to_file(
                     self.traj_file_name,
                     trajectory_q=self.expected_trajectory_q,
+                    trajectory_qd=self.expected_trajectory_qd,
                     time=self.expected_trajectory_time,
                 )
 
