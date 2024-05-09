@@ -20,6 +20,7 @@ class RCMSimulator(Controller):
         self.simulation_file = f"simulation_data/{sim_file}"
         self.rmq_client_in = Client(host=RMQ_CONFIG.RMQ_SERVER_IP)
         self.rmq_client_out_monitor = Client(host=RMQ_CONFIG.RMQ_SERVER_IP)
+        self.rmq_client_out_monitor.configure_outgoing_channel(RMQ_CONFIG.MONITOR_EXCHANGE, RMQ_CONFIG.FANOUT)
         self.rmq_client_out_controller = Client(host=RMQ_CONFIG.RMQ_SERVER_IP)
         self.shutdown_event = Event()
         self.configure_rmq_clients()
@@ -59,7 +60,7 @@ class RCMSimulator(Controller):
 
 # main
 if __name__ == "__main__":
-    simulator = RCMSimulator("case1_robot_output.csv", "case1_close_blocks", frequency=250)
+    simulator = RCMSimulator("square.csv", "square", frequency=200)
     sleep(2)
     print("Starting data publisher")
     simulator.start_publishing()
