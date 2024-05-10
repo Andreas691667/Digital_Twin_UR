@@ -11,12 +11,17 @@ D_a = JOINT_SPEED_RAD**2 / (2 * JOINT_ACCELERATION_RAD)
 
 
 def QUINTIC_POLYNOMIAL_Q(t, d, T):
+    """Quintic polynomial for position profile"""
     return d * ((10 * t**3) / T**3 - (15 * t**4) / T**4 + (6 * t**5) / T**5)
 
+def QUINTIC_POLYNOMIAL_QD(t, d, T):
+    """Quintic polynomial for velocity profile"""
+    return d * ((30*t**2*(t-T)**2)/T**5)
 
+# Trapezoidal position profile
 TRAPEZOIDAL_Q = [
-    lambda t, T: 1 / 2 * JOINT_ACCELERATION_RAD * t**2,
-    lambda t, T: JOINT_SPEED_RAD * t
+    lambda t: 1 / 2 * JOINT_ACCELERATION_RAD * t**2,
+    lambda t: JOINT_SPEED_RAD * t
     - (JOINT_SPEED_RAD**2) / (2 * JOINT_ACCELERATION_RAD),
     lambda t, T: (
         2 * JOINT_ACCELERATION_RAD * JOINT_SPEED_RAD * T
@@ -26,9 +31,15 @@ TRAPEZOIDAL_Q = [
     / (2 * JOINT_ACCELERATION_RAD),
 ]
 
+TRAPEZOIDAL_QD = [
+    lambda t: JOINT_ACCELERATION_RAD * t,
+    lambda t: JOINT_SPEED_RAD,
+    lambda t, T: JOINT_ACCELERATION_RAD * (T-t),
+]
+
 if __name__ == "__main__":
 
-    # four distances from 1 to pi
+    # three distances from 1 to pi
     distances = np.linspace(1, pi, 3)
 
     N = len(distances)
@@ -50,10 +61,10 @@ if __name__ == "__main__":
         q_trapezoidal = np.array(
             [
                 (
-                    TRAPEZOIDAL_Q[0](t_i, T)
+                    TRAPEZOIDAL_Q[0](t_i)
                     if t_i <= TI_a
                     else (
-                        TRAPEZOIDAL_Q[1](t_i, T)
+                        TRAPEZOIDAL_Q[1](t_i)
                         if t_i <= TI_a + TI_c
                         else TRAPEZOIDAL_Q[2](t_i, T)
                     )
@@ -63,16 +74,41 @@ if __name__ == "__main__":
         )
         error = q_quintic - q_trapezoidal
 
-        # add title to subfigure placed at the right of the plot
+        # velocity profiles
+        qd_quintic = np.array([QUINTIC_POLYNOMIAL_QD(t_i, distance, T) for t_i in t])
+        qd_trapezoidal = np.array(
+            [
+                (
+                    TRAPEZOIDAL_QD[0](t_i)
+                    if t_i <= TI_a
+                    else (
+                        TRAPEZOIDAL_QD[1](t_i)
+                        if t_i <= TI_a + TI_c
+                        else TRAPEZOIDAL_QD[2](t_i, T)
+                    )
+                )
+                for t_i in t
+            ]
+        )
+
+        # add title to subfigure 
         subfigs[i].suptitle(
             f"Distance traversed: {round(distance, 2)} rad in {round(T, 2)} s"
         )
 
         axs = subfigs[i].subplots(2, 1, sharex=True)
         axs = axs.ravel()
-        quintic = axs[0].plot(t, q_quintic, label="Quintic polynomial", color="red")
-        trapz = axs[0].plot(t, q_trapezoidal, label="Trapezoidal", color="blue")
+
+        quintic_q = axs[0].plot(t, q_quintic, label="Quintic polynomial pos.", color="red")
+        trapz_q = axs[0].plot(t, q_trapezoidal, label="Trapezoidal pos.", color="blue")
         axs[0].set_ylabel("Position [rad]")
+        
+        axs_right = axs[0].twinx()
+        quintic_qd = axs_right.plot(t, qd_quintic, label="Quintic polynomial vel.", color="red", linestyle="--", alpha=0.5)
+        trapz_qd = axs_right.plot(t, qd_trapezoidal, label="Trapezoidal vel.", color="blue", linestyle="--", alpha=0.5)
+        axs_right.set_ylabel("Velocity [rad/s]")
+        axs_right.legend(loc="lower left")
+
         # set y-label coordiante
         axs[0].yaxis.set_label_coords(-0.1, 0.5)
 
@@ -102,6 +138,5 @@ if __name__ == "__main__":
             )
             # add the legends back to the plot
             ax.add_artist(graph_leg)
-            ax.add_artist(reg_leg)
 
     plt.show()
