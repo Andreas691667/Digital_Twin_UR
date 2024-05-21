@@ -92,15 +92,15 @@ if __name__ == "__main__":
     large_fig = plt.figure()
 
     # Create 6 subfigs
-    subfigs = large_fig.subfigures(3, 1)
+    subfigs = large_fig.subfigures(2, 1)
     subfigs = subfigs.ravel()
 
     # set font to serif
     plt.rcParams['font.family'] = 'serif'
 
     for i in range(6):
-        if i == 0 or i == 2 or i == 5:
-            j = 0 if i == 0 else 1 if i == 2 else 2
+        if i == 0 or i == 5:
+            j = 0 if i == 0 else 1 if i == 2 else 1
             i = 0 if i == 0 else 2 if i == 2 else 5
 
             subfigs[j].suptitle(f"Position and faults in joint {i}")
@@ -110,14 +110,14 @@ if __name__ == "__main__":
             axs.set_xlabel("Time [s]")
 
 
-            axs.plot(timestamp_floats_pt, pt_qs[i], label="PT", color='red', linewidth=3, alpha=0.4)
+            axs.plot(timestamp_floats_pt, pt_qs[i], label="PT", color='green', linewidth=3, alpha=0.4)
 
             # vertical green lines at errors
             for error in errors:
-                axs.axvline(x=error, color='green', linewidth=2, linestyle='--')
+                axs.axvline(x=error, color='red', linewidth=2)
 
             # add custom legend to green
-            axs.plot([], [], label="Fault detected", color='green', linestyle='--')
+            axs.plot([], [], label="Fault detected", color='red', linewidth=2)
             axs.legend(loc='upper right')            
 
             # set x-axis limits

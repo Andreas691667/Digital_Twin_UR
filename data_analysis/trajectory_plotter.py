@@ -70,7 +70,8 @@ if __name__ == "__main__":
     file_key = args.key
 
     file_name_key = file_key if file_key is not None else "E8"
-    epsilon = 0.7
+    epsilon = 0.4
+    epsilon_t = 1.0
 
     # ----- WITH KEY -----
     r_dt = pd.read_csv(f"../src/dt/dt_trajectories/{file_name_key}_dt_trajectory.csv", delimiter=' ')
@@ -79,7 +80,7 @@ if __name__ == "__main__":
     r_pt = pd.read_csv(f"../src/robot_connection_manager/robot_output/{file_name_key}_robot_output.csv", delimiter=' ')
 
     # simulation data file
-    # r_pt = pd.read_csv("../src/controller_monitor/simulation_data/case1_robot_output.csv", delimiter=' ')
+    # r_pt = pd.read_csv("../src/robot_connection_manager/rcm_simulator/simulation_data/square.csv", delimiter=' ')
     
 
     # ----- WITHOUT KEY AND NAME (MANUAL) -----
@@ -118,20 +119,29 @@ if __name__ == "__main__":
     pt_qs = [q0_floats_pt, q1_floats_pt, q2_floats_pt, q3_floats_pt, q4_floats_pt, q5_floats_pt]
     qd0_floats_pt, qd1_floats_pt, qd2_floats_pt, qd3_floats_pt, qd4_floats_pt, qd5_floats_pt = read_qds(r_pt)
     
+    object_grip = r_pt.output_bit_register_66.astype(float).to_list()
+
     # make 1 one large figure with 6 subplots with 3 axes each (q_dt, q_pt, q_error)
     # Create a large figure
-    large_fig = plt.figure()
+    large_fig = plt.figure(figsize=(11, 7))
 
     # Create 6 subfigs
-    subfigs = large_fig.subfigures(3, 1)
+    subfigs = large_fig.subfigures(2, 1)
     subfigs = subfigs.ravel()
 
     # set font to serif
     plt.rcParams['font.family'] = 'serif'
 
+    current_block = 0
+    last_object_detected = False
+    last_block_at_fault = -1
+    first_fault_time = -1
+    fault_duration = 0
+
+
     for i in range(6):
-        if i == 0 or i == 2 or i == 5:
-            j = 0 if i == 0 else 1 if i == 2 else 2
+        if i == 0 or i == 5:
+            j = 0 if i == 0 else 1 if i == 2 else 1
             i = 0 if i == 0 else 2 if i == 2 else 5
 
             subfigs[j].suptitle(f"Position and error in joint {i}")
@@ -145,35 +155,103 @@ if __name__ == "__main__":
             max_q = max(max(dt_qs[i]), max(pt_qs[i]))
             # get min q value
             min_q = min(min(dt_qs[i]), min(pt_qs[i]))
-            axs[0].scatter(timestamp_floats_dt, dt_qs[i], label="DT", color='blue', s=4)
+            axs[0].scatter(timestamp_floats_dt, dt_qs[i], label="DT", color='blue', s=.3)
 
-
-            axs[0].plot(timestamp_floats_pt, pt_qs[i], label="PT", color='red', linewidth=3, alpha=0.4)
-
-            # diff_err = abs(dt_qs[i] - pt_qs[i])
+            axs[0].plot(timestamp_floats_pt, pt_qs[i], label="PT", color='green', linewidth=3, alpha=0.4)
 
             axs[1].scatter(error_ts, erros[i], label="Error", color='black', s=1)
             # plot red dotted horizontal line at epsilon
-            axs[1].axhline(y=epsilon, color='red', linestyle='--', label="$\epsilon_e$")
+            axs[1].axhline(y=epsilon, color='red', linestyle='--', label=f"$\epsilon_e$: {epsilon} rad")
 
             # set axs[2] y axis limits
             axs[0].set_ylim([min_q-0.1, max_q+0.1])
             # axs[1].set_ylim([min_q-0.1, max_q+0.1])
             axs[1].set_ylim([-0.01, max_error+0.1])
 
-            # for all True values in faults_qi, plot a vertical line at that time
+            # iterate over faults and plot vertical lines every time a fault occurs
+            # if the fault persists for more than epsilon_t seconds, plot a red vertical line
             for j in range(len(faults[i])):
-                if faults[i][j]:
-                    # add vertical line at fault time with opacity
-                    axs[0].axvline(x=error_ts[j], color='green', alpha=0.2, linewidth=0.5)
-                    axs[1].axvline(x=error_ts[j], color='green', alpha=0.2, linewidth=0.5)
+                # check object grip
+                object_detected = object_grip[j]
+                object_grapped = not last_object_detected and object_detected
+                last_object_detected = object_detected
 
-                    # axs[0].axvline(x=error_ts[j], color='green', linestyle='dotted')
-                    # axs[1].axvline(x=error_ts[j], color='green', linestyle='dotted')
+                if object_grapped:
+                    current_block += 1
+
+                if faults[i][j]:
+                    # if i == 0:
+                    #     print(f"Fault detected at {error_ts[j]}s in block {current_block}")
+                    #     if file_key == "E6":
+                    #         if error_ts[j] == 46.19999999999891 or error_ts[j] == 74.79999999999927:
+                    #             last_block_at_fault = current_block
+                    #     elif file_key == "E8":
+                    #         if error_ts[j] == 45.30000000000018:
+                    #             last_block_at_fault = current_block
+                    #         elif error_ts[j] > 55:
+                    #             last_block_at_fault = -1
+
+                    if first_fault_time == -1:
+                        first_fault_time = error_ts[j]
+                        fault_duration = 0
+
+
+                    if current_block != last_block_at_fault:
+                        # if fault has persisted for more than epsilon_t seconds
+                        if abs(error_ts[j] - first_fault_time) >= epsilon_t:
+                            # add vertical line at fault time with opacity
+                            axs[0].axvline(x=error_ts[j], color='red',  linewidth=2)
+                            axs[1].axvline(x=error_ts[j], color='red',  linewidth=2)
+                            first_fault_time = -1
+                            last_block_at_fault = current_block
+
+                        # else:
+                        #     # add vertical line at fault time with opacity
+                        #     axs[0].axvline(x=error_ts[j], color='green', alpha=0.2, linewidth=0.5)
+                        #     axs[1].axvline(x=error_ts[j], color='green', alpha=0.2, linewidth=0.5)
+                        
+
+                    # same block is at fault again
+                    else:
+                        if abs(error_ts[j] - first_fault_time) >= epsilon_t:
+                            # add vertical line at fault time with opacity
+                            if file_key == 'E8' and error_ts[j] > 55:
+                                axs[0].axvline(x=error_ts[j], color='red',  linewidth=2)
+                                axs[1].axvline(x=error_ts[j], color='red',  linewidth=2)
+                                first_fault_time = -1
+                                last_block_at_fault = -1
+                            else:
+                                axs[0].axvline(x=error_ts[j], color='cyan',  linewidth=2)
+                                axs[1].axvline(x=error_ts[j], color='cyan',  linewidth=2)
+                                first_fault_time = -1
+                        # else:
+                        #     axs[0].axvline(x=error_ts[j], color='blue', alpha=0.2, linewidth=0.5)
+                        #     axs[1].axvline(x=error_ts[j], color='blue', alpha=0.2, linewidth=0.5)
+
+                    fault_duration = abs(error_ts[j] - first_fault_time)
+
+                else:
+                    first_fault_time = -1
+                    block_at_fault = -1
+
+
+            # add custom legend to green vertical lines and red vertical lines
+            # axs[0].plot([], [], color='green', label='Error', alpha=0.5)
+            axs[0].plot([], [], color='red', label='Fault detected')
+            # axs[1].plot([], [], color='green', label='Error')
+            axs[1].plot([], [], color='red', label='Fault detected')
+            axs[0].plot([], [], color='cyan', label='Stock pos. empty')
+            axs[1].plot([], [], color='cyan', label='Stock pos. empty')
+
+            # for j in range(len(faults[i])):
+            #     if faults[i][j]:
+            #         # add vertical line at fault time with opacity
+            #         axs[0].axvline(x=error_ts[j], color='green', alpha=0.2, linewidth=0.5)
+            #         axs[1].axvline(x=error_ts[j], color='green', alpha=0.2, linewidth=0.5)
 
             # add custom legend to green vertical lines
-            axs[0].plot([], [], color='green', label='Fault', alpha=0.5)
-            axs[1].plot([], [], color='green', label='Fault', alpha=0.5)
+            # axs[0].plot([], [], color='green', label='Fault', alpha=0.5)
+            # axs[1].plot([], [], color='green', label='Fault', alpha=0.5)
 
 
             # add legend to all subplots and align to the right
