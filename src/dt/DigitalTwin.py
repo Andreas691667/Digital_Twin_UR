@@ -23,7 +23,7 @@ from dt_modules.FaultResolver import FaultResolver
 from dt_modules.TaskValidator import TaskValidator
 from dt_modules.TaskTrajectoryEstimator import TaskTrajectoryEstimator
 from dt_modules.TimingThresholdEstimator import TimingThresholdEstimator
-from dt.dt_modules.TaskTrajectoryTimingEstimator import TaskTrajectoryTimingEstimator
+from dt_modules.TaskTrajectoryTimingEstimator import TaskTrajectoryTimingEstimator
 from dt_modules.Visualisation.URVisualiser import Visualiser
 
 
@@ -132,7 +132,7 @@ class DigitalTwin:
         self.expected_trajectory_des = np.array([])
 
         self.pos_epsilon = 0.7  # allowed error for each joint [rad]
-        self.time_epsilon = 0.1  # allowed time for error to sustain [s]
+        self.time_epsilon = 1  # allowed time for error to sustain [s]
 
         # log files
         self.traj_file_name = file_name_key + "_dt_trajectory.csv"
