@@ -20,6 +20,8 @@ The following arguments are required:
 - -ms: The mitigation strategy to use for handling missing blocks. Options are: 'shift' for shifting the block origins and 'stock' for using the stock.
 - -key (optional): The key to prepend on log files.
 
+**NOTE:** Approach '1' is currently not implemented in the main branch and should not be used. 
+
 **Terminal 2 (Robot Connection Manager)**
 ```bash
 cd src/robot_connection_manager
