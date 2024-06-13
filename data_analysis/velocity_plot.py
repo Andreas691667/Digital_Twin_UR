@@ -86,19 +86,19 @@ if __name__ == "__main__":
     large_fig = plt.figure()
 
     # Create 6 subfigs
-    subfigs = large_fig.subfigures(1, 1)
+    subfigs = large_fig.subfigures(3, 1)
     # subfigs = subfigs.ravel()
 
     # set font to serif
     plt.rcParams['font.family'] = 'serif'
 
     for i in range(6):
-        if i == 0:
+        if i == 0 or i ==2 or i ==5:
             j = 0 if i == 0 else 1 if i == 2 else 2
             i = 0 if i == 0 else 2 if i == 2 else 5
 
-            subfigs.suptitle(f"Velocity in joint {i}", fontsize=20)
-            axs = subfigs.subplots(1, 1, sharex=True)
+            subfigs[j].suptitle(f"Velocity in joint {i}", fontsize=20)
+            axs = subfigs[j].subplots(1, 1, sharex=True)
             axs.set_ylabel("[rad/s]", fontsize=18)
             axs.set_xlabel("Time [s]",  fontsize=18)
 

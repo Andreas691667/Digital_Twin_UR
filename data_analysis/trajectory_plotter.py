@@ -70,7 +70,7 @@ if __name__ == "__main__":
     file_key = args.key
 
     file_name_key = file_key if file_key is not None else "E8"
-    epsilon = 0.4
+    epsilon = 0.7
     epsilon_t = 1.0
 
     # ----- WITH KEY -----
@@ -126,7 +126,7 @@ if __name__ == "__main__":
     large_fig = plt.figure(figsize=(11, 7))
 
     # Create 6 subfigs
-    subfigs = large_fig.subfigures(2, 1)
+    subfigs = large_fig.subfigures(3, 2)
     subfigs = subfigs.ravel()
 
     # set font to serif
@@ -140,9 +140,10 @@ if __name__ == "__main__":
 
 
     for i in range(6):
-        if i == 0 or i == 5:
+        if i == 0 or i > 0:
             j = 0 if i == 0 else 1 if i == 2 else 1
-            i = 0 if i == 0 else 2 if i == 2 else 5
+            # i = 0 if i == 0 else 2 if i == 2 else 5
+            j=i
 
             subfigs[j].suptitle(f"Position and error in joint {i}")
             axs = subfigs[j].subplots(2, 1, sharex=True)
@@ -155,11 +156,13 @@ if __name__ == "__main__":
             max_q = max(max(dt_qs[i]), max(pt_qs[i]))
             # get min q value
             min_q = min(min(dt_qs[i]), min(pt_qs[i]))
-            axs[0].scatter(timestamp_floats_dt, dt_qs[i], label="DT", color='blue', s=.3)
+            axs[0].plot(timestamp_floats_dt, dt_qs[i], color='blue', marker='.', linestyle='', markersize=1)
+            axs[0].plot([], [], color='blue', label='DT', marker='.', linestyle='dotted', markersize=1)
 
             axs[0].plot(timestamp_floats_pt, pt_qs[i], label="PT", color='green', linewidth=3, alpha=0.4)
 
-            axs[1].scatter(error_ts, erros[i], label="Error", color='black', s=1)
+            axs[1].scatter(error_ts, erros[i], color='black', s=1)
+            axs[1].plot([], [], color='black', label='Error', marker='.', linestyle='dotted', markersize=1)
             # plot red dotted horizontal line at epsilon
             axs[1].axhline(y=epsilon, color='red', linestyle='--', label=f"$\epsilon_e$: {epsilon} rad")
 
