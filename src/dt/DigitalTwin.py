@@ -625,7 +625,7 @@ class DigitalTwin:
 
         # if object detected, reset timer
         # else check if timer has expired. If expired, return fault
-        # If we grap an object, we increment the current block being processed, i.e. it is initialized from 0
+        # If we grap an object, we increment the current block being processed, i.e. it is initialized from -1
         if object_grapped:
             self.current_block += 1  # Increment block number
             self.pick_stock_tried = 1  # Reset pick_stock_tried
