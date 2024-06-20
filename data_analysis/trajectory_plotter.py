@@ -70,8 +70,8 @@ if __name__ == "__main__":
     file_key = args.key
 
     file_name_key = file_key if file_key is not None else "E8"
-    epsilon = 0.7
-    epsilon_t = 1.0
+    epsilon = 0.4
+    epsilon_t = 1
 
     # ----- WITH KEY -----
     r_dt = pd.read_csv(f"../src/dt/dt_trajectories/{file_name_key}_dt_trajectory.csv", delimiter=' ')
@@ -126,7 +126,7 @@ if __name__ == "__main__":
     large_fig = plt.figure(figsize=(11, 7))
 
     # Create 6 subfigs
-    subfigs = large_fig.subfigures(3, 2)
+    subfigs = large_fig.subfigures(2,1)
     subfigs = subfigs.ravel()
 
     # set font to serif
@@ -140,10 +140,10 @@ if __name__ == "__main__":
 
 
     for i in range(6):
-        if i == 0 or i > 0:
+        if i == 0 or i ==5:
             j = 0 if i == 0 else 1 if i == 2 else 1
             # i = 0 if i == 0 else 2 if i == 2 else 5
-            j=i
+            # j=i
 
             subfigs[j].suptitle(f"Position and error in joint {i}")
             axs = subfigs[j].subplots(2, 1, sharex=True)
@@ -262,6 +262,7 @@ if __name__ == "__main__":
                 # set axes granularity
                 max_time = max(timestamp_floats_dt[-1], timestamp_floats_pt[-1])
                 ax.set_xticks(np.arange(0, max_time, 10))
+                # ax.set_xticks(np.arange(0, max_time, 0.05))
                 ax.legend(loc='upper right')
                 ax.grid()
 

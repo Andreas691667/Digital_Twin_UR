@@ -58,13 +58,9 @@ class FaultResolver:
 
         # For block[j] try PICK_STOCK[i++]
         if pick_stock_tried < len(GRID_CONFIG.PICK_STOCK_COORDINATES):
-            task_config[current_block + 1][GRID_CONFIG.ORIGIN][
-                GRID_CONFIG.x
-            ] = GRID_CONFIG.PICK_STOCK_COORDINATES[pick_stock_tried][
-                GRID_CONFIG.ORIGIN
-            ][
-                GRID_CONFIG.x
-            ]
+            task_config[current_block + 1][GRID_CONFIG.ORIGIN][GRID_CONFIG.x] = GRID_CONFIG.PICK_STOCK_COORDINATES[
+                pick_stock_tried][GRID_CONFIG.ORIGIN][GRID_CONFIG.x]
+            
             task_config[current_block + 1][GRID_CONFIG.ORIGIN][
                 GRID_CONFIG.y
             ] = GRID_CONFIG.PICK_STOCK_COORDINATES[pick_stock_tried][
