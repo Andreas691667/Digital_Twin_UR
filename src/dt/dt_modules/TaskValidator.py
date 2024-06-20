@@ -96,7 +96,7 @@ class TaskValidator:
 
         return task_valid
 
-    def __is_grip_possible(self, block_pos, block_map, start, stop, threshold):
+    def __is_grip_possible(self, block_pos, block_map, start, stop, gripper_threshold):
         """Check if a grip position is possible in given coordinate map"""
 
         grip_possible = True
@@ -107,26 +107,37 @@ class TaskValidator:
                 dist = (block_pos - current_block_pos) * GRID_CONFIG.GRID_PARAMETERS[GRID_CONFIG.HOLE_DIST]
 
                 if block_pos[2] and dist[0] == 0:
-                    if np.abs(dist[1]/2) <= threshold/2:
+                    D = np.abs(dist[1]) - GRID_CONFIG.BLOCK_WIDTH/2
+                    if D <= gripper_threshold/2:
                         grip_possible = False
 
                 elif not block_pos[2] and dist[1] == 0:
-                    if np.abs(dist[0]/2) <= threshold/2:
+                    D = np.abs(dist[0]) - GRID_CONFIG.BLOCK_WIDTH/2
+                    if D <= gripper_threshold/2:
                         grip_possible = False
+
+                # if block_pos[2] and dist[0] == 0:
+                #     if np.abs(dist[1]) <= threshold:
+                #         grip_possible = False
+
+                # elif not block_pos[2] and dist[1] == 0:
+                #     if np.abs(dist[0]) <= threshold:
+                #         grip_possible = False
 
         return grip_possible
 
 # main
 if __name__ == "__main__":
     import yaml
+    import json
     # task = GRID_CONFIG.block_config_close_blocks
 
-    with open("../../config/tasks/square_stock.yaml", "r") as file:
+    with open("../../config/tasks/2_blocks.yaml", "r", encoding="utf-8") as file:
         task = yaml.safe_load(file)
 
 
     task_validator = TaskValidator()
-    valid, task_new = task_validator.validate_task(task, 2)
+    valid, task_new = task_validator.validate_task(task)
 
     print(f"Task valid: {valid}")
-    # print(json.dumps(task_new, indent=4))
+    print(json.dumps(task_new, indent=4))

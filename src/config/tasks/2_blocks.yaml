@@ -3,17 +3,13 @@ NO_BLOCKS: 2
   ORIGIN:
     x: 0
     y: 1
-    ROTATE_WRIST: False
   TARGET:
     x: 13
     y: -5
-    ROTATE_WRIST: False
 1:
   ORIGIN:
-    x: 2
+    x: 1
     y: 1
-    ROTATE_WRIST: False
   TARGET:
-    x: 11
+    x: 12
     y: -5
-    ROTATE_WRIST: False

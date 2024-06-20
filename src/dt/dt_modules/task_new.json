@@ -1,0 +1,99 @@
+{
+    "NO_BLOCKS": 8,
+    "0": {
+        "ORIGIN": {
+            "x": -1,
+            "y": 1,
+            "ROTATE_WRIST": false
+        },
+        "TARGET": {
+            "x": 12,
+            "y": -7,
+            "ROTATE_WRIST": false
+        }
+    },
+    "1": {
+        "ORIGIN": {
+            "x": -1,
+            "y": 2,
+            "ROTATE_WRIST": false
+        },
+        "TARGET": {
+            "x": 12,
+            "y": -6,
+            "ROTATE_WRIST": false
+        }
+    },
+    "2": {
+        "ORIGIN": {
+            "x": 2,
+            "y": 1,
+            "ROTATE_WRIST": false
+        },
+        "TARGET": {
+            "x": 12,
+            "y": -5,
+            "ROTATE_WRIST": false
+        }
+    },
+    "3": {
+        "ORIGIN": {
+            "x": 2,
+            "y": 2,
+            "ROTATE_WRIST": false
+        },
+        "TARGET": {
+            "x": 13,
+            "y": -5,
+            "ROTATE_WRIST": true
+        }
+    },
+    "4": {
+        "ORIGIN": {
+            "x": 5,
+            "y": 1,
+            "ROTATE_WRIST": false
+        },
+        "TARGET": {
+            "x": 14,
+            "y": -5,
+            "ROTATE_WRIST": true
+        }
+    },
+    "5": {
+        "ORIGIN": {
+            "x": 5,
+            "y": 2,
+            "ROTATE_WRIST": false
+        },
+        "TARGET": {
+            "x": 14,
+            "y": -6,
+            "ROTATE_WRIST": false
+        }
+    },
+    "6": {
+        "ORIGIN": {
+            "x": 8,
+            "y": 1,
+            "ROTATE_WRIST": false
+        },
+        "TARGET": {
+            "x": 14,
+            "y": -7,
+            "ROTATE_WRIST": false
+        }
+    },
+    "7": {
+        "ORIGIN": {
+            "x": 8,
+            "y": 2,
+            "ROTATE_WRIST": false
+        },
+        "TARGET": {
+            "x": 13,
+            "y": -7,
+            "ROTATE_WRIST": true
+        }
+    }
+}
