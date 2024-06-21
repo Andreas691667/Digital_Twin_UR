@@ -70,7 +70,7 @@ if __name__ == "__main__":
     file_key = args.key
 
     file_name_key = file_key if file_key is not None else "E8"
-    epsilon = 0.4
+    epsilon = 0.7
     epsilon_t = 1
 
     # ----- WITH KEY -----
