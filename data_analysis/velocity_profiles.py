@@ -40,7 +40,7 @@ TRAPEZOIDAL_QD = [
 if __name__ == "__main__":
 
     # three distances from 1 to pi
-    distances = np.linspace(1, pi, 3)
+    distances = np.linspace(1, 3.4, 3)
 
     N = len(distances)
 
@@ -93,7 +93,7 @@ if __name__ == "__main__":
 
         # add title to subfigure 
         subfigs[i].suptitle(
-            f"Distance traversed: {round(distance, 2)} rad in {round(T, 2)} s"
+            f"Distance traversed: {round(distance, 2)} rad in {round(T, 2)} s ($\\alpha=${JOINT_ACCELERATION_DEG} deg/$s^2$, $\\omega=${JOINT_SPEED_MAX_DEG} deg/s )"
         )
 
         axs = subfigs[i].subplots(2, 1, sharex=True)

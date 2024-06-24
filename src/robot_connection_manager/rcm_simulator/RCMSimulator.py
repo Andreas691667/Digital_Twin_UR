@@ -60,8 +60,8 @@ class RCMSimulator(Controller):
 
 # main
 if __name__ == "__main__":
-    simulator = RCMSimulator("square.csv", "square", frequency=100)
-    sleep(2)
+    simulator = RCMSimulator("square.csv", "square", frequency=80)
+    sleep(3)
     print("Starting data publisher")
     simulator.start_publishing()
     
