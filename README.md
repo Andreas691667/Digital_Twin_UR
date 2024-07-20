@@ -4,7 +4,7 @@ This repository contains the source code for the Bachelor's project made by:
 - Andreas Kaag Thomsen
 - Buster Salomon Rasmussen
 
-For the Bachelor of Science in the Computer Engineering program at the University of Aarhus. The repository contains the source code for the Digital Twin of the Universal Robots UR3e robot arm as well as the source code for controlling and monitoring the arm.
+For the Bachelor of Science in the Computer Engineering program at Aarhus University. The repository contains the source code for the Digital Twin of the Universal Robots UR3e robot arm as well as the source code for controlling and monitoring the arm.
 
 For handling the connections to the robot, the repository ``URInterface`` has been used, and can be found [here](https://gitlab.au.dk/clagms/urinterface/-/tree/data_publisher/src?ref_type=heads) (accessed February 12th). Specifically, the ``data_publisher`` branch, which also features a visulisation application. The repository uses the [RTDE Client library](https://github.com/UniversalRobots/RTDE_Python_Client_Library) provided by Universal Robots A/S. The file ``RTDEConnect.py`` is from Universal Robots' ['Remote Operation of Robots' guide](https://www.universal-robots.com/articles/ur/interface-communication/remote-operation-of-robots/) (accessed February 16th).
 
