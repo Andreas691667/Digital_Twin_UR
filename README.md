@@ -8,6 +8,11 @@ For the Bachelor of Science in the Computer Engineering program at Aarhus Univer
 
 For handling the connections to the robot, the repository ``URInterface`` has been used, and can be found [here](https://gitlab.au.dk/clagms/urinterface/-/tree/data_publisher/src?ref_type=heads) (accessed February 12th). Specifically, the ``data_publisher`` branch, which also features a visulisation application. The repository uses the [RTDE Client library](https://github.com/UniversalRobots/RTDE_Python_Client_Library) provided by Universal Robots A/S. The file ``RTDEConnect.py`` is from Universal Robots' ['Remote Operation of Robots' guide](https://www.universal-robots.com/articles/ur/interface-communication/remote-operation-of-robots/) (accessed February 16th).
 
+## Content
+- ``src``: Source code for he Digital Twin of the Universal Robots UR3e robot arm as well as the source code for controlling and monitoring the arm.
+- ``rtde``: RTDE client library from Universal Robots.
+- ``data_analysis``: Code for data postprocessing.
+
 ## How to run the system
 To run the system, open two terminals in the root of the repo and run the following commands in each terminal:
 **Terminal 1 (Digital Twin)**
