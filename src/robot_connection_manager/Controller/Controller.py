@@ -4,7 +4,7 @@ import numpy as np
 import ast
 import msvcrt
 from dataclasses import dataclass
-from time import sleep
+from time import sleep, time
 import yaml
 import json
 from queue import Queue, Empty
@@ -79,6 +79,8 @@ class Controller:
         # start threads
         self.shutdown_thread.start()
         self.controller_thread.start()
+
+        self.start_time = 0
 
     def configure_rmq_clients(self):
         self.rmq_client_in.configure_incoming_channel(
@@ -196,6 +198,7 @@ class Controller:
         self.robot_connection.play_program()
 
         if main_program:
+            self.start_time = time() if self.block_number == 0 else self.start_time
             sleep(1)
             self.STATE = ControllerStates.NORMAL_OPERATION
 
@@ -334,6 +337,10 @@ class Controller:
             self.__go_to_home()
             sleep(1)
             print("\t [INFO] Task done")
+
+            # print time taken
+            print(f"\t [INFO] Time taken: {round(time() - self.start_time, 2)}s")
+
             self.__reset_robot_registers()
             # self.rtde_connection.shutdown()
             self.task_finished = True
