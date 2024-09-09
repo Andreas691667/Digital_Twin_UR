@@ -40,7 +40,7 @@ TRAPEZOIDAL_QD = [
 if __name__ == "__main__":
 
     # three distances from 1 to pi
-    distances = np.linspace(1, 3.4, 3)
+    distances = np.linspace(1, 3.7, 3)
 
     N = len(distances)
 

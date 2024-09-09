@@ -123,14 +123,25 @@ if __name__ == "__main__":
 
     # make 1 one large figure with 6 subplots with 3 axes each (q_dt, q_pt, q_error)
     # Create a large figure
-    large_fig = plt.figure(figsize=(11, 7))
+    # create figure with figure parameters exported from a plot
+    # params = {'top': 0.88, 'bottom': 0.11, 'left': 0.125,'right': 0.9,'hspace': 0.2, 'wspace': 0.2}
+    # params = {'top': 0.94, 'bottom': 0.41, 'left': 0.08,'right': 0.99,'hspace': 0.08, 'wspace': 0.2}
+    # params = {'top': 0.94, 'bottom': 0.345, 'left': 0.105,'right': 0.995,'hspace': 0.05, 'wspace': 0.22}
+
+    params = {'top': 0.93, 'bottom': 0.165, 'left': 0.085,'right': 0.995,'hspace': 0.05, 'wspace': 0.22}
+
+    large_fig = plt.figure(figsize=(16, 5))
+
+    large_fig.subplots_adjust(**params)
 
     # Create 6 subfigs
-    subfigs = large_fig.subfigures(2,1)
+    subfigs = large_fig.subfigures(1,2)
     subfigs = subfigs.ravel()
 
     # set font to serif
     plt.rcParams['font.family'] = 'serif'
+    # set font size to 8 pt
+    plt.rcParams['font.size'] = 14
 
     current_block = 0
     last_object_detected = False
@@ -160,6 +171,9 @@ if __name__ == "__main__":
             axs[0].plot([], [], color='blue', label='DT', marker='.', linestyle='dotted', markersize=1)
 
             axs[0].plot(timestamp_floats_pt, pt_qs[i], label="PT", color='green', linewidth=3, alpha=0.4)
+
+            axs[0].set_yticks(np.arange(np.floor(min_q), max_q, 0.5))
+
 
             axs[1].scatter(error_ts, erros[i], color='black', s=1)
             axs[1].plot([], [], color='black', label='Error', marker='.', linestyle='dotted', markersize=1)
@@ -266,108 +280,7 @@ if __name__ == "__main__":
                 ax.legend(loc='upper right')
                 ax.grid()
 
-
-
-
-
-
-    # fig, axs = plt.subplots(3, 2, sharex=True, sharey=True)
-    # fig.suptitle("Joint Positions, Velocities and Errors")
-    # fig.subplots_adjust(hspace=0.5)
-    # fig.subplots_adjust(wspace=0.5)
-    # fig.set_size_inches(10, 10)
-
-    # # plot positions
-    # for i in range(6):
-    #     # axs[i, :].grid()
-    #     # axs[i, :].set_xlabel("Time [s]")
-    #     axs[i, 0].set_ylabel("Joint Position [deg]")
-    #     axs[i, 1].set_ylabel("Joint Position [deg]")
-    #     # axs[i, j].set_title(f"q{i}")
-    #     axs[i, 0].plot(timestamp_floats_dt, dt_qs[i], label="DT")
-    #     axs[i, 1].plot(timestamp_floats_pt, pt_qs[i], label="PT")
-    #     axs[i, 2].plot(error_ts, error_q0, label="Error")
-    #     # axs[i, :].legend()    
-    
-    # # # plot positions
-    # fig, (ax1, ax2) = plt.subplots(2, 1, sharex=True, sharey=True)
-    # ax1.plot(timestamp_floats_dt, q0_floats_dt, label="q0")
-    # ax1.plot(timestamp_floats_dt, q1_floats_dt, label="q1")
-    # ax1.plot(timestamp_floats_dt, q2_floats_dt, label="q2")
-    # ax1.plot(timestamp_floats_dt, q3_floats_dt, label="q3")
-    # ax1.plot(timestamp_floats_dt, q4_floats_dt, label="q4")
-    # ax1.plot(timestamp_floats_dt, q5_floats_dt, label="q5")
-    # # cursor = Cursor(ax1, useblit=True, color='red', linewidth=2)
-    
-    # ax1.set_xlabel("Time [s]")
-    # ax1.set_ylabel("Joint Position [rad]")
-    # ax1.set_title("DT")
-    
-    # ax2.plot(timestamp_floats_pt, q0_floats_pt, label="q0")
-    # ax2.plot(timestamp_floats_pt, q1_floats_pt, label="q1")
-    # ax2.plot(timestamp_floats_pt, q2_floats_pt, label="q2")
-    # ax2.plot(timestamp_floats_pt, q3_floats_pt, label="q3")
-    # ax2.plot(timestamp_floats_pt, q4_floats_pt, label="q4")
-    # ax2.plot(timestamp_floats_pt, q5_floats_pt, label="q5")
-    # cursor = MultiCursor(None, (ax1,ax2), useblit=True, color='red', linewidth=1)
-
-    # ax2.set_xlabel("Time [s]")
-    # ax2.set_ylabel("Joint Position [rad]")
-    # ax2.set_title("PT")
-
-    # # increase granularity of x-axis
-    # ax2.set_xticks(np.arange(0, 25, 1))
-    # ax1.grid()
-    # ax2.grid()
-    # fig.legend()
-
-    # # plot errors
-    # figt, axt = plt.subplots(6, 1, sharex=True, sharey=True)
-    # axt[0].plot(error_ts, error_q0, label="q0")
-    # axt[1].plot(error_ts, error_q1, label="q1")
-    # axt[2].plot(error_ts, error_q2, label="q2")
-    # axt[3].plot(error_ts, error_q3, label="q3")
-    # axt[4].plot(error_ts, error_q4, label="q4")
-    # axt[5].plot(error_ts, error_q5, label="q5")
-
-    # axt[5].set_xlabel("Time [s]")
-    # axt[0].set_ylabel("Joint Position Error [rad]")
-    # axt[0].set_title("Errors")
-
-    # axt[0].set_xticks(np.arange(0, 25, 1))
-
-    # figt.legend()
-
     # plt.show()
 
-    # # # plot velocities
-    # fig, (ax1, ax2) = plt.subplots(2, 1, sharex=True, sharey=True)
-    # ax1.plot(timestamp_floats_dt, qd0_floats_dt, label="q0")
-    # ax1.plot(timestamp_floats_dt, qd1_floats_dt, label="q1")
-    # ax1.plot(timestamp_floats_dt, qd2_floats_dt, label="q2")
-    # ax1.plot(timestamp_floats_dt, qd3_floats_dt, label="q3")
-    # ax1.plot(timestamp_floats_dt, qd4_floats_dt, label="q4")
-    # ax1.plot(timestamp_floats_dt, qd5_floats_dt, label="q5")
-    # cursor = Cursor(ax1, useblit=True, color='red', linewidth=2)
-    
-    # ax1.set_xlabel("Time [s]")
-    # ax1.set_ylabel("Joint Velocity [rad/s]")
-    # ax1.set_title("DT")
-    
-    # ax2.plot(timestamp_floats_pt, qd0_floats_pt, label="q0")
-    # ax2.plot(timestamp_floats_pt, qd1_floats_pt, label="q1")
-    # ax2.plot(timestamp_floats_pt, qd2_floats_pt, label="q2")
-    # ax2.plot(timestamp_floats_pt, qd3_floats_pt, label="q3")
-    # ax2.plot(timestamp_floats_pt, qd4_floats_pt, label="q4")
-    # ax2.plot(timestamp_floats_pt, qd5_floats_pt, label="q5")
-    # cursor = Cursor(ax2, useblit=True, color='red', linewidth=2)
-
-    # ax2.set_xlabel("Time [s]")
-    # ax2.set_ylabel("Joint Velocoty [rad/s]")
-    # ax2.set_title("PT")
-
-    # # increase granularity of x-axis
-    # ax2.set_xticks(np.arange(0, 25, 1))
-
-    # fig.legend()
-    plt.show()
+    # save fig as svg
+    large_fig.savefig("trajectory_plot.pdf", format='pdf', dpi=1500)
